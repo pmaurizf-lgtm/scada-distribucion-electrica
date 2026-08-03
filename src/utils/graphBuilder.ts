@@ -67,7 +67,9 @@ export function buildGraph(
       target: circuit.destinationId,
       type: 'smoothstep',
       animated: protectionState ? protectionState === 'cerrada' : !isAlt,
-      label: `${circuit.protectionName} · ${circuit.protectionCurrentA} A`,
+      label: circuit.protectionCurrentA
+        ? `${circuit.protectionName} · ${circuit.protectionCurrentA} A`
+        : circuit.protectionName,
       data: { circuit, protectionState },
       className: [
         isAlt ? 'edge-alternativa' : 'edge-normal',

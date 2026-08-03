@@ -470,6 +470,21 @@ body {
   color: #8fd9ae;
 }
 
+.badge--svc-VM {
+  background: rgba(214, 69, 69, 0.2);
+  color: #f0a0a0;
+}
+
+.badge--svc-VS {
+  background: rgba(212, 160, 23, 0.2);
+  color: #e6c35a;
+}
+
+.badge--svc-NV {
+  background: rgba(120, 140, 150, 0.25);
+  color: #b0c0c8;
+}
+
 .dot--prot-cerrada {
   background: var(--prot-closed);
 }

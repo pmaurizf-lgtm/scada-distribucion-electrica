@@ -16,8 +16,8 @@ export function DetailPanel({
       <aside className="panel panel--empty">
         <h2>Detalle</h2>
         <p>
-          Busca un equipo por nombre o selecciónalo en el diagrama. La búsqueda
-          resalta el equipo y todas las alimentaciones aguas arriba.
+          Busca un equipo por nombre o ID. La búsqueda resalta el equipo y todas
+          las alimentaciones aguas arriba (datos reales 690 V).
         </p>
         <p className="muted" style={{ marginTop: '1rem' }}>
           Protecciones: <span className="swatch swatch--cerrada" /> cerrada
@@ -32,14 +32,7 @@ export function DetailPanel({
       <aside className="panel">
         <header className="panel__header">
           <h2>Búsqueda · aguas arriba</h2>
-          <button
-            type="button"
-            className="panel__close"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            ×
-          </button>
+          <CloseButton onClose={onClose} />
         </header>
         <SearchDetails
           equipment={selection.item}
@@ -55,14 +48,7 @@ export function DetailPanel({
       <aside className="panel">
         <header className="panel__header">
           <h2>Equipo</h2>
-          <button
-            type="button"
-            className="panel__close"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            ×
-          </button>
+          <CloseButton onClose={onClose} />
         </header>
         <EquipmentDetails
           equipment={selection.item}
@@ -77,20 +63,21 @@ export function DetailPanel({
     <aside className="panel">
       <header className="panel__header">
         <h2>Circuito</h2>
-        <button
-          type="button"
-          className="panel__close"
-          onClick={onClose}
-          aria-label="Cerrar"
-        >
-          ×
-        </button>
+        <CloseButton onClose={onClose} />
       </header>
       <CircuitDetails
         circuit={selection.item}
         state={protectionStatus[selection.item.id]}
       />
     </aside>
+  )
+}
+
+function CloseButton({ onClose }: { onClose: () => void }) {
+  return (
+    <button type="button" className="panel__close" onClick={onClose} aria-label="Cerrar">
+      ×
+    </button>
   )
 }
 
@@ -109,17 +96,7 @@ function SearchDetails({
         Equipo localizado: <strong>{equipment.name}</strong>
         <span className="muted"> ({equipment.id})</span>
       </p>
-      <dl className="kv">
-        <dt>Tipo</dt>
-        <dd>{equipment.kind.replaceAll('_', ' ')}</dd>
-        {equipment.voltage && (
-          <>
-            <dt>Tensión</dt>
-            <dd>{equipment.voltage}</dd>
-          </>
-        )}
-      </dl>
-
+      <EquipmentKv equipment={equipment} />
       <h3>Alimentaciones aguas arriba ({upstreamCircuits.length})</h3>
       <CircuitList
         circuits={upstreamCircuits}
@@ -144,32 +121,43 @@ function EquipmentDetails({
 
   return (
     <div className="panel__body">
-      <dl className="kv">
-        <dt>ID</dt>
-        <dd>{equipment.id}</dd>
-        <dt>Nombre</dt>
-        <dd>{equipment.name}</dd>
-        <dt>Tipo</dt>
-        <dd>{equipment.kind.replaceAll('_', ' ')}</dd>
-        {equipment.voltage && (
-          <>
-            <dt>Tensión</dt>
-            <dd>{equipment.voltage}</dd>
-          </>
-        )}
-        {equipment.description && (
-          <>
-            <dt>Descripción</dt>
-            <dd>{equipment.description}</dd>
-          </>
-        )}
-      </dl>
-
+      <EquipmentKv equipment={equipment} />
       <h3>Circuitos entrantes ({incoming.length})</h3>
       <CircuitList circuits={incoming} protectionStatus={protectionStatus} />
       <h3>Circuitos salientes ({outgoing.length})</h3>
       <CircuitList circuits={outgoing} protectionStatus={protectionStatus} />
     </div>
+  )
+}
+
+function EquipmentKv({ equipment }: { equipment: Equipment }) {
+  return (
+    <dl className="kv">
+      <dt>ID</dt>
+      <dd>{equipment.id}</dd>
+      <dt>Nombre</dt>
+      <dd>{equipment.name}</dd>
+      <dt>Tipo</dt>
+      <dd>{equipment.kind.replaceAll('_', ' ')}</dd>
+      {equipment.local && (
+        <>
+          <dt>Local</dt>
+          <dd>{equipment.local}</dd>
+        </>
+      )}
+      {equipment.voltage && (
+        <>
+          <dt>Tensión</dt>
+          <dd>{equipment.voltage}</dd>
+        </>
+      )}
+      {equipment.virtual && (
+        <>
+          <dt>Nota</dt>
+          <dd>Nodo de barra (sintético)</dd>
+        </>
+      )}
+    </dl>
   )
 }
 
@@ -185,14 +173,32 @@ function CircuitDetails({
       <dl className="kv">
         <dt>ID</dt>
         <dd>{circuit.id}</dd>
+        {circuit.circuitRef && (
+          <>
+            <dt>Ref. Excel</dt>
+            <dd>{circuit.circuitRef}</dd>
+          </>
+        )}
+        {circuit.excelRow && (
+          <>
+            <dt>Fila Excel</dt>
+            <dd>{circuit.excelRow}</dd>
+          </>
+        )}
         <dt>Nombre</dt>
         <dd>{circuit.name}</dd>
         <dt>Origen</dt>
         <dd>{circuit.originId}</dd>
         <dt>Destino</dt>
         <dd>{circuit.destinationId}</dd>
-        <dt>Protección</dt>
+        <dt>Breaker ID</dt>
         <dd>{circuit.protectionName}</dd>
+        {circuit.protectionModel && (
+          <>
+            <dt>Modelo</dt>
+            <dd>{circuit.protectionModel}</dd>
+          </>
+        )}
         <dt>Estado</dt>
         <dd>
           {state ? (
@@ -203,30 +209,68 @@ function CircuitDetails({
             <span className="muted">Sin estado cargado</span>
           )}
         </dd>
-        <dt>Intensidad</dt>
-        <dd>{circuit.protectionCurrentA} A</dd>
-        <dt>Tipo de línea</dt>
+        <dt>In</dt>
+        <dd>
+          {circuit.protectionCurrentA != null
+            ? `${circuit.protectionCurrentA} A`
+            : '—'}
+        </dd>
+        <dt>Tipo línea</dt>
         <dd>
           <span className={`badge badge--${circuit.lineType}`}>
             {circuit.lineType === 'normal' ? 'Normal' : 'Alternativa'}
           </span>
         </dd>
+        {circuit.service && (
+          <>
+            <dt>Servicio</dt>
+            <dd>
+              <span className={`badge badge--svc-${circuit.service}`}>
+                {circuit.service}
+              </span>
+            </dd>
+          </>
+        )}
+        {circuit.pKWe != null && (
+          <>
+            <dt>P</dt>
+            <dd>{circuit.pKWe.toFixed(2)} kWe</dd>
+          </>
+        )}
+        {circuit.qKVAr != null && (
+          <>
+            <dt>Q</dt>
+            <dd>{circuit.qKVAr.toFixed(2)} kVAr</dd>
+          </>
+        )}
+        {circuit.sKVA != null && (
+          <>
+            <dt>S</dt>
+            <dd>{circuit.sKVA.toFixed(2)} kVA</dd>
+          </>
+        )}
+        {circuit.ibA != null && (
+          <>
+            <dt>Ib</dt>
+            <dd>{circuit.ibA.toFixed(2)} A</dd>
+          </>
+        )}
         {circuit.voltage && (
           <>
             <dt>Tensión</dt>
             <dd>{circuit.voltage}</dd>
           </>
         )}
-        {circuit.cableSection && (
+        {circuit.parallelCables != null && circuit.parallelCables > 1 && (
           <>
-            <dt>Sección cable</dt>
-            <dd>{circuit.cableSection}</dd>
+            <dt>Paralelos</dt>
+            <dd>{circuit.parallelCables}</dd>
           </>
         )}
-        {circuit.notes && (
+        {circuit.virtual && (
           <>
-            <dt>Notas</dt>
-            <dd>{circuit.notes}</dd>
+            <dt>Nota</dt>
+            <dd>Enlace de barra (sintético)</dd>
           </>
         )}
       </dl>
@@ -260,7 +304,11 @@ function CircuitList({
               <br />
               <span className="muted">
                 {showPath && `${c.originId} → ${c.destinationId} · `}
-                {c.protectionName} · {c.protectionCurrentA} A
+                {c.protectionName}
+                {c.protectionCurrentA != null
+                  ? ` · ${c.protectionCurrentA} A`
+                  : ''}
+                {c.service ? ` · ${c.service}` : ''}
                 {state && (
                   <>
                     {' '}

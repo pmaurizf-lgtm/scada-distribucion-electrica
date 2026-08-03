@@ -22,7 +22,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
-import { sampleDistribution } from '../data/sampleDistribution'
+import { system690 } from '../data/system690'
 import {
   sampleProtectionStatus,
   toProtectionStatusMap,
@@ -58,7 +58,7 @@ function ScadaCanvasInner() {
   const [statusSource, setStatusSource] = useState('simulación de ejemplo')
 
   const graph = useMemo(
-    () => buildGraph(sampleDistribution, protectionStatus),
+    () => buildGraph(system690, protectionStatus),
     [protectionStatus],
   )
 
@@ -108,7 +108,7 @@ function ScadaCanvasInner() {
   const runSearch = useCallback(
     (rawQuery: string) => {
       const found = findEquipmentByQuery(
-        sampleDistribution.equipment,
+        system690.equipment,
         rawQuery,
       )
       if (!found) {
@@ -118,7 +118,7 @@ function ScadaCanvasInner() {
         return
       }
 
-      const trace = getUpstreamTrace(found.id, sampleDistribution.circuits)
+      const trace = getUpstreamTrace(found.id, system690.circuits)
       setSearchError(null)
       setHighlight({
         targetId: found.id,
@@ -260,7 +260,7 @@ function ScadaCanvasInner() {
 
   const handleNodeClick = useCallback((_: MouseEvent, node: Node) => {
     const equipment = (node.data as EquipmentNodeData).equipment
-    const circuits = sampleDistribution.circuits.filter(
+    const circuits = system690.circuits.filter(
       (c) => c.originId === equipment.id || c.destinationId === equipment.id,
     )
     setHighlight(null)
@@ -295,8 +295,8 @@ function ScadaCanvasInner() {
         <div className="topbar__brand">
           <span className="topbar__mark" aria-hidden />
           <div>
-            <h1>{sampleDistribution.title}</h1>
-            <p>{sampleDistribution.vessel}</p>
+            <h1>{system690.title}</h1>
+            <p>{system690.vessel}</p>
           </div>
         </div>
         <div className="topbar__controls">
@@ -315,7 +315,7 @@ function ScadaCanvasInner() {
               />
             </label>
             <datalist id="equipment-suggestions">
-              {sampleDistribution.equipment.map((eq) => (
+              {system690.equipment.map((eq) => (
                 <option key={eq.id} value={eq.name} />
               ))}
             </datalist>
@@ -445,8 +445,8 @@ function ScadaCanvasInner() {
 
       <footer className="statusbar">
         <span>
-          {sampleDistribution.equipment.length} equipos ·{' '}
-          {sampleDistribution.circuits.length} circuitos · protecciones:{' '}
+          {system690.equipment.length} equipos ·{' '}
+          {system690.circuits.length} circuitos · protecciones:{' '}
           <span className="swatch swatch--cerrada" /> {closedCount} cerradas ·{' '}
           <span className="swatch swatch--abierta" /> {openCount} abiertas ·{' '}
           {statusSource}

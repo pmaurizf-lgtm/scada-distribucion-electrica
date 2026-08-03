@@ -1,32 +1,35 @@
 import type { ProtectionStatusEntry } from '../types'
+import { system690 } from './system690'
 
 /**
- * Simulación del futuro archivo de estado de protecciones
- * (circuitos cerrados / abiertos). Convención SCADA industrial:
- * - cerrada = energizada / interruptor cerrado → rojo
- * - abierta = desenergizada / interruptor abierto → verde
+ * Simulación del estado de protecciones sobre el sistema 690 V real.
+ * - cerrada = energizada → rojo
+ * - abierta = desenergizada → verde
+ *
+ * Por defecto: alternativas abiertas; el resto cerradas (salvo bus-tie
+ * y algunos ejemplos).
  */
-export const sampleProtectionStatus: ProtectionStatusEntry[] = [
-  { circuitId: 'C-001', protectionName: 'ACB GEN-1', state: 'cerrada' },
-  { circuitId: 'C-002', protectionName: 'ACB GEN-2', state: 'cerrada' },
-  { circuitId: 'C-003', protectionName: 'ACB BUS-TIE', state: 'abierta' },
-  { circuitId: 'C-004', protectionName: 'MCCB GEN-EM', state: 'cerrada' },
-  { circuitId: 'C-005', protectionName: 'MCCB ESB-N', state: 'cerrada' },
-  { circuitId: 'C-006', protectionName: 'MCCB ESB-A', state: 'abierta' },
-  { circuitId: 'C-007', protectionName: 'MCCB ENG', state: 'cerrada' },
-  { circuitId: 'C-008', protectionName: 'MCCB DECK', state: 'cerrada' },
-  { circuitId: 'C-009', protectionName: 'MCCB XFMR', state: 'cerrada' },
-  { circuitId: 'C-010', protectionName: 'MCCB ACC', state: 'cerrada' },
-  { circuitId: 'C-011', protectionName: 'MCCB PUMP-SW', state: 'cerrada' },
-  { circuitId: 'C-012', protectionName: 'MCCB PUMP-SW-A', state: 'abierta' },
-  { circuitId: 'C-013', protectionName: 'MCCB PUMP-FW', state: 'abierta' },
-  { circuitId: 'C-014', protectionName: 'MCCB FAN', state: 'cerrada' },
-  { circuitId: 'C-015', protectionName: 'MCCB FAN-A', state: 'abierta' },
-  { circuitId: 'C-016', protectionName: 'MCCB WINCH', state: 'cerrada' },
-  { circuitId: 'C-017', protectionName: 'MCB LIGHT', state: 'cerrada' },
-  { circuitId: 'C-018', protectionName: 'MCB NAV', state: 'cerrada' },
-  { circuitId: 'C-019', protectionName: 'MCB NAV-A', state: 'abierta' },
-]
+function buildSampleStatus(): ProtectionStatusEntry[] {
+  return system690.circuits.map((c) => {
+    let state: 'cerrada' | 'abierta' = 'cerrada'
+    if (c.virtual) state = 'cerrada'
+    else if (c.lineType === 'alternativa') state = 'abierta'
+    // Ejemplo: bus-tie entre cuadros N-1 / N-2 abierto
+    else if (c.protectionName === 'QT1B' || c.protectionName === 'QT2A') {
+      state = 'abierta'
+    }
+    // Ejemplo: consumo en mantenimiento
+    else if (c.destinationId === 'PMP-FOSS0001') state = 'abierta'
+    return {
+      circuitId: c.id,
+      protectionName: c.protectionName,
+      state,
+    }
+  })
+}
+
+export const sampleProtectionStatus: ProtectionStatusEntry[] =
+  buildSampleStatus()
 
 export function toProtectionStatusMap(
   entries: ProtectionStatusEntry[],
