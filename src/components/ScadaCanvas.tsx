@@ -28,17 +28,20 @@ import {
   toProtectionStatusMap,
 } from '../data/sampleProtectionStatus'
 import type {
+  Circuit,
   ProtectionStatusEntry,
   ProtectionStatusMap,
   Selection,
 } from '../types'
 import {
   buildGraph,
+  layoutSubtree,
   LINE_COLORS,
   type CircuitEdgeData,
   type EquipmentNodeData,
 } from '../utils/graphBuilder'
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
+import { CircuitBalloon } from './CircuitBalloon'
 import { DetailPanel } from './DetailPanel'
 import { EquipmentNode } from './EquipmentNode'
 
@@ -46,9 +49,16 @@ const nodeTypes = { equipment: EquipmentNode }
 
 const emptyStatus: ProtectionStatusMap = {}
 
+interface BalloonState {
+  circuit: Circuit
+  x: number
+  y: number
+}
+
 function ScadaCanvasInner() {
   const { fitView } = useReactFlow()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   const [protectionStatus, setProtectionStatus] =
     useState<ProtectionStatusMap>(() =>
@@ -70,6 +80,7 @@ function ScadaCanvasInner() {
   }, [graph, setNodes, setEdges])
 
   const [selection, setSelection] = useState<Selection>(null)
+  const [balloon, setBalloon] = useState<BalloonState | null>(null)
   const [showAlt, setShowAlt] = useState(true)
   const [showNormal, setShowNormal] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -85,40 +96,114 @@ function ScadaCanvasInner() {
     setSearchError(null)
   }, [])
 
-  const runSearch = useCallback(
-    (rawQuery: string) => {
-      const found = findEquipmentByQuery(system690.equipment, rawQuery)
-      if (!found) {
-        setSearchError('No se encontró ningún equipo con ese nombre o ID.')
-        setHighlight(null)
-        setSelection(null)
-        return
-      }
+  const runSearch = useCallback((rawQuery: string) => {
+    const found = findEquipmentByQuery(system690.equipment, rawQuery)
+    if (!found) {
+      setSearchError('No se encontró ningún equipo con ese nombre o ID.')
+      setHighlight(null)
+      setSelection(null)
+      setBalloon(null)
+      return
+    }
 
-      const trace = getUpstreamTrace(found.id, system690.circuits)
-      setSearchError(null)
-      setHighlight({
-        targetId: found.id,
-        equipmentIds: new Set(trace.equipmentIds),
-        circuitIds: new Set(trace.circuitIds),
+    const trace = getUpstreamTrace(found.id, system690.circuits)
+    setSearchError(null)
+    setBalloon(null)
+    setHighlight({
+      targetId: found.id,
+      equipmentIds: new Set(trace.equipmentIds),
+      circuitIds: new Set(trace.circuitIds),
+    })
+    setSelection({
+      type: 'search',
+      item: found,
+      upstreamCircuits: trace.circuits,
+      upstreamEquipmentIds: trace.equipmentIds,
+    })
+  }, [])
+
+  const displayNodes = useMemo((): Node<EquipmentNodeData>[] => {
+    if (!highlight) {
+      return nodes.map((node) => ({
+        ...node,
+        data: { ...node.data, highlight: undefined },
+        selected: false,
+      }))
+    }
+
+    const scoped = nodes.filter((n) => highlight.equipmentIds.has(n.id))
+    const scopedEdges = edges.filter((e) => highlight.circuitIds.has(e.id))
+    const compacted = layoutSubtree(scoped, scopedEdges)
+
+    return compacted.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        highlight:
+          node.id === highlight.targetId
+            ? ('target' as const)
+            : ('upstream' as const),
+      },
+      selected: node.id === highlight.targetId,
+    }))
+  }, [nodes, edges, highlight])
+
+  const displayEdges = useMemo(() => {
+    return edges
+      .filter((e) => {
+        const circuit = (e.data as CircuitEdgeData | undefined)?.circuit
+        if (!circuit) return true
+        if (highlight && !highlight.circuitIds.has(e.id)) return false
+        if (circuit.lineType === 'alternativa' && !showAlt) return false
+        if (circuit.lineType === 'normal' && !showNormal) return false
+        return true
       })
-      setSelection({
-        type: 'search',
-        item: found,
-        upstreamCircuits: trace.circuits,
-        upstreamEquipmentIds: trace.equipmentIds,
+      .map((edge) => {
+        const circuit = (edge.data as CircuitEdgeData)?.circuit
+        const isAlt = circuit?.lineType === 'alternativa'
+        const baseStroke = isAlt
+          ? LINE_COLORS.alternativa
+          : LINE_COLORS.normal
+        const selected = balloon?.circuit.id === edge.id
+
+        return {
+          ...edge,
+          label: highlight
+            ? circuit?.protectionName
+            : selected
+              ? circuit?.protectionName
+              : undefined,
+          labelStyle: {
+            fill: selected ? '#fff' : '#c8d4d0',
+            fontSize: highlight ? 10 : 11,
+            fontWeight: 600,
+          },
+          labelBgStyle: {
+            fill: selected ? '#2a3a36' : '#1a2422',
+            fillOpacity: 0.92,
+          },
+          labelBgPadding: [3, 5] as [number, number],
+          labelBgBorderRadius: 4,
+          style: {
+            ...edge.style,
+            stroke: baseStroke,
+            strokeWidth: selected ? 3.5 : isAlt ? 2.25 : 2.75,
+            opacity: 0.95,
+            strokeDasharray: undefined,
+          },
+          animated: false,
+          zIndex: selected ? 20 : isAlt ? 1 : 2,
+        }
       })
-    },
-    [],
-  )
+  }, [edges, showAlt, showNormal, highlight, balloon])
 
   useEffect(() => {
     if (!highlight) return
     const t = window.setTimeout(() => {
-      void fitView({ padding: 0.28, duration: 450, maxZoom: 1.35 })
-    }, 60)
+      void fitView({ padding: 0.2, duration: 400, maxZoom: 1.5 })
+    }, 80)
     return () => window.clearTimeout(t)
-  }, [highlight, fitView])
+  }, [highlight, displayNodes, fitView])
 
   const handleSearchSubmit = useCallback(
     (e: FormEvent) => {
@@ -175,80 +260,20 @@ function ScadaCanvasInner() {
     [applyStatusEntries],
   )
 
-  const displayNodes = useMemo(() => {
-    const scoped = highlight
-      ? nodes.filter((n) => highlight.equipmentIds.has(n.id))
-      : nodes
-
-    return scoped.map((node) => {
-      let nodeHighlight: EquipmentNodeData['highlight']
-      if (highlight) {
-        nodeHighlight =
-          node.id === highlight.targetId ? 'target' : 'upstream'
-      }
-      return {
-        ...node,
-        data: { ...node.data, highlight: nodeHighlight },
-        selected: node.id === highlight?.targetId,
-      }
+  const placeBalloon = useCallback((circuit: Circuit, event: MouseEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    const localX = rect ? event.clientX - rect.left : event.clientX
+    const localY = rect ? event.clientY - rect.top : event.clientY
+    const balloonW = 280
+    const balloonH = 320
+    const maxX = (rect?.width ?? window.innerWidth) - balloonW - 12
+    const maxY = (rect?.height ?? window.innerHeight) - balloonH - 12
+    setBalloon({
+      circuit,
+      x: Math.max(12, Math.min(localX + 14, maxX)),
+      y: Math.max(12, Math.min(localY + 14, maxY)),
     })
-  }, [nodes, highlight])
-
-  const displayEdges = useMemo(() => {
-    return edges
-      .filter((e) => {
-        const circuit = (e.data as CircuitEdgeData | undefined)?.circuit
-        if (!circuit) return true
-        if (highlight && !highlight.circuitIds.has(e.id)) return false
-        if (circuit.lineType === 'alternativa' && !showAlt) return false
-        if (circuit.lineType === 'normal' && !showNormal) return false
-        return true
-      })
-      .map((edge) => {
-        const circuit = (edge.data as CircuitEdgeData)?.circuit
-        const isAlt = circuit?.lineType === 'alternativa'
-        const baseStroke = isAlt
-          ? LINE_COLORS.alternativa
-          : LINE_COLORS.normal
-
-        let opacity = 0.95
-        let strokeWidth = isAlt ? 2.25 : 2.75
-        const selected =
-          selection?.type === 'circuit' && selection.item.id === edge.id
-        if (selected) {
-          strokeWidth = 3.5
-          opacity = 1
-        }
-
-        return {
-          ...edge,
-          label: selected
-            ? circuit?.protectionCurrentA
-              ? `${circuit.protectionName} · ${circuit.protectionCurrentA} A`
-              : circuit?.protectionName
-            : undefined,
-          labelStyle: selected
-            ? {
-                fill: '#e4ebe8',
-                fontSize: 11,
-                fontWeight: 600,
-              }
-            : undefined,
-          labelBgStyle: selected
-            ? { fill: '#1a2422', fillOpacity: 0.95 }
-            : undefined,
-          style: {
-            ...edge.style,
-            stroke: baseStroke,
-            strokeWidth,
-            opacity,
-            strokeDasharray: undefined,
-          },
-          animated: false,
-          zIndex: selected ? 20 : isAlt ? 1 : 2,
-        }
-      })
-  }, [edges, showAlt, showNormal, highlight, selection])
+  }, [])
 
   const handleNodeClick = useCallback((_: MouseEvent, node: Node) => {
     const equipment = (node.data as EquipmentNodeData).equipment
@@ -256,25 +281,31 @@ function ScadaCanvasInner() {
       (c) => c.originId === equipment.id || c.destinationId === equipment.id,
     )
     setSearchError(null)
+    setBalloon(null)
     setSelection({ type: 'equipment', item: equipment, circuits })
   }, [])
 
-  const handleEdgeClick = useCallback((_: MouseEvent, edge: Edge) => {
-    const circuit = (edge.data as CircuitEdgeData | undefined)?.circuit
-    if (circuit) {
+  const handleEdgeClick = useCallback(
+    (event: MouseEvent, edge: Edge) => {
+      const circuit = (edge.data as CircuitEdgeData | undefined)?.circuit
+      if (!circuit) return
+      event.stopPropagation()
       setSearchError(null)
       setSelection({ type: 'circuit', item: circuit })
-    }
-  }, [])
+      placeBalloon(circuit, event)
+    },
+    [placeBalloon],
+  )
 
   const handlePaneClick = useCallback(() => {
-    // Solo limpia detalle; el árbol filtrado se mantiene hasta "Limpiar"
+    setBalloon(null)
     if (!highlight) setSelection(null)
   }, [highlight])
 
   const clearSearchView = useCallback(() => {
     clearHighlight()
     setSelection(null)
+    setBalloon(null)
     setSearchQuery('')
     requestAnimationFrame(() => {
       void fitView({ padding: 0.15, duration: 400 })
@@ -322,11 +353,7 @@ function ScadaCanvasInner() {
               Buscar
             </button>
             {highlight && (
-              <button
-                type="button"
-                className="btn"
-                onClick={clearSearchView}
-              >
+              <button type="button" className="btn" onClick={clearSearchView}>
                 Ver todo
               </button>
             )}
@@ -368,11 +395,7 @@ function ScadaCanvasInner() {
             >
               Cargar archivo
             </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={handleClearStatus}
-            >
+            <button type="button" className="btn" onClick={handleClearStatus}>
               Quitar estados
             </button>
             <input
@@ -389,7 +412,7 @@ function ScadaCanvasInner() {
       {searchError && <div className="banner banner--error">{searchError}</div>}
 
       <main className="workspace">
-        <div className="canvas-wrap">
+        <div className="canvas-wrap" ref={canvasRef}>
           <ReactFlow
             nodes={displayNodes}
             edges={displayEdges}
@@ -427,11 +450,22 @@ function ScadaCanvasInner() {
               maskColor="rgba(8, 14, 12, 0.7)"
             />
           </ReactFlow>
+
+          {balloon && (
+            <CircuitBalloon
+              circuit={balloon.circuit}
+              state={protectionStatus[balloon.circuit.id]}
+              x={balloon.x}
+              y={balloon.y}
+              onClose={() => setBalloon(null)}
+            />
+          )}
         </div>
         <DetailPanel
           selection={selection}
           protectionStatus={protectionStatus}
           onClose={() => {
+            setBalloon(null)
             if (highlight) {
               const target = system690.equipment.find(
                 (e) => e.id === highlight.targetId,

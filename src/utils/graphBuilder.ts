@@ -119,68 +119,94 @@ export function buildGraph(
     }
   })
 
-  return { nodes: layoutNodes(nodes, edges, data), edges }
+  return { nodes: layoutNodes(nodes, edges, data, { compact: false }), edges }
+}
+
+/** Reposiciona un subconjunto de nodos/aristas con layout compacto (vista búsqueda). */
+export function layoutSubtree(
+  nodes: Node<EquipmentNodeData>[],
+  edges: Edge<CircuitEdgeData>[],
+): Node<EquipmentNodeData>[] {
+  return layoutNodes(nodes, edges, null, { compact: true })
 }
 
 function layoutNodes(
   nodes: Node<EquipmentNodeData>[],
   edges: Edge[],
-  data: DistributionData,
+  data: DistributionData | null,
+  options: { compact: boolean },
 ): Node<EquipmentNodeData>[] {
+  const compact = options.compact
   const g = new dagre.graphlib.Graph({ multigraph: true })
   g.setDefaultEdgeLabel(() => ({}))
   g.setGraph({
     rankdir: 'TB',
     align: 'UL',
-    nodesep: 72,
-    ranksep: 150,
-    edgesep: 40,
-    marginx: 60,
-    marginy: 60,
+    nodesep: compact ? 36 : 72,
+    ranksep: compact ? 70 : 150,
+    edgesep: compact ? 18 : 40,
+    marginx: compact ? 24 : 60,
+    marginy: compact ? 24 : 60,
     acyclicer: 'greedy',
     ranker: 'network-simplex',
   })
 
   for (const node of nodes) {
-    g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
+    g.setNode(node.id, {
+      width: compact ? 180 : NODE_WIDTH,
+      height: compact ? 64 : NODE_HEIGHT,
+    })
   }
 
-  // Preferir aristas normales en el layout; las alternativas pesan menos
   let edgeSeq = 0
   for (const edge of edges) {
     const circuit = (edge.data as CircuitEdgeData | undefined)?.circuit
     const isAlt = circuit?.lineType === 'alternativa'
-    g.setEdge(edge.source, edge.target, {
-      weight: isAlt ? 1 : 4,
-      minlen: isAlt ? 2 : 1,
-    }, `e${edgeSeq++}`)
+    g.setEdge(
+      edge.source,
+      edge.target,
+      {
+        weight: isAlt ? 1 : 5,
+        minlen: 1,
+      },
+      `e${edgeSeq++}`,
+    )
   }
 
   dagre.layout(g)
 
-  // Separar visualmente cuadros N-1 (izquierda) y N-2 (derecha)
-  const SHIFT = 520
+  const SHIFT = compact ? 0 : 520
   const laid = nodes.map((node) => {
     const pos = g.node(node.id)
+    if (!pos) {
+      return node
+    }
     const eq = node.data.equipment
     let xShift = 0
-    if (/MSB-6PWS0001|PNL-MSB10|SDG-GENS000[12]/.test(eq.id)) xShift = -SHIFT
-    else if (/MSB-6PWS0002|PNL-MSB20|SDG-GENS000[34]/.test(eq.id)) xShift = SHIFT
-    else {
-      // Empujar cargas según su alimentación dominante
-      const inns = data.circuits.filter((c) => c.destinationId === eq.id)
-      const fromN1 = inns.some((c) => /MSB10|MSB-6PWS0001|GENS000[12]/.test(c.originId))
-      const fromN2 = inns.some((c) => /MSB20|MSB-6PWS0002|GENS000[34]/.test(c.originId))
-      if (fromN1 && !fromN2) xShift = -SHIFT * 0.55
-      else if (fromN2 && !fromN1) xShift = SHIFT * 0.55
+    if (!compact && data) {
+      if (/MSB-6PWS0001|PNL-MSB10|SDG-GENS000[12]/.test(eq.id)) xShift = -SHIFT
+      else if (/MSB-6PWS0002|PNL-MSB20|SDG-GENS000[34]/.test(eq.id))
+        xShift = SHIFT
+      else {
+        const inns = data.circuits.filter((c) => c.destinationId === eq.id)
+        const fromN1 = inns.some((c) =>
+          /MSB10|MSB-6PWS0001|GENS000[12]/.test(c.originId),
+        )
+        const fromN2 = inns.some((c) =>
+          /MSB20|MSB-6PWS0002|GENS000[34]/.test(c.originId),
+        )
+        if (fromN1 && !fromN2) xShift = -SHIFT * 0.55
+        else if (fromN2 && !fromN1) xShift = SHIFT * 0.55
+      }
     }
 
-    const rank = KIND_RANK[eq.kind]
+    const w = compact ? 180 : NODE_WIDTH
+    const h = compact ? 64 : NODE_HEIGHT
     return {
       ...node,
       position: {
-        x: pos.x - NODE_WIDTH / 2 + xShift,
-        y: pos.y - NODE_HEIGHT / 2 + rank * 8,
+        x: pos.x - w / 2 + xShift,
+        y: pos.y - h / 2,
       },
     }
   })
