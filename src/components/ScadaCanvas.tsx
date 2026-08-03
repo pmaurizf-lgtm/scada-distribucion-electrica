@@ -47,7 +47,7 @@ const nodeTypes = { equipment: EquipmentNode }
 const emptyStatus: ProtectionStatusMap = {}
 
 function ScadaCanvasInner() {
-  const { fitView, setCenter, getNode } = useReactFlow()
+  const { fitView } = useReactFlow()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [protectionStatus, setProtectionStatus] =
@@ -85,31 +85,9 @@ function ScadaCanvasInner() {
     setSearchError(null)
   }, [])
 
-  const focusEquipment = useCallback(
-    (equipmentId: string) => {
-      requestAnimationFrame(() => {
-        const node = getNode(equipmentId)
-        if (!node) {
-          void fitView({ padding: 0.2, duration: 400 })
-          return
-        }
-        const w = node.measured?.width ?? 200
-        const h = node.measured?.height ?? 72
-        setCenter(node.position.x + w / 2, node.position.y + h / 2, {
-          zoom: 1.15,
-          duration: 500,
-        })
-      })
-    },
-    [fitView, getNode, setCenter],
-  )
-
   const runSearch = useCallback(
     (rawQuery: string) => {
-      const found = findEquipmentByQuery(
-        system690.equipment,
-        rawQuery,
-      )
+      const found = findEquipmentByQuery(system690.equipment, rawQuery)
       if (!found) {
         setSearchError('No se encontró ningún equipo con ese nombre o ID.')
         setHighlight(null)
@@ -130,10 +108,17 @@ function ScadaCanvasInner() {
         upstreamCircuits: trace.circuits,
         upstreamEquipmentIds: trace.equipmentIds,
       })
-      focusEquipment(found.id)
     },
-    [focusEquipment],
+    [],
   )
+
+  useEffect(() => {
+    if (!highlight) return
+    const t = window.setTimeout(() => {
+      void fitView({ padding: 0.28, duration: 450, maxZoom: 1.35 })
+    }, 60)
+    return () => window.clearTimeout(t)
+  }, [highlight, fitView])
 
   const handleSearchSubmit = useCallback(
     (e: FormEvent) => {
@@ -191,13 +176,15 @@ function ScadaCanvasInner() {
   )
 
   const displayNodes = useMemo(() => {
-    return nodes.map((node) => {
+    const scoped = highlight
+      ? nodes.filter((n) => highlight.equipmentIds.has(n.id))
+      : nodes
+
+    return scoped.map((node) => {
       let nodeHighlight: EquipmentNodeData['highlight']
       if (highlight) {
-        if (node.id === highlight.targetId) nodeHighlight = 'target'
-        else if (highlight.equipmentIds.has(node.id))
-          nodeHighlight = 'upstream'
-        else nodeHighlight = 'dim'
+        nodeHighlight =
+          node.id === highlight.targetId ? 'target' : 'upstream'
       }
       return {
         ...node,
@@ -212,6 +199,7 @@ function ScadaCanvasInner() {
       .filter((e) => {
         const circuit = (e.data as CircuitEdgeData | undefined)?.circuit
         if (!circuit) return true
+        if (highlight && !highlight.circuitIds.has(e.id)) return false
         if (circuit.lineType === 'alternativa' && !showAlt) return false
         if (circuit.lineType === 'normal' && !showNormal) return false
         return true
@@ -223,18 +211,11 @@ function ScadaCanvasInner() {
           ? LINE_COLORS.alternativa
           : LINE_COLORS.normal
 
-        let opacity = 0.92
-        let strokeWidth = isAlt ? 2 : 2.5
+        let opacity = 0.95
+        let strokeWidth = isAlt ? 2.25 : 2.75
         const selected =
           selection?.type === 'circuit' && selection.item.id === edge.id
-        if (highlight) {
-          if (highlight.circuitIds.has(edge.id)) {
-            strokeWidth = 3.5
-            opacity = 1
-          } else {
-            opacity = 0.12
-          }
-        } else if (selected) {
+        if (selected) {
           strokeWidth = 3.5
           opacity = 1
         }
@@ -264,7 +245,7 @@ function ScadaCanvasInner() {
             strokeDasharray: undefined,
           },
           animated: false,
-          zIndex: highlight?.circuitIds.has(edge.id) || selected ? 20 : isAlt ? 1 : 2,
+          zIndex: selected ? 20 : isAlt ? 1 : 2,
         }
       })
   }, [edges, showAlt, showNormal, highlight, selection])
@@ -274,7 +255,6 @@ function ScadaCanvasInner() {
     const circuits = system690.circuits.filter(
       (c) => c.originId === equipment.id || c.destinationId === equipment.id,
     )
-    setHighlight(null)
     setSearchError(null)
     setSelection({ type: 'equipment', item: equipment, circuits })
   }, [])
@@ -282,16 +262,24 @@ function ScadaCanvasInner() {
   const handleEdgeClick = useCallback((_: MouseEvent, edge: Edge) => {
     const circuit = (edge.data as CircuitEdgeData | undefined)?.circuit
     if (circuit) {
-      setHighlight(null)
       setSearchError(null)
       setSelection({ type: 'circuit', item: circuit })
     }
   }, [])
 
   const handlePaneClick = useCallback(() => {
-    setSelection(null)
+    // Solo limpia detalle; el árbol filtrado se mantiene hasta "Limpiar"
+    if (!highlight) setSelection(null)
+  }, [highlight])
+
+  const clearSearchView = useCallback(() => {
     clearHighlight()
-  }, [clearHighlight])
+    setSelection(null)
+    setSearchQuery('')
+    requestAnimationFrame(() => {
+      void fitView({ padding: 0.15, duration: 400 })
+    })
+  }, [clearHighlight, fitView])
 
   const closedCount = Object.values(protectionStatus).filter(
     (s) => s === 'cerrada',
@@ -337,13 +325,9 @@ function ScadaCanvasInner() {
               <button
                 type="button"
                 className="btn"
-                onClick={() => {
-                  clearHighlight()
-                  setSelection(null)
-                  setSearchQuery('')
-                }}
+                onClick={clearSearchView}
               >
-                Limpiar
+                Ver todo
               </button>
             )}
           </form>
@@ -448,16 +432,33 @@ function ScadaCanvasInner() {
           selection={selection}
           protectionStatus={protectionStatus}
           onClose={() => {
+            if (highlight) {
+              const target = system690.equipment.find(
+                (e) => e.id === highlight.targetId,
+              )
+              if (target) {
+                setSelection({
+                  type: 'search',
+                  item: target,
+                  upstreamCircuits: system690.circuits.filter((c) =>
+                    highlight.circuitIds.has(c.id),
+                  ),
+                  upstreamEquipmentIds: [...highlight.equipmentIds],
+                })
+                return
+              }
+            }
             setSelection(null)
-            clearHighlight()
           }}
         />
       </main>
 
       <footer className="statusbar">
         <span>
-          {system690.equipment.length} equipos ·{' '}
-          {system690.circuits.length} circuitos · protecciones:{' '}
+          {highlight
+            ? `Árbol de ${highlight.targetId}: ${highlight.equipmentIds.size} equipos · ${highlight.circuitIds.size} circuitos`
+            : `${system690.equipment.length} equipos · ${system690.circuits.length} circuitos`}
+          {' · '}protecciones:{' '}
           <span className="swatch swatch--cerrada" /> {closedCount} cerradas ·{' '}
           <span className="swatch swatch--abierta" /> {openCount} abiertas ·{' '}
           {statusSource}
