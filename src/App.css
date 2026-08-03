@@ -9,8 +9,10 @@
   --muted: #8fa39b;
   --accent: #3d9b8f;
   --accent-dim: #2a6b62;
-  --alt: #d4a017;
-  --alt-dim: #8a6a12;
+  --line-normal: #e6c200;
+  --line-alt: #3b82f6;
+  --alt: #3b82f6;
+  --alt-dim: #1d4ed8;
   --prot-closed: #d64545;
   --prot-open: #3cb371;
   --target: #e8c547;
@@ -218,12 +220,12 @@ body {
   display: inline-block;
   width: 22px;
   height: 0;
-  border-top: 2.5px solid var(--accent);
+  border-top: 2.5px solid var(--line-normal);
 }
 
 .legend-line--alt {
-  border-top-color: var(--alt);
-  border-top-style: dashed;
+  border-top-color: var(--line-alt);
+  border-top-style: solid;
 }
 
 .workspace {
@@ -365,8 +367,25 @@ body {
 .eq-handle {
   width: 8px !important;
   height: 8px !important;
-  background: var(--accent) !important;
+  background: var(--line-normal) !important;
   border: 1px solid var(--bg) !important;
+}
+
+.eq-handle--alt {
+  background: var(--line-alt) !important;
+}
+
+.react-flow__edge-path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.react-flow__edge.edge-normal .react-flow__edge-path {
+  stroke: var(--line-normal);
+}
+
+.react-flow__edge.edge-alternativa .react-flow__edge-path {
+  stroke: var(--line-alt);
 }
 
 .panel {
@@ -451,13 +470,13 @@ body {
 }
 
 .badge--normal {
-  background: rgba(61, 155, 143, 0.2);
-  color: #7ecfc4;
+  background: rgba(230, 194, 0, 0.2);
+  color: #f0d84a;
 }
 
 .badge--alternativa {
-  background: rgba(212, 160, 23, 0.2);
-  color: #e6c35a;
+  background: rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
 }
 
 .badge--cerrada {
@@ -516,11 +535,11 @@ body {
 }
 
 .dot--normal {
-  background: var(--accent);
+  background: var(--line-normal);
 }
 
 .dot--alternativa {
-  background: var(--alt);
+  background: var(--line-alt);
 }
 
 .statusbar {

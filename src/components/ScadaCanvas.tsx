@@ -28,14 +28,13 @@ import {
   toProtectionStatusMap,
 } from '../data/sampleProtectionStatus'
 import type {
-  ProtectionState,
   ProtectionStatusEntry,
   ProtectionStatusMap,
   Selection,
 } from '../types'
 import {
   buildGraph,
-  PROTECTION_COLORS,
+  LINE_COLORS,
   type CircuitEdgeData,
   type EquipmentNodeData,
 } from '../utils/graphBuilder'
@@ -55,7 +54,7 @@ function ScadaCanvasInner() {
     useState<ProtectionStatusMap>(() =>
       toProtectionStatusMap(sampleProtectionStatus),
     )
-  const [statusSource, setStatusSource] = useState('simulación de ejemplo')
+  const [statusSource, setStatusSource] = useState('todos abiertos')
 
   const graph = useMemo(
     () => buildGraph(system690, protectionStatus),
@@ -153,7 +152,7 @@ function ScadaCanvasInner() {
   )
 
   const handleLoadSimulated = useCallback(() => {
-    applyStatusEntries(sampleProtectionStatus, 'simulación de ejemplo')
+    applyStatusEntries(sampleProtectionStatus, 'todos abiertos')
   }, [applyStatusEntries])
 
   const handleClearStatus = useCallback(() => {
@@ -219,44 +218,56 @@ function ScadaCanvasInner() {
       })
       .map((edge) => {
         const circuit = (edge.data as CircuitEdgeData)?.circuit
-        const protectionState = (edge.data as CircuitEdgeData)
-          ?.protectionState as ProtectionState | undefined
         const isAlt = circuit?.lineType === 'alternativa'
-        const baseStroke = protectionState
-          ? PROTECTION_COLORS[protectionState]
-          : isAlt
-            ? '#d4a017'
-            : '#3d9b8f'
+        const baseStroke = isAlt
+          ? LINE_COLORS.alternativa
+          : LINE_COLORS.normal
 
-        let opacity = 1
-        let strokeWidth = protectionState === 'cerrada' ? 3 : 2.5
+        let opacity = 0.92
+        let strokeWidth = isAlt ? 2 : 2.5
+        const selected =
+          selection?.type === 'circuit' && selection.item.id === edge.id
         if (highlight) {
           if (highlight.circuitIds.has(edge.id)) {
-            strokeWidth = 4
+            strokeWidth = 3.5
             opacity = 1
           } else {
-            opacity = 0.18
+            opacity = 0.12
           }
+        } else if (selected) {
+          strokeWidth = 3.5
+          opacity = 1
         }
 
         return {
           ...edge,
+          label: selected
+            ? circuit?.protectionCurrentA
+              ? `${circuit.protectionName} · ${circuit.protectionCurrentA} A`
+              : circuit?.protectionName
+            : undefined,
+          labelStyle: selected
+            ? {
+                fill: '#e4ebe8',
+                fontSize: 11,
+                fontWeight: 600,
+              }
+            : undefined,
+          labelBgStyle: selected
+            ? { fill: '#1a2422', fillOpacity: 0.95 }
+            : undefined,
           style: {
             ...edge.style,
             stroke: baseStroke,
             strokeWidth,
             opacity,
+            strokeDasharray: undefined,
           },
-          animated: highlight
-            ? highlight.circuitIds.has(edge.id) &&
-              protectionState !== 'abierta'
-            : protectionState
-              ? protectionState === 'cerrada'
-              : !isAlt,
-          zIndex: highlight?.circuitIds.has(edge.id) ? 10 : 0,
+          animated: false,
+          zIndex: highlight?.circuitIds.has(edge.id) || selected ? 20 : isAlt ? 1 : 2,
         }
       })
-  }, [edges, showAlt, showNormal, highlight])
+  }, [edges, showAlt, showNormal, highlight, selection])
 
   const handleNodeClick = useCallback((_: MouseEvent, node: Node) => {
     const equipment = (node.data as EquipmentNodeData).equipment

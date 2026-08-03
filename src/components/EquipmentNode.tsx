@@ -20,7 +20,20 @@ function EquipmentNodeComponent({ data, selected }: NodeProps<EqNode>) {
     <div
       className={`eq-node eq-node--${equipment.kind}${selected ? ' eq-node--selected' : ''}${highlightClass}`}
     >
-      <Handle type="target" position={Position.Top} className="eq-handle" />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="in-normal"
+        className="eq-handle eq-handle--normal"
+        style={{ left: '35%' }}
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="in-alt"
+        className="eq-handle eq-handle--alt"
+        style={{ left: '65%' }}
+      />
       <span className="eq-node__kind">{KIND_LABEL[equipment.kind]}</span>
       <strong className="eq-node__name">{equipment.name}</strong>
       <span className="eq-node__meta">
@@ -28,7 +41,20 @@ function EquipmentNodeComponent({ data, selected }: NodeProps<EqNode>) {
         {equipment.local ? ` · ${equipment.local}` : ''}
         {!equipment.local && equipment.voltage ? ` · ${equipment.voltage}` : ''}
       </span>
-      <Handle type="source" position={Position.Bottom} className="eq-handle" />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="out-normal"
+        className="eq-handle eq-handle--normal"
+        style={{ left: '35%' }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="out-alt"
+        className="eq-handle eq-handle--alt"
+        style={{ left: '65%' }}
+      />
     </div>
   )
 }
