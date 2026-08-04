@@ -16,9 +16,11 @@ type EqNode = Node<EquipmentNodeData, 'equipment'>
 function EquipmentNodeComponent({ data, selected }: NodeProps<EqNode>) {
   const { equipment, highlight } = data
   const highlightClass = highlight ? ` eq-node--${highlight}` : ''
+  const isBus =
+    !!equipment.virtual || equipment.id.startsWith('MSB-6PWS')
   return (
     <div
-      className={`eq-node eq-node--${equipment.kind}${selected ? ' eq-node--selected' : ''}${highlightClass}`}
+      className={`eq-node eq-node--${equipment.kind}${isBus ? ' eq-node--bus' : ''}${selected ? ' eq-node--selected' : ''}${highlightClass}`}
     >
       <Handle
         type="target"
@@ -34,7 +36,9 @@ function EquipmentNodeComponent({ data, selected }: NodeProps<EqNode>) {
         className="eq-handle eq-handle--alt"
         style={{ left: '65%' }}
       />
-      <span className="eq-node__kind">{KIND_LABEL[equipment.kind]}</span>
+      <span className="eq-node__kind">
+        {isBus ? 'Barra / cuadro' : KIND_LABEL[equipment.kind]}
+      </span>
       <strong className="eq-node__name">{equipment.name}</strong>
       <span className="eq-node__meta">
         {equipment.id}

@@ -380,6 +380,19 @@ body {
   line-height: 1.25;
 }
 
+.eq-node--bus {
+  width: 360px;
+  text-align: center;
+  border-left-width: 1px;
+  border-top: 3px solid var(--line-normal);
+  border-bottom: 3px solid var(--line-normal);
+  background: linear-gradient(
+    180deg,
+    rgba(230, 194, 0, 0.12),
+    rgba(26, 40, 36, 0.95)
+  );
+}
+
 .eq-node--generador {
   border-left-color: var(--gen);
 }
@@ -477,8 +490,8 @@ body {
   stroke: var(--line-normal);
 }
 
-.react-flow__edge.edge-alternativa .react-flow__edge-path {
-  stroke: var(--line-alt);
+.react-flow__edge.edge-virtual .react-flow__edge-path {
+  stroke-opacity: 0.45;
 }
 
 .panel {
