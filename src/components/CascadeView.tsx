@@ -71,15 +71,17 @@ function BreakerChip({
   name,
   state,
   onClick,
+  compact,
 }: {
   name: string
   state?: ProtectionState
   onClick?: (e: ReactMouseEvent) => void
+  compact?: boolean
 }) {
   return (
     <button
       type="button"
-      className={`casc-brk${state ? ` casc-brk--${state}` : ''}`}
+      className={`casc-brk${state ? ` casc-brk--${state}` : ''}${compact ? ' casc-brk--compact' : ''}`}
       onClick={onClick}
       title={`Interruptor ${name}`}
     >
@@ -95,6 +97,182 @@ function FeedBadge({ circuit }: { circuit: Circuit }) {
       {lineBadge(circuit.lineType)}
       <span className="casc-feed__brk">{circuit.protectionName}</span>
     </span>
+  )
+}
+
+/** Barra horizontal con salidas colgando (estilo unifilar de cuadro) */
+function HorizontalBus({
+  label,
+  voltage = '690V 3φ 60Hz',
+  items,
+  coupler,
+  protectionStatus,
+  expandedEquip,
+  onToggleEquip,
+  onBreaker,
+  nested,
+}: {
+  label: string
+  voltage?: string
+  items: {
+    key: string
+    circuit: Circuit
+    equipment: Equipment
+  }[]
+  coupler?: { id: string; afterIndex: number; title: string }
+  protectionStatus: Record<string, ProtectionState>
+  expandedEquip?: Set<string>
+  onToggleEquip?: (id: string) => void
+  onBreaker: (c: Circuit, e: ReactMouseEvent) => void
+  nested?: boolean
+}) {
+  return (
+    <div className={`hbus${nested ? ' hbus--nested' : ''}`}>
+      <div className="hbus__title">
+        <strong>{label}</strong>
+        <span>{voltage}</span>
+      </div>
+
+      <div className="hbus__rail-wrap">
+        <div className="hbus__rail" aria-hidden />
+        <div className="hbus__drops">
+          {(() => {
+            const nodes: ReactNode[] = []
+            const couplerEl = coupler ? (
+              <div
+                key={`coupler-${coupler.id}`}
+                className="hbus__coupler"
+                title={coupler.title}
+              >
+                <div className="hbus-drop__stem" aria-hidden />
+                <span className="casc-brk__box casc-brk__box--static" />
+                <span className="hbus__coupler-id">{coupler.id}</span>
+              </div>
+            ) : null
+
+            if (coupler && coupler.afterIndex < 0) nodes.push(couplerEl)
+
+            items.forEach((item, index) => {
+              nodes.push(
+                <div key={item.key} className="hbus__slot">
+                  <BusDrop
+                    circuit={item.circuit}
+                    equipment={item.equipment}
+                    protectionStatus={protectionStatus}
+                    expanded={expandedEquip?.has(item.equipment.id) ?? false}
+                    onToggleEquip={
+                      onToggleEquip
+                        ? () => onToggleEquip(item.equipment.id)
+                        : undefined
+                    }
+                    onBreaker={onBreaker}
+                  />
+                </div>,
+              )
+              if (coupler && index === coupler.afterIndex) nodes.push(couplerEl)
+            })
+
+            return nodes
+          })()}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BusDrop({
+  circuit,
+  equipment,
+  protectionStatus,
+  expanded,
+  onToggleEquip,
+  onBreaker,
+}: {
+  circuit: Circuit
+  equipment: Equipment
+  protectionStatus: Record<string, ProtectionState>
+  expanded: boolean
+  onToggleEquip?: () => void
+  onBreaker: (c: Circuit, e: ReactMouseEvent) => void
+}) {
+  const children = useMemo(
+    () => childFeeders(system690, equipment.id),
+    [equipment.id],
+  )
+  const feeds = useMemo(
+    () => incomingFeeds(system690, equipment.id),
+    [equipment.id],
+  )
+  const [innerOpen, setInnerOpen] = useState<Set<string>>(new Set())
+  const canExpand = children.length > 0 && !!onToggleEquip
+  const isAlt = circuit.lineType === 'alternativa'
+
+  return (
+    <div className={`hbus-drop${isAlt ? ' hbus-drop--alt' : ''}`}>
+      <div className="hbus-drop__stem" aria-hidden />
+      <BreakerChip
+        name={circuit.protectionName}
+        state={protectionStatus[circuit.id]}
+        compact
+        onClick={(e) => onBreaker(circuit, e)}
+      />
+      <div className="hbus-drop__stem hbus-drop__stem--short" aria-hidden />
+
+      <button
+        type="button"
+        className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}`}
+        data-equip={equipment.id}
+        onClick={onToggleEquip}
+        disabled={!canExpand}
+        title={equipment.name}
+      >
+        <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
+        <span className="hbus-drop__id">{equipment.id}</span>
+        <span className="hbus-drop__name">{equipment.name}</span>
+        {canExpand && (
+          <span className="hbus-drop__more">
+            {children.length} {expanded ? '▴' : '▾'}
+          </span>
+        )}
+      </button>
+
+      <div className="hbus-drop__feeds">
+        {feeds.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            className="hbus-drop__feed"
+            onClick={(e) => onBreaker(c, e)}
+          >
+            <FeedBadge circuit={c} />
+          </button>
+        ))}
+      </div>
+
+      {expanded && children.length > 0 && (
+        <HorizontalBus
+          nested
+          label={equipment.id}
+          voltage="salidas"
+          items={children.map(({ circuit: c, equipment: eq }) => ({
+            key: c.id,
+            circuit: c,
+            equipment: eq,
+          }))}
+          protectionStatus={protectionStatus}
+          expandedEquip={innerOpen}
+          onToggleEquip={(id) => {
+            setInnerOpen((prev) => {
+              const next = new Set(prev)
+              if (next.has(id)) next.delete(id)
+              else next.add(id)
+              return next
+            })
+          }}
+          onBreaker={onBreaker}
+        />
+      )}
+    </div>
   )
 }
 
@@ -142,19 +320,13 @@ export function CascadeView({ protectionStatus }: CascadeViewProps) {
   }, [])
 
   return (
-    <div
-      className="casc"
-      ref={stageRef}
-      onClick={() => setBalloon(null)}
-    >
+    <div className="casc" ref={stageRef} onClick={() => setBalloon(null)}>
       <header className="casc__intro">
         <h2>Planta eléctrica 690 V · vista en cascada</h2>
         <p>
-          Arriba → abajo: generadores, interruptores de generador (QG*),
-          acoplamiento entre barras (QT1B/QT2A) y cuadros principales. Pulsa un
-          MSB para ver salidas 1SA/1SB (o 2SA/2SB). Pulsa un CCM/ABT/… para ver
-          sus salidas. Ejemplo: Q1A03 (NORM) y Q2B02 (ALT) alimentan
-          CCM-6PWS0003.
+          Al desplegar un cuadro o un CCM, las salidas se muestran en barra
+          horizontal (estilo unifilar). Pulsa un interruptor para ver P/Q/S/I y
+          modelo. Ejemplo: CCM-6PWS0003 cuelga de Q1A03 (NORM) y Q2B02 (ALT).
         </p>
       </header>
 
@@ -164,7 +336,10 @@ export function CascadeView({ protectionStatus }: CascadeViewProps) {
             <div key={board.id} className="casc__gen-col">
               {board.gens.map(({ half, gen, breaker }) => (
                 <div key={gen.id} className="casc__gen-block">
-                  <GenSymbol label={gen.id.replace('SDG-', '')} title={gen.name} />
+                  <GenSymbol
+                    label={gen.id.replace('SDG-', '')}
+                    title={gen.name}
+                  />
                   <div className="casc__vline" />
                   <BreakerChip
                     name={breaker.protectionName}
@@ -201,7 +376,7 @@ export function CascadeView({ protectionStatus }: CascadeViewProps) {
           <div className="casc__tie-line" />
         </div>
 
-        <div className="casc__boards">
+        <div className="casc__boards casc__boards--stack">
           {boards.map((board) => (
             <BoardCard
               key={board.id}
@@ -251,6 +426,8 @@ function BoardCard({
   const sb = board.feeders.filter((f) => f.half === 'SB')
   const tagA = board.id.endsWith('1') ? '1SA' : '2SA'
   const tagB = board.id.endsWith('1') ? '1SB' : '2SB'
+  const ordered: FeederOutlet[] = [...sa, ...sb]
+  const couplerAfter = sa.length - 1
 
   return (
     <section className={`casc-board${expanded ? ' casc-board--open' : ''}`}>
@@ -263,184 +440,43 @@ function BoardCard({
         </span>
       </button>
 
-      <div className="casc-bus">
-        <div className="casc-bus__seg casc-bus__seg--a">
-          <span>{tagA}</span>
-        </div>
-        <div className="casc-bus__coupler" title={board.sectionCoupler.label}>
-          <span className="casc-brk__box casc-brk__box--static" />
-          <span>{board.sectionCoupler.id}</span>
-        </div>
-        <div className="casc-bus__seg casc-bus__seg--b">
-          <span>{tagB}</span>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="casc-board__body">
-          <div className="casc-board__cols">
-            <FeederColumn
-              title={`${tagA} · salidas`}
-              feeders={sa}
-              expandedEquip={expandedEquip}
-              protectionStatus={protectionStatus}
-              onToggleEquip={onToggleEquip}
-              onBreaker={onBreaker}
-            />
-            <FeederColumn
-              title={`${tagB} · salidas`}
-              feeders={sb}
-              expandedEquip={expandedEquip}
-              protectionStatus={protectionStatus}
-              onToggleEquip={onToggleEquip}
-              onBreaker={onBreaker}
-            />
+      {!expanded && (
+        <div className="casc-bus casc-bus--collapsed">
+          <div className="casc-bus__seg casc-bus__seg--a">
+            <span>{tagA}</span>
+          </div>
+          <div className="casc-bus__coupler" title={board.sectionCoupler.label}>
+            <span className="casc-brk__box casc-brk__box--static" />
+            <span>{board.sectionCoupler.id}</span>
+          </div>
+          <div className="casc-bus__seg casc-bus__seg--b">
+            <span>{tagB}</span>
           </div>
         </div>
       )}
-    </section>
-  )
-}
 
-function FeederColumn({
-  title,
-  feeders,
-  expandedEquip,
-  protectionStatus,
-  onToggleEquip,
-  onBreaker,
-}: {
-  title: string
-  feeders: FeederOutlet[]
-  expandedEquip: Set<string>
-  protectionStatus: Record<string, ProtectionState>
-  onToggleEquip: (id: string) => void
-  onBreaker: (c: Circuit, e: ReactMouseEvent) => void
-}) {
-  return (
-    <div className="casc-col">
-      <h3>{title}</h3>
-      <ul className="casc-outlets">
-        {feeders.map((f) => (
-          <li key={f.circuit.id}>
-            <EquipCascade
-              equipment={f.equipment}
-              feederCircuit={f.circuit}
-              expanded={expandedEquip.has(f.equipment.id)}
-              protectionStatus={protectionStatus}
-              onToggle={() => onToggleEquip(f.equipment.id)}
-              onBreaker={onBreaker}
-            />
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function EquipCascade({
-  equipment,
-  feederCircuit,
-  expanded,
-  protectionStatus,
-  onToggle,
-  onBreaker,
-  depth = 0,
-}: {
-  equipment: Equipment
-  feederCircuit?: Circuit
-  expanded: boolean
-  protectionStatus: Record<string, ProtectionState>
-  onToggle: () => void
-  onBreaker: (c: Circuit, e: ReactMouseEvent) => void
-  depth?: number
-}) {
-  const children = useMemo(
-    () => childFeeders(system690, equipment.id),
-    [equipment.id],
-  )
-  const feeds = useMemo(
-    () => incomingFeeds(system690, equipment.id),
-    [equipment.id],
-  )
-  const [innerOpen, setInnerOpen] = useState<Set<string>>(new Set())
-  const canExpand = children.length > 0
-
-  return (
-    <div className={`casc-eq depth-${Math.min(depth, 3)}`}>
-      <div className="casc-eq__row">
-        {feederCircuit && (
-          <BreakerChip
-            name={feederCircuit.protectionName}
-            state={protectionStatus[feederCircuit.id]}
-            onClick={(e) => onBreaker(feederCircuit, e)}
+      {expanded && (
+        <div className="casc-board__body">
+          <HorizontalBus
+            label={`${board.id} · ${tagA} | ${board.sectionCoupler.id} | ${tagB}`}
+            items={ordered.map((f) => ({
+              key: f.circuit.id,
+              circuit: f.circuit,
+              equipment: f.equipment,
+            }))}
+            coupler={{
+              id: board.sectionCoupler.id,
+              afterIndex: couplerAfter,
+              title: board.sectionCoupler.label,
+            }}
+            protectionStatus={protectionStatus}
+            expandedEquip={expandedEquip}
+            onToggleEquip={onToggleEquip}
+            onBreaker={onBreaker}
           />
-        )}
-        <button
-          type="button"
-          className={`casc-eq__btn${expanded ? ' casc-eq__btn--open' : ''}`}
-          data-equip={equipment.id}
-          onClick={onToggle}
-          disabled={!canExpand}
-        >
-          <span className="casc-eq__sym" data-kind={equipment.kind}>
-            {symbolFor(equipment.kind)}
-          </span>
-          <span className="casc-eq__text">
-            <strong>{equipment.id}</strong>
-            <span>{equipment.name}</span>
-          </span>
-          {canExpand && (
-            <span className="casc-eq__count">{children.length}</span>
-          )}
-          {canExpand && (
-            <span className="casc-eq__chev">{expanded ? '▾' : '▸'}</span>
-          )}
-        </button>
-      </div>
-
-      <div className="casc-eq__feeds">
-        {feeds.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className="casc-eq__feed-btn"
-            onClick={(e) => onBreaker(c, e)}
-          >
-            <FeedBadge circuit={c} />
-            <span className="muted">← {c.originId}</span>
-          </button>
-        ))}
-      </div>
-
-      {expanded && children.length > 0 && (
-        <ul className="casc-outlets casc-outlets--nested">
-          {children.map(({ circuit, equipment: child }) => {
-            const open = innerOpen.has(child.id)
-            return (
-              <li key={circuit.id}>
-                <EquipCascade
-                  equipment={child}
-                  feederCircuit={circuit}
-                  expanded={open}
-                  protectionStatus={protectionStatus}
-                  onToggle={() => {
-                    setInnerOpen((prev) => {
-                      const next = new Set(prev)
-                      if (next.has(child.id)) next.delete(child.id)
-                      else next.add(child.id)
-                      return next
-                    })
-                  }}
-                  onBreaker={onBreaker}
-                  depth={depth + 1}
-                />
-              </li>
-            )
-          })}
-        </ul>
+        </div>
       )}
-    </div>
+    </section>
   )
 }
 
