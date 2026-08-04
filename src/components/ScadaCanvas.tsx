@@ -18,9 +18,16 @@ import {
   toggleProtectionState,
 } from '../utils/energyFlow'
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
-import { CascadeView, type CascadeFocus } from './CascadeView'
+import {
+  CascadeView,
+  type CascadeFocus,
+  type LockTool,
+} from './CascadeView'
 
 const emptyStatus: ProtectionStatusMap = {}
+const ZOOM_MIN = 0.35
+const ZOOM_MAX = 2.5
+const ZOOM_STEP = 0.15
 
 export function ScadaCanvas() {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -28,6 +35,11 @@ export function ScadaCanvas() {
     useState<ProtectionStatusMap>(() =>
       toProtectionStatusMap(sampleProtectionStatus),
     )
+  const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const [lockTool, setLockTool] = useState<LockTool>('none')
+  const [zoom, setZoom] = useState(1)
   const [statusSource, setStatusSource] = useState('todos abiertos')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchHint, setSearchHint] = useState<string | null>(null)
@@ -48,22 +60,54 @@ export function ScadaCanvas() {
 
   const handleSimulateToggle = useCallback(() => {
     setProtectionStatus((prev) => {
-      const ids = system690.circuits.map((c) => c.id)
-      const next = invertProtectionStatus(prev, ids)
-      return next
+      const ids = system690.circuits
+        .map((c) => c.id)
+        .filter((id) => !lockedCircuits.has(id))
+      return invertProtectionStatus(prev, ids)
     })
-    setStatusSource('simulación · estados invertidos')
+    setStatusSource('simulación · estados invertidos (excepto bloqueados)')
+  }, [lockedCircuits])
+
+  const handleToggleProtection = useCallback(
+    (circuitId: string) => {
+      if (lockedCircuits.has(circuitId)) {
+        setSearchHint(
+          `Interruptor bloqueado con candado: no se puede cerrar hasta quitar el candado.`,
+        )
+        return false
+      }
+      setProtectionStatus((prev) => toggleProtectionState(prev, circuitId))
+      setStatusSource('simulación manual')
+      return true
+    },
+    [lockedCircuits],
+  )
+
+  const handleLockCircuit = useCallback((circuitId: string) => {
+    setLockedCircuits((prev) => new Set(prev).add(circuitId))
+    setProtectionStatus((prev) => ({ ...prev, [circuitId]: 'abierta' }))
+    setStatusSource('candado aplicado · interruptor abierto y bloqueado')
   }, [])
 
-  const handleToggleProtection = useCallback((circuitId: string) => {
-    setProtectionStatus((prev) => toggleProtectionState(prev, circuitId))
-    setStatusSource('simulación manual')
+  const handleUnlockCircuit = useCallback((circuitId: string) => {
+    setLockedCircuits((prev) => {
+      const next = new Set(prev)
+      next.delete(circuitId)
+      return next
+    })
+    setStatusSource('candado retirado · interruptor manipulable')
   }, [])
 
   const handleClearStatus = useCallback(() => {
     setProtectionStatus(emptyStatus)
     setStatusSource('sin estado de protecciones')
   }, [])
+
+  const zoomIn = () =>
+    setZoom((z) => Math.min(ZOOM_MAX, Math.round((z + ZOOM_STEP) * 100) / 100))
+  const zoomOut = () =>
+    setZoom((z) => Math.max(ZOOM_MIN, Math.round((z - ZOOM_STEP) * 100) / 100))
+  const zoomReset = () => setZoom(1)
 
   const handleFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
@@ -123,7 +167,85 @@ export function ScadaCanvas() {
             <p>{system690.vessel} · vista cascada tipo planta eléctrica</p>
           </div>
         </div>
+
         <div className="topbar__controls">
+          <div className="topbar__actions">
+            <button type="button" className="btn" onClick={handleSimulateToggle}>
+              Simular estado
+            </button>
+            <button
+              type="button"
+              className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
+              onClick={() =>
+                setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
+              }
+            >
+              Poner candado
+            </button>
+            <button
+              type="button"
+              className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
+              onClick={() =>
+                setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
+              }
+            >
+              Quitar candado
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                applyStatusEntries(sampleProtectionStatus, 'todos abiertos')
+              }
+            >
+              Todos abiertos
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Cargar archivo
+            </button>
+            <button type="button" className="btn" onClick={handleClearStatus}>
+              Quitar estados
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={handleFileChange}
+            />
+
+            <div className="zoom-controls" role="group" aria-label="Zoom">
+              <button
+                type="button"
+                className="btn btn--zoom"
+                onClick={zoomOut}
+                title="Alejar"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                className="btn btn--zoom btn--zoom-label"
+                onClick={zoomReset}
+                title="Restablecer zoom 100%"
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <button
+                type="button"
+                className="btn btn--zoom"
+                onClick={zoomIn}
+                title="Acercar"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
           <form className="search" onSubmit={handleSearch}>
             <label>
               <span className="sr-only">Buscar equipo</span>
@@ -162,6 +284,7 @@ export function ScadaCanvas() {
               </button>
             )}
           </form>
+
           <label className="toggle">
             <span className="legend-line legend-line--normal" />
             Normal
@@ -174,14 +297,27 @@ export function ScadaCanvas() {
       </header>
 
       {searchHint && <div className="banner">{searchHint}</div>}
+      {lockTool !== 'none' && (
+        <div className="banner banner--tool">
+          {lockTool === 'lock'
+            ? 'Modo poner candado activo: pulsa un interruptor para abrirlo y bloquearlo.'
+            : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
+        </div>
+      )}
 
       <main className="workspace workspace--cascade">
         <CascadeView
           protectionStatus={protectionStatus}
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
+          lockedCircuits={lockedCircuits}
+          lockTool={lockTool}
+          zoom={zoom}
+          onZoomChange={setZoom}
           focus={focus}
           onToggleProtection={handleToggleProtection}
+          onLockCircuit={handleLockCircuit}
+          onUnlockCircuit={handleUnlockCircuit}
           onClearFocus={() => {
             setFocus(null)
             setSearchHint(null)
@@ -194,39 +330,9 @@ export function ScadaCanvas() {
           Cascada 690 V · protecciones:{' '}
           <span className="swatch swatch--cerrada" /> {closedCount} cerradas ·{' '}
           <span className="swatch swatch--abierta" /> {openCount} abiertas ·
-          flujo: {energizedCircuitIds.size} circ. · {statusSource}
+          candados: {lockedCircuits.size} · flujo: {energizedCircuitIds.size}{' '}
+          circ. · zoom {Math.round(zoom * 100)}% · {statusSource}
         </span>
-        <div className="statusbar__actions">
-          <button type="button" className="btn" onClick={handleSimulateToggle}>
-            Simular estado
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() =>
-              applyStatusEntries(sampleProtectionStatus, 'todos abiertos')
-            }
-          >
-            Todos abiertos
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Cargar archivo
-          </button>
-          <button type="button" className="btn" onClick={handleClearStatus}>
-            Quitar estados
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            className="sr-only"
-            onChange={handleFileChange}
-          />
-        </div>
       </footer>
     </div>
   )

@@ -23,6 +23,9 @@ import {
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
 import { CircuitBalloon } from './CircuitBalloon'
+import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
+
+export type LockTool = 'none' | 'lock' | 'unlock'
 
 export interface CascadeFocus {
   equipmentId: string
@@ -33,8 +36,14 @@ interface CascadeViewProps {
   protectionStatus: Record<string, ProtectionState>
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
+  lockedCircuits: Set<string>
+  lockTool: LockTool
+  zoom: number
+  onZoomChange: (zoom: number) => void
   focus: CascadeFocus | null
-  onToggleProtection: (circuitId: string) => void
+  onToggleProtection: (circuitId: string) => boolean | void
+  onLockCircuit: (circuitId: string) => void
+  onUnlockCircuit: (circuitId: string) => void
   onClearFocus?: () => void
 }
 
@@ -88,66 +97,7 @@ function GenSymbol({ short, title }: { short: string; title: string }) {
   )
 }
 
-/** Candado abierto (verde) = circuito abierto; cerrado (rojo) = cerrado/energizado */
-function PadlockIcon({ state }: { state?: ProtectionState }) {
-  const closed = state === 'cerrada'
-  const color = closed ? 'var(--prot-closed)' : 'var(--prot-open)'
-  return (
-    <svg
-      className="casc-brk__lock"
-      viewBox="0 0 16 18"
-      width="14"
-      height="16"
-      aria-hidden
-    >
-      {closed ? (
-        <>
-          <rect
-            x="2"
-            y="8"
-            width="12"
-            height="9"
-            rx="1.5"
-            fill={color}
-            stroke="currentColor"
-            strokeWidth="1"
-          />
-          <path
-            d="M5 8V5.5a3 3 0 0 1 6 0V8"
-            fill="none"
-            stroke={color}
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
-          <circle cx="8" cy="12.5" r="1.2" fill="currentColor" />
-        </>
-      ) : (
-        <>
-          <rect
-            x="2"
-            y="8"
-            width="12"
-            height="9"
-            rx="1.5"
-            fill={color}
-            stroke="currentColor"
-            strokeWidth="1"
-            opacity="0.9"
-          />
-          <path
-            d="M5 8V5.5a3 3 0 0 1 5.5-1.5"
-            fill="none"
-            stroke={color}
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
-          <circle cx="8" cy="12.5" r="1.2" fill="currentColor" />
-        </>
-      )}
-    </svg>
-  )
-}
-
+/** Candado rojo solo cuando el interruptor está bloqueado (LOTO) */
 function BreakerChip({
   name,
   state,
@@ -155,6 +105,7 @@ function BreakerChip({
   compact,
   circuitId,
   flowing,
+  locked,
   title,
 }: {
   name: string
@@ -163,20 +114,25 @@ function BreakerChip({
   compact?: boolean
   circuitId?: string
   flowing?: boolean
+  locked?: boolean
   title?: string
 }) {
+  const open = state !== 'cerrada'
   return (
     <button
       type="button"
-      className={`casc-brk${state ? ` casc-brk--${state}` : ''}${compact ? ' casc-brk--compact' : ''}${flowing ? ' casc-brk--flow' : ''}`}
+      className={`casc-brk${state ? ` casc-brk--${state}` : ''}${compact ? ' casc-brk--compact' : ''}${flowing ? ' casc-brk--flow' : ''}${locked ? ' casc-brk--locked' : ''}`}
       onClick={onClick}
       title={
         title ??
-        `Interruptor ${name} · ${state === 'cerrada' ? 'cerrado' : 'abierto'}`
+        `Interruptor motorizado ${name} · ${open ? 'abierto' : 'cerrado'}${locked ? ' · BLOQUEADO' : ''}`
       }
       data-circuit-id={circuitId}
     >
-      <PadlockIcon state={state} />
+      <span className="casc-brk__sym">
+        <MotorizedBreakerSymbol state={state} />
+      </span>
+      {locked && <LockBadge />}
       <span className="casc-brk__name">{name}</span>
     </button>
   )
@@ -189,6 +145,7 @@ function HorizontalBus({
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
+  lockedCircuits,
   expandedEquip,
   onToggleEquip,
   onLocalBreaker,
@@ -202,6 +159,7 @@ function HorizontalBus({
   protectionStatus: Record<string, ProtectionState>
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
+  lockedCircuits: Set<string>
   expandedEquip?: Set<string>
   onToggleEquip?: (id: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
@@ -230,6 +188,7 @@ function HorizontalBus({
                 protectionStatus={protectionStatus}
                 energizedCircuitIds={energizedCircuitIds}
                 energizedEquipmentIds={energizedEquipmentIds}
+                lockedCircuits={lockedCircuits}
                 expanded={expandedEquip?.has(item.equipment.id) ?? false}
                 onToggleEquip={
                   onToggleEquip
@@ -254,6 +213,7 @@ function BusDrop({
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
+  lockedCircuits,
   expanded,
   onToggleEquip,
   onLocalBreaker,
@@ -265,6 +225,7 @@ function BusDrop({
   protectionStatus: Record<string, ProtectionState>
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
+  lockedCircuits: Set<string>
   expanded: boolean
   onToggleEquip?: () => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
@@ -301,59 +262,70 @@ function BusDrop({
 
   return (
     <div
-      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}`}
+      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}`}
       data-equip={equipment.id}
       data-circuit-id={localFeed.id}
     >
-      {/* Alimentaciones por arriba: remotas flotantes + local unida a barra */}
       <div className="hbus-drop__tops">
-        {remoteFeeds.map((remote) => (
-          <div
-            key={remote.id}
-            className={`hbus-drop__remote${remote.lineType === 'alternativa' ? ' hbus-drop__remote--alt' : ''}${energizedCircuitIds.has(remote.id) ? ' hbus-drop__remote--flow' : ''}`}
-            title={`Alimentación ${lineBadge(remote.lineType)} desde ${remote.originId}. Pulsa para ir a esa barra.`}
-          >
-            <div className="hbus-drop__remote-stub" aria-hidden />
-            <BreakerChip
-              name={remote.protectionName}
-              state={protectionStatus[remote.id]}
-              compact
-              circuitId={remote.id}
-              flowing={energizedCircuitIds.has(remote.id)}
-              title={`Ir a ${remote.protectionName} en ${remote.originId}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onJumpToCircuit(remote)
-              }}
-            />
-            <div className="hbus-drop__remote-cable" aria-hidden />
-            <span className="hbus-drop__remote-badge">
-              {lineBadge(remote.lineType)}
-            </span>
-          </div>
-        ))}
+        {remoteFeeds.map((remote) => {
+          const isAlt = remote.lineType === 'alternativa'
+          return (
+            <div
+              key={remote.id}
+              className={`hbus-drop__leg hbus-drop__leg--remote${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${energizedCircuitIds.has(remote.id) ? ' hbus-drop__leg--flow' : ''}`}
+              title={`Alimentación ${lineBadge(remote.lineType)} desde ${remote.originId}. Pulsa para ir a esa barra.`}
+            >
+              {/* Extremo libre: no unido a la barra local */}
+              <span className="hbus-drop__free-end" aria-hidden />
+              <BreakerChip
+                name={remote.protectionName}
+                state={protectionStatus[remote.id]}
+                compact
+                circuitId={remote.id}
+                flowing={energizedCircuitIds.has(remote.id)}
+                locked={lockedCircuits.has(remote.id)}
+                title={`Ir a ${remote.protectionName} en ${remote.originId}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onJumpToCircuit(remote)
+                }}
+              />
+              <span className="hbus-drop__wire" aria-hidden />
+              <span className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}>
+                {lineBadge(remote.lineType)}
+              </span>
+            </div>
+          )
+        })}
 
-        <div className="hbus-drop__local">
-          <div
-            className={`hbus-drop__stem${localFlowing ? ' hbus-drop__stem--flow' : ''}`}
-            aria-hidden
-          />
+        <div
+          className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+        >
+          <span className="hbus-drop__wire hbus-drop__wire--from-bus" aria-hidden />
           <BreakerChip
             name={localFeed.protectionName}
             state={protectionStatus[localFeed.id]}
             compact
             circuitId={localFeed.id}
             flowing={localFlowing}
+            locked={lockedCircuits.has(localFeed.id)}
             onClick={(e) => onLocalBreaker(localFeed, e)}
           />
-          <div
-            className={`hbus-drop__stem hbus-drop__stem--short${localFlowing ? ' hbus-drop__stem--flow' : ''}`}
-            aria-hidden
-          />
-          <span className="hbus-drop__local-badge">
+          <span className="hbus-drop__wire" aria-hidden />
+          <span
+            className={`hbus-drop__tag${isAltLocal ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
+          >
             {lineBadge(localFeed.lineType)}
           </span>
         </div>
+      </div>
+
+      {/* Empalme hacia el equipo (líneas unidas) */}
+      <div className="hbus-drop__join" aria-hidden>
+        {remoteFeeds.length > 0 && <span className="hbus-drop__join-bar" />}
+        <span
+          className={`hbus-drop__wire hbus-drop__wire--to-eq${localFlowing || remoteFeeds.some((r) => energizedCircuitIds.has(r.id)) ? ' hbus-drop__wire--flow' : ''}${isAltLocal && remoteFeeds.length === 0 ? ' hbus-drop__wire--alt' : ''}`}
+        />
       </div>
 
       <button
@@ -382,6 +354,7 @@ function BusDrop({
           protectionStatus={protectionStatus}
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
+          lockedCircuits={lockedCircuits}
           expandedEquip={innerOpen}
           onToggleEquip={(id) => {
             setInnerOpen((prev) => {
@@ -409,13 +382,22 @@ export function CascadeView({
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
+  lockedCircuits,
+  lockTool,
+  zoom,
+  onZoomChange,
   focus,
   onToggleProtection,
+  onLockCircuit,
+  onUnlockCircuit,
   onClearFocus,
 }: CascadeViewProps) {
   const boards = useMemo(() => buildBoardModels(system690), [])
   const ties = useMemo(() => busTieCircuits(system690), [])
   const stageRef = useRef<HTMLDivElement>(null)
+  const panRef = useRef<HTMLDivElement>(null)
+  const plantRef = useRef<HTMLDivElement>(null)
+  const [plantSize, setPlantSize] = useState({ w: 0, h: 0 })
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(
     () => new Set(['MSB-6PWS0002', 'MSB-6PWS0001']),
   )
@@ -445,7 +427,6 @@ export function CascadeView({
       const bd = boardFromOrigin(c.destinationId)
       if (bd) boardsToOpen.add(bd)
     }
-    // También por equipos MSB
     for (const id of focus.trace.equipmentIds) {
       if (id.startsWith('MSB-6PWS')) boardsToOpen.add(id)
     }
@@ -460,6 +441,94 @@ export function CascadeView({
       el?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
     })
   }, [focus])
+
+  /** Desplazamiento arrastrando con el ratón (en vez de barra de scroll) */
+  useEffect(() => {
+    const el = panRef.current
+    if (!el) return
+
+    let dragging = false
+    let moved = false
+    let startX = 0
+    let startY = 0
+    let originLeft = 0
+    let originTop = 0
+
+    const isInteractive = (t: EventTarget | null) =>
+      t instanceof Element &&
+      !!t.closest(
+        'button, a, input, select, textarea, label, .casc-brk, .circuit-balloon',
+      )
+
+    const onDown = (e: PointerEvent) => {
+      if (e.button !== 0 || isInteractive(e.target)) return
+      dragging = true
+      moved = false
+      startX = e.clientX
+      startY = e.clientY
+      originLeft = el.scrollLeft
+      originTop = el.scrollTop
+      el.classList.add('is-panning')
+      el.setPointerCapture(e.pointerId)
+    }
+
+    const onMove = (e: PointerEvent) => {
+      if (!dragging) return
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
+      if (Math.abs(dx) + Math.abs(dy) > 3) moved = true
+      el.scrollLeft = originLeft - dx
+      el.scrollTop = originTop - dy
+    }
+
+    const onUp = (e: PointerEvent) => {
+      if (!dragging) return
+      dragging = false
+      el.classList.remove('is-panning')
+      try {
+        el.releasePointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
+      if (moved) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return
+      e.preventDefault()
+      const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08
+      onZoomChange(
+        Math.min(2.5, Math.max(0.35, Math.round(zoom * factor * 100) / 100)),
+      )
+    }
+
+    el.addEventListener('pointerdown', onDown)
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', onUp)
+    el.addEventListener('pointercancel', onUp)
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      el.removeEventListener('pointerdown', onDown)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerup', onUp)
+      el.removeEventListener('pointercancel', onUp)
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [zoom, onZoomChange])
+
+  useEffect(() => {
+    const el = plantRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      setPlantSize({ w: el.offsetWidth, h: el.offsetHeight })
+    })
+    ro.observe(el)
+    setPlantSize({ w: el.offsetWidth, h: el.offsetHeight })
+    return () => ro.disconnect()
+  }, [expandedBoards, focus, expandedEquip])
 
   const toggleBoard = (id: string) => {
     setExpandedBoards((prev) => {
@@ -493,10 +562,26 @@ export function CascadeView({
   const onLocalBreaker = useCallback(
     (circuit: Circuit, e: ReactMouseEvent) => {
       e.stopPropagation()
+      if (lockTool === 'lock') {
+        onLockCircuit(circuit.id)
+        showBalloon(circuit, e)
+        return
+      }
+      if (lockTool === 'unlock') {
+        onUnlockCircuit(circuit.id)
+        showBalloon(circuit, e)
+        return
+      }
       onToggleProtection(circuit.id)
       showBalloon(circuit, e)
     },
-    [onToggleProtection, showBalloon],
+    [
+      lockTool,
+      onLockCircuit,
+      onUnlockCircuit,
+      onToggleProtection,
+      showBalloon,
+    ],
   )
 
   const onJumpToCircuit = useCallback((circuit: Circuit) => {
@@ -529,9 +614,10 @@ export function CascadeView({
         <h2>Planta eléctrica 690 V · esquema funcional</h2>
         <p>
           Alimentación local unida a la barra; la de otra barra aparece arriba
-          sin conectar (pulsa para ir a su origen). Candado verde = abierto,
-          rojo = cerrado. Pulsa un interruptor local para abrir/cerrar y ver el
-          flujo.
+          sin conectar (pulsa para ir a su origen). Símbolo IEC motorizado:
+          verde = abierto, rojo = cerrado. Candado rojo = bloqueado. Despliega
+          / pliega cada MSB para ver u ocultar salidas; los generadores quedan
+          fuera del recuadro.
         </p>
         {focus && (
           <div className="casc__focus-bar">
@@ -548,8 +634,25 @@ export function CascadeView({
         )}
       </header>
 
-      <div className="casc__stage casc__stage--plant">
-        <div className={`plant${focus ? ' plant--focus' : ''}`}>
+      <div
+        className="casc__stage casc__stage--plant casc__stage--pan"
+        ref={panRef}
+      >
+        <div
+          className="plant-zoom-space"
+          style={{
+            width: plantSize.w ? plantSize.w * zoom : undefined,
+            height: plantSize.h ? plantSize.h * zoom : undefined,
+          }}
+        >
+          <div
+            ref={plantRef}
+            className={`plant${focus ? ' plant--focus' : ''}`}
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top left',
+            }}
+          >
           <BoardColumn
             board={boardPopa}
             expanded={expandedBoards.has(boardPopa.id)}
@@ -557,6 +660,7 @@ export function CascadeView({
             protectionStatus={protectionStatus}
             energizedCircuitIds={energizedCircuitIds}
             energizedEquipmentIds={energizedEquipmentIds}
+            lockedCircuits={lockedCircuits}
             focusCircuitIds={focusCircuitIds}
             focusEquipmentIds={focusEquipmentIds}
             tieSide="right"
@@ -574,6 +678,7 @@ export function CascadeView({
                   state={protectionStatus[ties.qt2a.id]}
                   circuitId={ties.qt2a.id}
                   flowing={energizedCircuitIds.has(ties.qt2a.id)}
+                  locked={lockedCircuits.has(ties.qt2a.id)}
                   onClick={(e) => onLocalBreaker(ties.qt2a!, e)}
                 />
               )}
@@ -604,6 +709,7 @@ export function CascadeView({
                   state={protectionStatus[ties.qt1b.id]}
                   circuitId={ties.qt1b.id}
                   flowing={energizedCircuitIds.has(ties.qt1b.id)}
+                  locked={lockedCircuits.has(ties.qt1b.id)}
                   onClick={(e) => onLocalBreaker(ties.qt1b!, e)}
                 />
               )}
@@ -621,6 +727,7 @@ export function CascadeView({
             protectionStatus={protectionStatus}
             energizedCircuitIds={energizedCircuitIds}
             energizedEquipmentIds={energizedEquipmentIds}
+            lockedCircuits={lockedCircuits}
             focusCircuitIds={focusCircuitIds}
             focusEquipmentIds={focusEquipmentIds}
             tieSide="left"
@@ -629,6 +736,7 @@ export function CascadeView({
             onLocalBreaker={onLocalBreaker}
             onJumpToCircuit={onJumpToCircuit}
           />
+          </div>
         </div>
       </div>
 
@@ -652,6 +760,7 @@ function BoardColumn({
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
+  lockedCircuits,
   focusCircuitIds,
   focusEquipmentIds,
   tieSide,
@@ -666,6 +775,7 @@ function BoardColumn({
   protectionStatus: Record<string, ProtectionState>
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
+  lockedCircuits: Set<string>
   focusCircuitIds: Set<string> | null
   focusEquipmentIds: Set<string> | null
   tieSide: 'left' | 'right'
@@ -711,6 +821,7 @@ function BoardColumn({
           protectionStatus={protectionStatus}
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
+          lockedCircuits={lockedCircuits}
           expanded={expandedEquip.has(f.equipment.id)}
           onToggleEquip={() => onToggleEquip(f.equipment.id)}
           onLocalBreaker={onLocalBreaker}
@@ -722,115 +833,114 @@ function BoardColumn({
 
   const genFlowing = (breakerId: string) => energizedCircuitIds.has(breakerId)
 
-  return (
-    <section
-      className={`plant-msb${expanded ? ' plant-msb--open' : ''} plant-msb--tie-${tieSide}`}
-      data-board={board.id as BoardId}
-    >
-      <button type="button" className="plant-msb__head" onClick={onToggle}>
-        <span className="plant-msb__chev">{expanded ? '▾' : '▸'}</span>
-        <span className="plant-msb__id">{board.id}</span>
-        <span className="plant-msb__name">{board.name}</span>
-        <span className="plant-msb__meta">
-          {sb.length + sa.length}
-          {focusCircuitIds ? ` / ${board.feeders.length}` : ''} salidas ·{' '}
-          {expanded ? 'plegar' : 'desplegar'}
-        </span>
-      </button>
-
-      <div className="plant-rack">
-        <div className="plant-rack__spec">690V 3φ 60Hz</div>
-
-        <div className="plant-rack__gens">
-          <div className="plant-rack__half-top">
-            <span className="plant-rack__half-tag">{tagB}</span>
-            {genSb && (
-              <div
-                className={`plant-msb__gen-leg${genFlowing(genSb.breaker.id) ? ' plant-msb__gen-leg--flow' : ''}`}
-              >
-                <GenSymbol
-                  short={genShortLabel(genSb.half, board.id)}
-                  title={`${genSb.gen.id} · ${genSb.gen.name}`}
-                />
-                <div
-                  className={`plant-msb__vwire${genFlowing(genSb.breaker.id) ? ' plant-msb__vwire--flow' : ''}`}
-                />
-                <BreakerChip
-                  name={genSb.breaker.protectionName}
-                  state={protectionStatus[genSb.breaker.id]}
-                  circuitId={genSb.breaker.id}
-                  flowing={genFlowing(genSb.breaker.id)}
-                  onClick={(e) => onLocalBreaker(genSb.breaker, e)}
-                />
-                <div
-                  className={`plant-msb__vwire plant-msb__vwire--to-bus${genFlowing(genSb.breaker.id) ? ' plant-msb__vwire--flow' : ''}`}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="plant-rack__coupler-top" aria-hidden />
-
-          <div className="plant-rack__half-top">
-            <span className="plant-rack__half-tag">{tagA}</span>
-            {genSa && (
-              <div
-                className={`plant-msb__gen-leg${genFlowing(genSa.breaker.id) ? ' plant-msb__gen-leg--flow' : ''}`}
-              >
-                <GenSymbol
-                  short={genShortLabel(genSa.half, board.id)}
-                  title={`${genSa.gen.id} · ${genSa.gen.name}`}
-                />
-                <div
-                  className={`plant-msb__vwire${genFlowing(genSa.breaker.id) ? ' plant-msb__vwire--flow' : ''}`}
-                />
-                <BreakerChip
-                  name={genSa.breaker.protectionName}
-                  state={protectionStatus[genSa.breaker.id]}
-                  circuitId={genSa.breaker.id}
-                  flowing={genFlowing(genSa.breaker.id)}
-                  onClick={(e) => onLocalBreaker(genSa.breaker, e)}
-                />
-                <div
-                  className={`plant-msb__vwire plant-msb__vwire--to-bus${genFlowing(genSa.breaker.id) ? ' plant-msb__vwire--flow' : ''}`}
-                />
-              </div>
-            )}
-          </div>
+  const renderGenLeg = (
+    half: BusHalf,
+    tag: string,
+    genEntry: BoardModel['gens'][number] | undefined,
+  ) => {
+    if (!genEntry) {
+      return (
+        <div className="plant-msb__half-out">
+          <span className="plant-rack__half-tag">{tag}</span>
         </div>
-
-        <div className="plant-rack__rail-wrap">
-          <div
-            className={`plant-rack__rail${
-              energizedEquipmentIds.has(board.id) ? ' plant-rack__rail--live' : ''
-            }`}
-            aria-hidden
+      )
+    }
+    const flowing = genFlowing(genEntry.breaker.id)
+    return (
+      <div className="plant-msb__half-out">
+        <span className="plant-rack__half-tag">{tag}</span>
+        <div
+          className={`plant-msb__gen-leg${flowing ? ' plant-msb__gen-leg--flow' : ''}`}
+        >
+          <GenSymbol
+            short={genShortLabel(half, board.id)}
+            title={`${genEntry.gen.id} · ${genEntry.gen.name}`}
           />
           <div
-            className="plant-rack__coupler"
-            title={board.sectionCoupler.label}
-          >
-            <span className="casc-brk__box casc-brk__box--static" />
-            <span>{board.sectionCoupler.id}</span>
-          </div>
+            className={`plant-msb__vwire${flowing ? ' plant-msb__vwire--flow' : ''}`}
+          />
+          <BreakerChip
+            name={genEntry.breaker.protectionName}
+            state={protectionStatus[genEntry.breaker.id]}
+            circuitId={genEntry.breaker.id}
+            flowing={flowing}
+            locked={lockedCircuits.has(genEntry.breaker.id)}
+            onClick={(e) => onLocalBreaker(genEntry.breaker, e)}
+          />
+          <div
+            className={`plant-msb__vwire plant-msb__vwire--into-box${flowing ? ' plant-msb__vwire--flow' : ''}`}
+          />
         </div>
+      </div>
+    )
+  }
 
-        {expanded && (
-          <div className="plant-rack__drops">
-            <div className="plant-rack__half-drops">{renderDrops(sb)}</div>
+  return (
+    <div
+      className={`plant-msb-col plant-msb-col--tie-${tieSide}`}
+      data-board={board.id as BoardId}
+    >
+      {/* Generadores fuera del recuadro del cuadro principal */}
+      <div className="plant-msb__outside">
+        {renderGenLeg('SB', tagB, genSb)}
+        <div className="plant-msb__outside-gap" aria-hidden />
+        {renderGenLeg('SA', tagA, genSa)}
+      </div>
+
+      <section
+        className={`plant-msb${expanded ? ' plant-msb--open' : ''}`}
+      >
+        <button type="button" className="plant-msb__head" onClick={onToggle}>
+          <span className="plant-msb__chev">{expanded ? '▾' : '▸'}</span>
+          <span className="plant-msb__id">{board.id}</span>
+          <span className="plant-msb__name">{board.name}</span>
+          <span className="plant-msb__meta">
+            {sb.length + sa.length}
+            {focusCircuitIds ? ` / ${board.feeders.length}` : ''} salidas ·{' '}
+            {expanded ? 'plegar' : 'desplegar'}
+          </span>
+        </button>
+
+        <div className="plant-rack">
+          <div className="plant-rack__spec">690V 3φ 60Hz</div>
+
+          <div className="plant-rack__rail-wrap">
             <div
-              className="plant-rack__coupler-drop"
+              className={`plant-rack__rail${
+                energizedEquipmentIds.has(board.id)
+                  ? ' plant-rack__rail--live'
+                  : ''
+              }`}
+              aria-hidden
+            />
+            <div
+              className="plant-rack__coupler"
               title={board.sectionCoupler.label}
             >
-              <div className="hbus-drop__stem" aria-hidden />
               <span className="casc-brk__box casc-brk__box--static" />
-              <span className="hbus__coupler-id">{board.sectionCoupler.id}</span>
+              <span>{board.sectionCoupler.id}</span>
             </div>
-            <div className="plant-rack__half-drops">{renderDrops(sa)}</div>
           </div>
-        )}
-      </div>
-    </section>
+
+          {expanded && (
+            <div className="plant-rack__drops">
+              <div className="plant-rack__half-drops">{renderDrops(sb)}</div>
+              <div
+                className="plant-rack__coupler-drop"
+                title={board.sectionCoupler.label}
+              >
+                <div className="hbus-drop__stem" aria-hidden />
+                <span className="casc-brk__box casc-brk__box--static" />
+                <span className="hbus__coupler-id">
+                  {board.sectionCoupler.id}
+                </span>
+              </div>
+              <div className="plant-rack__half-drops">{renderDrops(sa)}</div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
   )
 }
 
