@@ -187,6 +187,99 @@ export function layoutSubtree(
     )
 }
 
+/** Layout limpio para una hoja (1 columna de salidas + gen + barra). */
+export function layoutSheet(
+  nodes: Node<EquipmentNodeData>[],
+  edges: Edge<CircuitEdgeData>[],
+  opts: { busId: string | null; mode: 'resumen' | 'hoja' },
+): Node<EquipmentNodeData>[] {
+  const positions = new Map<string, { x: number; y: number }>()
+  const byId = new Map(nodes.map((n) => [n.id, n]))
+
+  const place = (id: string, x: number, y: number) => {
+    if (byId.has(id)) positions.set(id, { x, y })
+  }
+
+  if (opts.mode === 'resumen') {
+    place('SDG-GENS0001', 80, 280)
+    place('SDG-GENS0002', 320, 280)
+    place('PNL-MSB1001A', 80, 170)
+    place('PNL-MSB1001B', 320, 170)
+    place('MSB-6PWS0001', 100, 60)
+
+    place('SDG-GENS0003', 700, 280)
+    place('SDG-GENS0004', 940, 280)
+    place('PNL-MSB2001A', 700, 170)
+    place('PNL-MSB2001B', 940, 170)
+    place('MSB-6PWS0002', 720, 60)
+  } else {
+    const busId = opts.busId
+    const gens = nodes.filter((n) => n.data.equipment.kind === 'generador')
+    const panels = nodes.filter(
+      (n) =>
+        n.data.equipment.kind === 'cuadro_principal' &&
+        n.id.startsWith('PNL-'),
+    )
+    const bus = nodes.find((n) => n.id === busId)
+    const loads = nodes.filter(
+      (n) =>
+        n.id !== busId &&
+        n.data.equipment.kind !== 'generador' &&
+        !n.id.startsWith('PNL-MSB'),
+    )
+
+    // Ordenar cargas por número de breaker en aristas entrantes
+    const order = new Map<string, number>()
+    for (const e of edges) {
+      const c = (e.data as CircuitEdgeData)?.circuit
+      if (!c || c.virtual) continue
+      const m = `${c.protectionName}`.match(/Q[12][AB](\d+)/i)
+      if (m) order.set(c.destinationId, Number(m[1]))
+    }
+    loads.sort(
+      (a, b) =>
+        (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99) ||
+        a.id.localeCompare(b.id),
+    )
+
+    const colX = 220
+    gens.forEach((g, i) => place(g.id, colX + i * 240, 520))
+    panels.forEach((p, i) => place(p.id, colX + i * 240, 400))
+    if (bus) place(bus.id, colX - 40, 280)
+
+    // Dos columnas si hay muchas salidas
+    const useTwoCols = loads.length > 12
+    loads.forEach((load, i) => {
+      if (useTwoCols) {
+        const col = i % 2
+        const row = Math.floor(i / 2)
+        place(load.id, 40 + col * 420, 20 + row * 86)
+      } else {
+        place(load.id, colX, 20 + i * 86)
+      }
+    })
+  }
+
+  // Cualquier nodo sin sitio
+  let orphan = 0
+  for (const n of nodes) {
+    if (!positions.has(n.id)) {
+      place(n.id, 800 + orphan * 40, 100 + orphan * 40)
+      orphan++
+    }
+  }
+
+  return nodes.map((node) => {
+    const pos = positions.get(node.id) ?? { x: 0, y: 0 }
+    const bus = node.id.startsWith('MSB-6PWS')
+    return {
+      ...node,
+      position: pos,
+      style: bus ? { width: BUS_WIDTH, minHeight: BUS_HEIGHT } : node.style,
+    }
+  })
+}
+
 /**
  * Layout unifilar alineado al plano PDF (hojas 1A/1B/2A/2B):
  * generadores abajo → paneles/barra → salidas hacia arriba por sección QxA/QxB.
