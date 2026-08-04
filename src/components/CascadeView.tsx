@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -400,6 +401,8 @@ export function CascadeView({
   const plantRef = useRef<HTMLDivElement>(null)
   const zoomRef = useRef(zoom)
   zoomRef.current = zoom
+  /** Tras zoom con rueda: reposicionar scroll para fijar el punto bajo el puntero */
+  const pendingZoomScroll = useRef<{ left: number; top: number } | null>(null)
   const [plantSize, setPlantSize] = useState({ w: 0, h: 0 })
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(
     () => new Set(['MSB-6PWS0002', 'MSB-6PWS0001']),
@@ -500,7 +503,7 @@ export function CascadeView({
     }
 
     const onWheel = (e: WheelEvent) => {
-      // Zoom con la rueda (sin necesidad de Ctrl)
+      // Zoom con la rueda hacia el puntero (sin Ctrl)
       e.preventDefault()
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
       const current = zoomRef.current
@@ -508,7 +511,19 @@ export function CascadeView({
         2.5,
         Math.max(0.35, Math.round(current * factor * 100) / 100),
       )
-      if (next !== current) onZoomChange(next)
+      if (next === current) return
+
+      const rect = el.getBoundingClientRect()
+      const offsetX = e.clientX - rect.left
+      const offsetY = e.clientY - rect.top
+      const plantX = (el.scrollLeft + offsetX) / current
+      const plantY = (el.scrollTop + offsetY) / current
+
+      pendingZoomScroll.current = {
+        left: plantX * next - offsetX,
+        top: plantY * next - offsetY,
+      }
+      onZoomChange(next)
     }
 
     el.addEventListener('pointerdown', onDown)
@@ -524,6 +539,15 @@ export function CascadeView({
       el.removeEventListener('wheel', onWheel)
     }
   }, [onZoomChange])
+
+  useLayoutEffect(() => {
+    const pending = pendingZoomScroll.current
+    const el = panRef.current
+    if (!pending || !el) return
+    pendingZoomScroll.current = null
+    el.scrollLeft = pending.left
+    el.scrollTop = pending.top
+  }, [zoom])
 
   useEffect(() => {
     const el = plantRef.current
@@ -703,51 +727,25 @@ export function CascadeView({
             onJumpToCircuit={onJumpToCircuit}
           />
 
-          <div className="plant__bridge" title="Interconexión cuadros N-2 ↔ N-1">
+          {/* Solo el puente superior QT2A ↔ QT1B (interruptores van dentro de cada cuadro) */}
+          <div
+            className={`plant__bridge${
+              ties.qt2a &&
+              ties.qt1b &&
+              energizedCircuitIds.has(ties.qt2a.id) &&
+              energizedCircuitIds.has(ties.qt1b.id)
+                ? ' plant__bridge--flow'
+                : ''
+            }`}
+            title="Interconexión cuadros · QT2A ↔ QT1B"
+          >
+            <div className="plant__bridge-cap" aria-hidden />
             <div className="plant__bridge-bar">
-              {ties.qt2a && (
-                <BreakerChip
-                  name={ties.qt2a.protectionName}
-                  state={protectionStatus[ties.qt2a.id]}
-                  circuitId={ties.qt2a.id}
-                  flowing={energizedCircuitIds.has(ties.qt2a.id)}
-                  locked={lockedCircuits.has(ties.qt2a.id)}
-                  onClick={(e) => onLocalBreaker(ties.qt2a!, e)}
-                />
-              )}
-              <div
-                className={`plant__bridge-hwire${
-                  ties.qt2a &&
-                  ties.qt1b &&
-                  energizedCircuitIds.has(ties.qt2a.id) &&
-                  energizedCircuitIds.has(ties.qt1b.id)
-                    ? ' plant__bridge-hwire--flow'
-                    : ''
-                }`}
-              />
-              <span className="plant__bridge-label">INTERCONEXIÓN</span>
-              <div
-                className={`plant__bridge-hwire${
-                  ties.qt2a &&
-                  ties.qt1b &&
-                  energizedCircuitIds.has(ties.qt2a.id) &&
-                  energizedCircuitIds.has(ties.qt1b.id)
-                    ? ' plant__bridge-hwire--flow'
-                    : ''
-                }`}
-              />
-              {ties.qt1b && (
-                <BreakerChip
-                  name={ties.qt1b.protectionName}
-                  state={protectionStatus[ties.qt1b.id]}
-                  circuitId={ties.qt1b.id}
-                  flowing={energizedCircuitIds.has(ties.qt1b.id)}
-                  locked={lockedCircuits.has(ties.qt1b.id)}
-                  onClick={(e) => onLocalBreaker(ties.qt1b!, e)}
-                />
-              )}
+              <div className="plant__bridge-hwire" />
+              <span className="plant__bridge-label">INTERCONEXIÓN CUADROS</span>
+              <div className="plant__bridge-hwire" />
             </div>
-            <div className="plant__bridge-down">
+            <div className="plant__bridge-legs" aria-hidden>
               <div className="plant__bridge-rise" />
               <div className="plant__bridge-rise" />
             </div>
@@ -812,6 +810,7 @@ function BoardColumn({
   lockedCircuits: Set<string>
   focusCircuitIds: Set<string> | null
   focusEquipmentIds: Set<string> | null
+  /** Lado que mira al puente: POPA=right (2SA), PROA=left (1SA espejado) */
   tieSide: 'left' | 'right'
   onToggle: () => void
   onToggleEquip: (id: string) => void
@@ -833,6 +832,10 @@ function BoardColumn({
   const tagA = halfTag(board.id, 'SA')
   const genSb = board.gens.find((g) => g.half === 'SB')
   const genSa = board.gens.find((g) => g.half === 'SA')
+  /** PROA espejado: SA queda hacia el puente (izquierda) */
+  const mirror = tieSide === 'left'
+  const tie = board.busTie[0]
+  const tieTag = tagA
 
   const showBoard =
     !focusCircuitIds ||
@@ -842,7 +845,8 @@ function BoardColumn({
       (g) =>
         focusCircuitIds.has(g.breaker.id) ||
         focusEquipmentIds?.has(g.gen.id),
-    )
+    ) ||
+    (tie != null && focusCircuitIds.has(tie.id))
 
   if (!showBoard) return null
 
@@ -867,7 +871,7 @@ function BoardColumn({
 
   const genFlowing = (breakerId: string) => energizedCircuitIds.has(breakerId)
 
-  const renderGenLeg = (
+  const renderGenOutside = (
     half: BusHalf,
     tag: string,
     genEntry: BoardModel['gens'][number] | undefined,
@@ -891,17 +895,6 @@ function BoardColumn({
             title={`${genEntry.gen.id} · ${genEntry.gen.name}`}
           />
           <div
-            className={`plant-msb__vwire${flowing ? ' plant-msb__vwire--flow' : ''}`}
-          />
-          <BreakerChip
-            name={genEntry.breaker.protectionName}
-            state={protectionStatus[genEntry.breaker.id]}
-            circuitId={genEntry.breaker.id}
-            flowing={flowing}
-            locked={lockedCircuits.has(genEntry.breaker.id)}
-            onClick={(e) => onLocalBreaker(genEntry.breaker, e)}
-          />
-          <div
             className={`plant-msb__vwire plant-msb__vwire--into-box${flowing ? ' plant-msb__vwire--flow' : ''}`}
           />
         </div>
@@ -909,9 +902,48 @@ function BoardColumn({
     )
   }
 
+  const renderQgInside = (
+    genEntry: BoardModel['gens'][number] | undefined,
+  ) => {
+    if (!genEntry) return <div className="plant-msb__qg-slot" />
+    const flowing = genFlowing(genEntry.breaker.id)
+    return (
+      <div
+        className={`plant-msb__qg-slot${flowing ? ' plant-msb__qg-slot--flow' : ''}`}
+      >
+        <div
+          className={`plant-msb__vwire plant-msb__vwire--from-gen${flowing ? ' plant-msb__vwire--flow' : ''}`}
+        />
+        <BreakerChip
+          name={genEntry.breaker.protectionName}
+          state={protectionStatus[genEntry.breaker.id]}
+          circuitId={genEntry.breaker.id}
+          flowing={flowing}
+          locked={lockedCircuits.has(genEntry.breaker.id)}
+          compact
+          onClick={(e) => onLocalBreaker(genEntry.breaker, e)}
+        />
+        <div
+          className={`plant-msb__vwire plant-msb__vwire--to-rail${flowing ? ' plant-msb__vwire--flow' : ''}`}
+        />
+      </div>
+    )
+  }
+
+  const tieFlowing = tie ? energizedCircuitIds.has(tie.id) : false
+
+  const leftGen = mirror ? genSa : genSb
+  const rightGen = mirror ? genSb : genSa
+  const leftTag = mirror ? tagA : tagB
+  const rightTag = mirror ? tagB : tagA
+  const leftHalf: BusHalf = mirror ? 'SA' : 'SB'
+  const rightHalf: BusHalf = mirror ? 'SB' : 'SA'
+  const leftDrops = mirror ? sa : sb
+  const rightDrops = mirror ? sb : sa
+
   return (
     <div
-      className={`plant-msb-col plant-msb-col--tie-${tieSide}`}
+      className={`plant-msb-col plant-msb-col--tie-${tieSide}${mirror ? ' plant-msb-col--mirror' : ''}`}
       data-board={board.id as BoardId}
     >
       <button type="button" className="plant-msb__head" onClick={onToggle}>
@@ -925,17 +957,42 @@ function BoardColumn({
         </span>
       </button>
 
-      {/* Generadores fuera del recuadro */}
+      {/* Generadores fuera del recuadro; cable continuo entra al MSB */}
       <div className="plant-msb__outside">
-        {renderGenLeg('SB', tagB, genSb)}
+        {renderGenOutside(leftHalf, leftTag, leftGen)}
         <div className="plant-msb__outside-gap" aria-hidden />
-        {renderGenLeg('SA', tagA, genSa)}
+        {renderGenOutside(rightHalf, rightTag, rightGen)}
       </div>
 
-      <section
-        className={`plant-msb${expanded ? ' plant-msb--open' : ''}`}
-      >
+      <section className={`plant-msb${expanded ? ' plant-msb--open' : ''}`}>
         <div className="plant-rack">
+          <div className="plant-msb__inner-top">
+            <div className="plant-msb__qg-row">
+              {renderQgInside(leftGen)}
+              <div className="plant-msb__qg-gap" aria-hidden />
+              {renderQgInside(rightGen)}
+            </div>
+
+            {tie && (
+              <div
+                className={`plant-msb__bustie plant-msb__bustie--${tieSide}${tieFlowing ? ' plant-msb__bustie--flow' : ''}`}
+              >
+                <div className="plant-msb__bustie-rise" aria-hidden />
+                <BreakerChip
+                  name={tie.protectionName}
+                  state={protectionStatus[tie.id]}
+                  circuitId={tie.id}
+                  flowing={tieFlowing}
+                  locked={lockedCircuits.has(tie.id)}
+                  compact
+                  title={`${tie.protectionName} · interconexión · barra ${tieTag}`}
+                  onClick={(e) => onLocalBreaker(tie, e)}
+                />
+                <div className="plant-msb__bustie-down" aria-hidden />
+              </div>
+            )}
+          </div>
+
           <div className="plant-rack__rail-wrap">
             <div
               className={`plant-rack__rail${
@@ -945,27 +1002,31 @@ function BoardColumn({
               }`}
               aria-hidden
             />
-            <div className="plant-rack__coupler">
-              <BreakerChip
-                name={board.sectionCoupler.protectionName}
-                state={protectionStatus[board.sectionCoupler.id]}
-                circuitId={board.sectionCoupler.id}
-                flowing={energizedCircuitIds.has(board.sectionCoupler.id)}
-                locked={lockedCircuits.has(board.sectionCoupler.id)}
-                compact
-                title={`${board.sectionCoupler.name} · acoplador de sección`}
-                onClick={(e) => onLocalBreaker(board.sectionCoupler, e)}
-              />
+            <div className="plant-rack__rail-labels">
+              <span className="plant-rack__rail-tag">{leftTag}</span>
+              <div className="plant-rack__coupler">
+                <BreakerChip
+                  name={board.sectionCoupler.protectionName}
+                  state={protectionStatus[board.sectionCoupler.id]}
+                  circuitId={board.sectionCoupler.id}
+                  flowing={energizedCircuitIds.has(board.sectionCoupler.id)}
+                  locked={lockedCircuits.has(board.sectionCoupler.id)}
+                  compact
+                  title={`${board.sectionCoupler.name} · acoplador de sección`}
+                  onClick={(e) => onLocalBreaker(board.sectionCoupler, e)}
+                />
+              </div>
+              <span className="plant-rack__rail-tag">{rightTag}</span>
             </div>
           </div>
 
           {expanded && (
             <div className="plant-rack__drops">
-              <div className="plant-rack__half-drops">{renderDrops(sb)}</div>
+              <div className="plant-rack__half-drops">{renderDrops(leftDrops)}</div>
               <div className="plant-rack__coupler-drop" aria-hidden>
                 <div className="hbus-drop__wire hbus-drop__wire--from-bus" />
               </div>
-              <div className="plant-rack__half-drops">{renderDrops(sa)}</div>
+              <div className="plant-rack__half-drops">{renderDrops(rightDrops)}</div>
             </div>
           )}
         </div>
