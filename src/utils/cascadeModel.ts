@@ -41,28 +41,38 @@ export function boardFromOrigin(originId: string): BoardId | null {
   return null
 }
 
+/** Orden del esquema funcional: POPA (N-2) a la izquierda, PROA (N-1) a la derecha */
 export function buildBoardModels(data: DistributionData): BoardModel[] {
   const eq = (id: string) => data.equipment.find((e) => e.id === id)!
 
-  const boards: { id: BoardId; name: string; gens: [string, string]; coupler: string }[] = [
-    {
-      id: 'MSB-6PWS0001',
-      name: 'CUADRO PRINCIPAL PROA (MSB-6PWS0001)',
-      gens: ['SDG-GENS0001', 'SDG-GENS0002'],
-      coupler: 'QT1', // acoplamiento interno 1SA↔1SB (plano planta)
-    },
+  /** gens: [SB, SA] — orden visual del plano (G*B | G*A) */
+  const boards: {
+    id: BoardId
+    name: string
+    gens: [string, string]
+    coupler: string
+  }[] = [
     {
       id: 'MSB-6PWS0002',
       name: 'CUADRO PRINCIPAL POPA (MSB-6PWS0002)',
-      gens: ['SDG-GENS0003', 'SDG-GENS0004'],
+      gens: ['SDG-GENS0004', 'SDG-GENS0003'],
       coupler: 'QT2',
     },
+    {
+      id: 'MSB-6PWS0001',
+      name: 'CUADRO PRINCIPAL PROA (MSB-6PWS0001)',
+      gens: ['SDG-GENS0002', 'SDG-GENS0001'],
+      coupler: 'QT1',
+    },
   ]
+
+  const qt1b = data.circuits.find((c) => c.protectionName === 'QT1B')
+  const qt2a = data.circuits.find((c) => c.protectionName === 'QT2A')
 
   return boards.map((b) => {
     const boardEq = eq(b.id)
     const gens = b.gens.map((genId, idx) => {
-      const half: BusHalf = idx === 0 ? 'SA' : 'SB'
+      const half: BusHalf = idx === 0 ? 'SB' : 'SA'
       const breaker = data.circuits.find((c) => c.originId === genId)!
       return { half, gen: eq(genId), breaker }
     })
@@ -77,12 +87,15 @@ export function buildBoardModels(data: DistributionData): BoardModel[] {
       }))
       .sort((a, b2) => a.breaker.localeCompare(b2.breaker, undefined, { numeric: true }))
 
-    const busTie = data.circuits.filter(
-      (c) =>
-        (c.protectionName === 'QT1B' || c.protectionName === 'QT2A') &&
-        (c.originId.includes(b.id === 'MSB-6PWS0001' ? 'MSB10' : 'MSB20') ||
-          c.destinationId.includes(b.id === 'MSB-6PWS0001' ? 'MSB10' : 'MSB20')),
-    )
+    /** Enlace bus-tie del lado de este cuadro (QT2A en N-2 / QT1B en N-1) */
+    const busTie =
+      b.id === 'MSB-6PWS0002'
+        ? qt2a
+          ? [qt2a]
+          : []
+        : qt1b
+          ? [qt1b]
+          : []
 
     return {
       id: b.id,
@@ -90,13 +103,23 @@ export function buildBoardModels(data: DistributionData): BoardModel[] {
       local: boardEq?.local,
       sectionCoupler: {
         id: b.coupler,
-        label: `${b.coupler} · acoplamiento ${b.id === 'MSB-6PWS0001' ? '1SA↔1SB' : '2SA↔2SB'}`,
+        label: `${b.coupler} · acoplamiento ${b.id === 'MSB-6PWS0001' ? '1SB↔1SA' : '2SB↔2SA'}`,
       },
       busTie,
       gens,
       feeders,
     }
   })
+}
+
+export function busTieCircuits(data: DistributionData): {
+  qt2a?: Circuit
+  qt1b?: Circuit
+} {
+  return {
+    qt2a: data.circuits.find((c) => c.protectionName === 'QT2A'),
+    qt1b: data.circuits.find((c) => c.protectionName === 'QT1B'),
+  }
 }
 
 /** Circuitos hijos reales (no virtuales) que salen de un equipo */
