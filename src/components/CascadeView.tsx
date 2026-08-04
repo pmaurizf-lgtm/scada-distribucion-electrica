@@ -24,6 +24,7 @@ import {
 import type { UpstreamTrace } from '../utils/upstream'
 import { CircuitBalloon } from './CircuitBalloon'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
+import { SearchTreeView } from './SearchTreeView'
 
 export type LockTool = 'none' | 'lock' | 'unlock'
 
@@ -397,6 +398,8 @@ export function CascadeView({
   const stageRef = useRef<HTMLDivElement>(null)
   const panRef = useRef<HTMLDivElement>(null)
   const plantRef = useRef<HTMLDivElement>(null)
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
   const [plantSize, setPlantSize] = useState({ w: 0, h: 0 })
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(
     () => new Set(['MSB-6PWS0002', 'MSB-6PWS0001']),
@@ -497,12 +500,15 @@ export function CascadeView({
     }
 
     const onWheel = (e: WheelEvent) => {
-      if (!(e.ctrlKey || e.metaKey)) return
+      // Zoom con la rueda (sin necesidad de Ctrl)
       e.preventDefault()
-      const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08
-      onZoomChange(
-        Math.min(2.5, Math.max(0.35, Math.round(zoom * factor * 100) / 100)),
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
+      const current = zoomRef.current
+      const next = Math.min(
+        2.5,
+        Math.max(0.35, Math.round(current * factor * 100) / 100),
       )
+      if (next !== current) onZoomChange(next)
     }
 
     el.addEventListener('pointerdown', onDown)
@@ -517,7 +523,7 @@ export function CascadeView({
       el.removeEventListener('pointercancel', onUp)
       el.removeEventListener('wheel', onWheel)
     }
-  }, [zoom, onZoomChange])
+  }, [onZoomChange])
 
   useEffect(() => {
     const el = plantRef.current
@@ -622,8 +628,8 @@ export function CascadeView({
         {focus && (
           <div className="casc__focus-bar">
             <span>
-              Búsqueda: <strong>{focus.equipmentId}</strong> ·{' '}
-              {focus.trace.circuits.length} alimentaciones aguas arriba
+              Búsqueda: <strong>{focus.equipmentId}</strong> · árbol de
+              alimentaciones (equipo único)
             </span>
             {onClearFocus && (
               <button type="button" className="btn" onClick={onClearFocus}>
@@ -638,6 +644,33 @@ export function CascadeView({
         className="casc__stage casc__stage--plant casc__stage--pan"
         ref={panRef}
       >
+        {focus ? (
+          <div
+            className="plant-zoom-space"
+            style={{
+              width: plantSize.w ? plantSize.w * zoom : undefined,
+              height: plantSize.h ? plantSize.h * zoom : undefined,
+            }}
+          >
+            <div
+              ref={plantRef}
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top left',
+              }}
+            >
+              <SearchTreeView
+                equipmentId={focus.equipmentId}
+                trace={focus.trace}
+                protectionStatus={protectionStatus}
+                lockedCircuits={lockedCircuits}
+                energizedCircuitIds={energizedCircuitIds}
+                energizedEquipmentIds={energizedEquipmentIds}
+                onBreaker={onLocalBreaker}
+              />
+            </div>
+          </div>
+        ) : (
         <div
           className="plant-zoom-space"
           style={{
@@ -647,7 +680,7 @@ export function CascadeView({
         >
           <div
             ref={plantRef}
-            className={`plant${focus ? ' plant--focus' : ''}`}
+            className="plant"
             style={{
               transform: `scale(${zoom})`,
               transformOrigin: 'top left',
@@ -738,6 +771,7 @@ export function CascadeView({
           />
           </div>
         </div>
+        )}
       </div>
 
       {balloon && (
@@ -880,7 +914,18 @@ function BoardColumn({
       className={`plant-msb-col plant-msb-col--tie-${tieSide}`}
       data-board={board.id as BoardId}
     >
-      {/* Generadores fuera del recuadro del cuadro principal */}
+      <button type="button" className="plant-msb__head" onClick={onToggle}>
+        <span className="plant-msb__chev">{expanded ? '▾' : '▸'}</span>
+        <span className="plant-msb__id">{board.id}</span>
+        <span className="plant-msb__name">{board.name}</span>
+        <span className="plant-msb__meta">
+          {sb.length + sa.length}
+          {focusCircuitIds ? ` / ${board.feeders.length}` : ''} salidas ·{' '}
+          {expanded ? 'plegar' : 'desplegar'}
+        </span>
+      </button>
+
+      {/* Generadores fuera del recuadro */}
       <div className="plant-msb__outside">
         {renderGenLeg('SB', tagB, genSb)}
         <div className="plant-msb__outside-gap" aria-hidden />
@@ -890,20 +935,7 @@ function BoardColumn({
       <section
         className={`plant-msb${expanded ? ' plant-msb--open' : ''}`}
       >
-        <button type="button" className="plant-msb__head" onClick={onToggle}>
-          <span className="plant-msb__chev">{expanded ? '▾' : '▸'}</span>
-          <span className="plant-msb__id">{board.id}</span>
-          <span className="plant-msb__name">{board.name}</span>
-          <span className="plant-msb__meta">
-            {sb.length + sa.length}
-            {focusCircuitIds ? ` / ${board.feeders.length}` : ''} salidas ·{' '}
-            {expanded ? 'plegar' : 'desplegar'}
-          </span>
-        </button>
-
         <div className="plant-rack">
-          <div className="plant-rack__spec">690V 3φ 60Hz</div>
-
           <div className="plant-rack__rail-wrap">
             <div
               className={`plant-rack__rail${
@@ -913,27 +945,25 @@ function BoardColumn({
               }`}
               aria-hidden
             />
-            <div
-              className="plant-rack__coupler"
-              title={board.sectionCoupler.label}
-            >
-              <span className="casc-brk__box casc-brk__box--static" />
-              <span>{board.sectionCoupler.id}</span>
+            <div className="plant-rack__coupler">
+              <BreakerChip
+                name={board.sectionCoupler.protectionName}
+                state={protectionStatus[board.sectionCoupler.id]}
+                circuitId={board.sectionCoupler.id}
+                flowing={energizedCircuitIds.has(board.sectionCoupler.id)}
+                locked={lockedCircuits.has(board.sectionCoupler.id)}
+                compact
+                title={`${board.sectionCoupler.name} · acoplador de sección`}
+                onClick={(e) => onLocalBreaker(board.sectionCoupler, e)}
+              />
             </div>
           </div>
 
           {expanded && (
             <div className="plant-rack__drops">
               <div className="plant-rack__half-drops">{renderDrops(sb)}</div>
-              <div
-                className="plant-rack__coupler-drop"
-                title={board.sectionCoupler.label}
-              >
-                <div className="hbus-drop__stem" aria-hidden />
-                <span className="casc-brk__box casc-brk__box--static" />
-                <span className="hbus__coupler-id">
-                  {board.sectionCoupler.id}
-                </span>
+              <div className="plant-rack__coupler-drop" aria-hidden>
+                <div className="hbus-drop__wire hbus-drop__wire--from-bus" />
               </div>
               <div className="plant-rack__half-drops">{renderDrops(sa)}</div>
             </div>

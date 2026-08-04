@@ -15,12 +15,48 @@ export interface BoardModel {
   id: BoardId
   name: string
   local?: string
-  /** Acoplamiento entre mitades SA↔SB (si existe en datos; si no, lógico) */
-  sectionCoupler: { id: string; label: string }
+  /** Acoplador de sección SA↔SB (QBT1 / QBT2) */
+  sectionCoupler: Circuit
   /** Enlace a la otra barra (bus-tie) */
   busTie: Circuit[]
   gens: { half: BusHalf; gen: Equipment; breaker: Circuit }[]
   feeders: FeederOutlet[]
+}
+
+/** Circuitos sintéticos de acoplamiento de sección (no vienen del Excel) */
+export function sectionCouplerCircuit(boardId: BoardId): Circuit {
+  if (boardId === 'MSB-6PWS0001') {
+    return {
+      id: 'synth-QBT1',
+      circuitRef: 'MSB-6PWS0001-QBT1',
+      name: 'Acoplamiento 1SB ↔ 1SA',
+      originId: 'PNL-MSB1001B',
+      destinationId: 'PNL-MSB1001A',
+      protectionName: 'QBT1',
+      protectionModel: 'Motorizado · acoplador de sección',
+      lineType: 'normal',
+      service: 'VS',
+      voltage: '690',
+      notes: 'Acoplador de barras 1SB-1SA (sintético)',
+    }
+  }
+  return {
+    id: 'synth-QBT2',
+    circuitRef: 'MSB-6PWS0002-QBT2',
+    name: 'Acoplamiento 2SB ↔ 2SA',
+    originId: 'PNL-MSB2001B',
+    destinationId: 'PNL-MSB2001A',
+    protectionName: 'QBT2',
+    protectionModel: 'Motorizado · acoplador de sección',
+    lineType: 'normal',
+    service: 'VS',
+    voltage: '690',
+    notes: 'Acoplador de barras 2SB-2SA (sintético)',
+  }
+}
+
+export function allSectionCouplers(): Circuit[] {
+  return [sectionCouplerCircuit('MSB-6PWS0001'), sectionCouplerCircuit('MSB-6PWS0002')]
 }
 
 export function halfFromPanel(panelId: string): BusHalf | null {
@@ -50,19 +86,16 @@ export function buildBoardModels(data: DistributionData): BoardModel[] {
     id: BoardId
     name: string
     gens: [string, string]
-    coupler: string
   }[] = [
     {
       id: 'MSB-6PWS0002',
       name: 'CUADRO PRINCIPAL POPA (MSB-6PWS0002)',
       gens: ['SDG-GENS0004', 'SDG-GENS0003'],
-      coupler: 'QT2',
     },
     {
       id: 'MSB-6PWS0001',
       name: 'CUADRO PRINCIPAL PROA (MSB-6PWS0001)',
       gens: ['SDG-GENS0002', 'SDG-GENS0001'],
-      coupler: 'QT1',
     },
   ]
 
@@ -101,10 +134,7 @@ export function buildBoardModels(data: DistributionData): BoardModel[] {
       id: b.id,
       name: boardEq?.name ?? b.name,
       local: boardEq?.local,
-      sectionCoupler: {
-        id: b.coupler,
-        label: `${b.coupler} · acoplamiento ${b.id === 'MSB-6PWS0001' ? '1SB↔1SA' : '2SB↔2SA'}`,
-      },
+      sectionCoupler: sectionCouplerCircuit(b.id),
       busTie,
       gens,
       feeders,

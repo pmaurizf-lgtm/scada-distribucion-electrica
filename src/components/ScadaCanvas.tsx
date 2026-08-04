@@ -18,6 +18,7 @@ import {
   toggleProtectionState,
 } from '../utils/energyFlow'
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
+import { allSectionCouplers } from '../utils/cascadeModel'
 import {
   CascadeView,
   type CascadeFocus,
@@ -60,9 +61,10 @@ export function ScadaCanvas() {
 
   const handleSimulateToggle = useCallback(() => {
     setProtectionStatus((prev) => {
-      const ids = system690.circuits
-        .map((c) => c.id)
-        .filter((id) => !lockedCircuits.has(id))
+      const ids = [
+        ...system690.circuits.map((c) => c.id),
+        ...allSectionCouplers().map((c) => c.id),
+      ].filter((id) => !lockedCircuits.has(id))
       return invertProtectionStatus(prev, ids)
     })
     setStatusSource('simulación · estados invertidos (excepto bloqueados)')
