@@ -79,6 +79,11 @@ function GenSymbol({
         e.stopPropagation()
         onToggle()
       }}
+      onDoubleClick={(e) => {
+        // Evitar que el doble clic pliegue el cuadro MSB
+        e.stopPropagation()
+        e.preventDefault()
+      }}
     >
       <svg viewBox="0 0 56 70" className="casc-gen__svg" aria-hidden>
         <line
@@ -188,8 +193,8 @@ function HorizontalBus({
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
   lockedCircuits: Set<string>
-  expandedEquip?: Set<string>
-  onToggleEquip?: (id: string) => void
+  expandedEquip: Set<string>
+  onToggleEquip: (id: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
   nested?: boolean
@@ -218,12 +223,9 @@ function HorizontalBus({
               energizedCircuitIds={energizedCircuitIds}
               energizedEquipmentIds={energizedEquipmentIds}
               lockedCircuits={lockedCircuits}
-              expanded={expandedEquip?.has(item.equipment.id) ?? false}
-              onToggleEquip={
-                onToggleEquip
-                  ? () => onToggleEquip(item.equipment.id)
-                  : undefined
-              }
+              expanded={expandedEquip.has(item.equipment.id)}
+              expandedEquip={expandedEquip}
+              onToggleEquip={onToggleEquip}
               onLocalBreaker={onLocalBreaker}
               onJumpToCircuit={onJumpToCircuit}
               focusCircuitIds={focusCircuitIds}
@@ -243,6 +245,7 @@ function BusDrop({
   energizedEquipmentIds,
   lockedCircuits,
   expanded,
+  expandedEquip,
   onToggleEquip,
   onLocalBreaker,
   onJumpToCircuit,
@@ -255,7 +258,8 @@ function BusDrop({
   energizedEquipmentIds: Set<string>
   lockedCircuits: Set<string>
   expanded: boolean
-  onToggleEquip?: () => void
+  expandedEquip: Set<string>
+  onToggleEquip: (id: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
   focusCircuitIds?: Set<string> | null
@@ -268,8 +272,7 @@ function BusDrop({
     () => incomingFeeds(system690, equipment.id),
     [equipment.id],
   )
-  const [innerOpen, setInnerOpen] = useState<Set<string>>(new Set())
-  const canExpand = children.length > 0 && !!onToggleEquip
+  const canExpand = children.length > 0
 
   const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
   const remoteFeeds = feeds.filter((c) => c.id !== localFeed.id)
@@ -359,11 +362,24 @@ function BusDrop({
     )
   }
 
+  const toggleExpand = (e: ReactMouseEvent) => {
+    if (!canExpand) return
+    e.preventDefault()
+    e.stopPropagation()
+    onToggleEquip(equipment.id)
+  }
+
   return (
     <div
-      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}`}
+      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}`}
       data-equip={equipment.id}
       data-circuit-id={localFeed.id}
+      title={
+        canExpand
+          ? `${equipment.id} · doble clic para ${expanded ? 'plegar' : 'desplegar'}`
+          : undefined
+      }
+      onDoubleClick={toggleExpand}
     >
       <div className="hbus-drop__tops">
         {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
@@ -380,7 +396,13 @@ function BusDrop({
           type="button"
           className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}`}
           data-equip={equipment.id}
-          onClick={onToggleEquip}
+          title={
+            canExpand
+              ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
+              : undefined
+          }
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={toggleExpand}
           disabled={!canExpand}
         >
           <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
@@ -410,15 +432,8 @@ function BusDrop({
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
           lockedCircuits={lockedCircuits}
-          expandedEquip={innerOpen}
-          onToggleEquip={(id) => {
-            setInnerOpen((prev) => {
-              const next = new Set(prev)
-              if (next.has(id)) next.delete(id)
-              else next.add(id)
-              return next
-            })
-          }}
+          expandedEquip={expandedEquip}
+          onToggleEquip={onToggleEquip}
           onLocalBreaker={onLocalBreaker}
           onJumpToCircuit={onJumpToCircuit}
           focusCircuitIds={focusCircuitIds}
@@ -748,7 +763,13 @@ export function CascadeView({
 
     const w = plant.offsetWidth
     const h = plant.offsetHeight
-    if (w < 8 || h < 8) return
+    if (w < 8 || h < 8) {
+      // Layout aún no listo: reintentar sin perder el pending
+      window.setTimeout(() => {
+        if (fitZoomPending.current) fitAndCenterView()
+      }, 120)
+      return
+    }
 
     const pad = 48
     const availW = Math.max(stage.clientWidth - pad, 80)
@@ -762,12 +783,9 @@ export function CascadeView({
 
     if (Math.abs(next - zoomRef.current) >= 0.01) {
       onZoomChange(next)
-      // el centrado se aplica en el effect de `zoom` cuando el DOM ya refleja el scale
     } else {
-      // Mismo zoom: centrar en el siguiente frame
       requestAnimationFrame(() => {
         centerPending.current = true
-        // forzar el effect de centrado midiendo otra vez
         const s = panRef.current
         const p = plantRef.current
         const sp = p?.parentElement
@@ -815,27 +833,31 @@ export function CascadeView({
     centerPending.current = false
   }, [zoom])
 
-  /** Tras plegar/desplegar: esperar a que el layout se estabilice y entonces encajar */
+  /** Tras plegar/desplegar o montaje: encajar en viewport (no al mutar tamaño por CSS) */
   useEffect(() => {
     if (!fitZoomPending.current) return
     const t = window.setTimeout(() => {
       if (!fitZoomPending.current) return
       fitAndCenterView()
-    }, 60)
+    }, 100)
     return () => window.clearTimeout(t)
-  }, [expandedBoards, expandedEquip, focus, plantSize.w, plantSize.h, fitAndCenterView])
+  }, [expandedBoards, expandedEquip, focus, fitAndCenterView])
 
-  // Viewport del stage: reajustar
+  // Viewport del stage: solo si el ancho cambia de verdad (redimensionar ventana)
   useEffect(() => {
     const stage = panRef.current
     if (!stage || typeof ResizeObserver === 'undefined') return
+    let lastW = stage.clientWidth
     let t: number | undefined
     const ro = new ResizeObserver(() => {
+      const w = stage.clientWidth
+      if (Math.abs(w - lastW) < 48) return
+      lastW = w
       window.clearTimeout(t)
       t = window.setTimeout(() => {
         fitZoomPending.current = true
         fitAndCenterView()
-      }, 80)
+      }, 100)
     })
     ro.observe(stage)
     return () => {
@@ -1163,7 +1185,8 @@ function BoardColumn({
           energizedEquipmentIds={energizedEquipmentIds}
           lockedCircuits={lockedCircuits}
           expanded={expandedEquip.has(f.equipment.id)}
-          onToggleEquip={() => onToggleEquip(f.equipment.id)}
+          expandedEquip={expandedEquip}
+          onToggleEquip={onToggleEquip}
           onLocalBreaker={onLocalBreaker}
           onJumpToCircuit={onJumpToCircuit}
           focusCircuitIds={focusCircuitIds}
@@ -1250,19 +1273,44 @@ function BoardColumn({
   const rightHalfLive = liveHalves.has(rightHalf)
   const qbtLive = energizedCircuitIds.has(board.sectionCoupler.id)
 
+  const toggleBoard = (e: ReactMouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onToggle()
+  }
+
   return (
     <div
       className={`plant-msb-col plant-msb-col--tie-${tieSide}${mirror ? ' plant-msb-col--mirror' : ''}`}
       data-board={board.id as BoardId}
+      title={`Doble clic para ${expanded ? 'plegar' : 'desplegar'} el cuadro`}
+      onDoubleClick={(e) => {
+        const t = e.target
+        if (
+          t instanceof Element &&
+          t.closest(
+            '.casc-brk, .casc-gen, .hbus-drop, .hbus-drop__eq, button.casc-brk',
+          )
+        ) {
+          return
+        }
+        toggleBoard(e)
+      }}
     >
-      <button type="button" className="plant-msb__head" onClick={onToggle}>
+      <button
+        type="button"
+        className="plant-msb__head"
+        title={`Doble clic para ${expanded ? 'plegar' : 'desplegar'}`}
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={toggleBoard}
+      >
         <span className="plant-msb__chev">{expanded ? '▾' : '▸'}</span>
         <span className="plant-msb__id">{board.id}</span>
         <span className="plant-msb__name">{board.name}</span>
         <span className="plant-msb__meta">
           {sb.length + sa.length}
-          {focusCircuitIds ? ` / ${board.feeders.length}` : ''} salidas ·{' '}
-          {expanded ? 'plegar' : 'desplegar'}
+          {focusCircuitIds ? ` / ${board.feeders.length}` : ''} salidas · doble
+          clic · {expanded ? 'plegar' : 'desplegar'}
         </span>
       </button>
 

@@ -997,6 +997,7 @@ body {
   flex-direction: column;
   align-items: stretch;
   overflow: visible;
+  user-select: none;
 }
 
 /* Generadores fuera del recuadro del MSB */
@@ -1119,7 +1120,7 @@ body {
 
 .casc-gen--running {
   color: var(--line-normal);
-  filter: drop-shadow(0 0 8px rgba(230, 194, 0, 0.55));
+  box-shadow: 0 0 14px rgba(230, 194, 0, 0.5);
 }
 
 .casc-gen__state {
@@ -2198,6 +2199,14 @@ body {
 
 .hbus-drop__eq:disabled {
   cursor: default;
+}
+
+.hbus-drop--expandable {
+  cursor: pointer;
+}
+
+.hbus-drop--expandable .hbus-drop__eq:not(:disabled) {
+  cursor: pointer;
 }
 
 .hbus-drop__eq:not(:disabled):hover,

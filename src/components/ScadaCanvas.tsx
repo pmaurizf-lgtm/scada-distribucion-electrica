@@ -322,11 +322,11 @@ export function ScadaCanvas() {
               : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
           </div>
         )}
-        {runningGenerators.size === 0 && lockTool === 'none' && !searchHint && (
+        {lockTool === 'none' && !searchHint && (
           <div className="banner">
-            Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG*
-            y luego los interruptores de salida / QBT para ver el flujo de
-            energía.
+            {runningGenerators.size === 0
+              ? 'Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
+              : `Simulación: ${runningGenerators.size} generador${runningGenerators.size === 1 ? '' : 'es'} en marcha. Cierra QG* / salidas / QBT para ver el flujo (doble clic en cuadros o equipos para plegar/desplegar).`}
           </div>
         )}
       </div>
