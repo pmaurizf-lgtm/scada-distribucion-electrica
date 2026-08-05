@@ -221,11 +221,11 @@ body {
 
 .plant-zoom-space {
   position: relative;
-  /* Superficie de arrastre ≥ viewport del stage */
+  /* El padding de centrado lo aplica JS al plegar/desplegar */
   min-width: 100%;
   min-height: 100%;
   box-sizing: content-box;
-  padding: 2rem;
+  padding: 1.5rem;
 }
 
 .search {

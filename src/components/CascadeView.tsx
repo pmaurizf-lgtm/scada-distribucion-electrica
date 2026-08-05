@@ -537,8 +537,9 @@ export function CascadeView({
   zoomRef.current = zoom
   /** Tras zoom con rueda: reposicionar scroll para fijar el punto bajo el puntero */
   const pendingZoomScroll = useRef<{ left: number; top: number } | null>(null)
-  /** Tras plegar/desplegar MSB: ajustar zoom al viewport */
+  /** Tras plegar/desplegar MSB: ajustar zoom al viewport y centrar */
   const fitZoomPending = useRef(true)
+  const centerPending = useRef(false)
   const [plantSize, setPlantSize] = useState({ w: 0, h: 0 })
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(
     () => new Set(['MSB-6PWS0002', 'MSB-6PWS0001']),
@@ -698,13 +699,42 @@ export function CascadeView({
     return () => ro.disconnect()
   }, [expandedBoards, focus, expandedEquip])
 
-  /** Zoom dinámico: encajar el unifilar en el área visible al plegar/desplegar */
+  /** Centra el diagrama en el viewport (también si es más pequeño que la pantalla) */
+  const centerViewOnPlant = useCallback(() => {
+    const stage = panRef.current
+    const plant = plantRef.current
+    if (!stage || !plant) return
+    const space = plant.parentElement as HTMLElement | null
+    if (!space || !space.classList.contains('plant-zoom-space')) return
+
+    const z = zoomRef.current
+    const contentW = Math.max(plant.offsetWidth * z, 1)
+    const contentH = Math.max(plant.offsetHeight * z, 1)
+    const basePad = 24
+
+    // Si el unifilar cabe en pantalla, el padding lo centra; si no, deja margen mínimo
+    const padX = Math.max(basePad, (stage.clientWidth - contentW) / 2)
+    const padY = Math.max(basePad, (stage.clientHeight - contentH) / 2)
+    space.style.paddingLeft = `${padX}px`
+    space.style.paddingRight = `${padX}px`
+    space.style.paddingTop = `${padY}px`
+    space.style.paddingBottom = `${padY}px`
+
+    const left = padX + contentW / 2 - stage.clientWidth / 2
+    const top = padY + contentH / 2 - stage.clientHeight / 2
+    const maxLeft = Math.max(0, stage.scrollWidth - stage.clientWidth)
+    const maxTop = Math.max(0, stage.scrollHeight - stage.clientHeight)
+    stage.scrollLeft = Math.min(Math.max(0, left), maxLeft)
+    stage.scrollTop = Math.min(Math.max(0, top), maxTop)
+  }, [])
+
+  /** Zoom dinámico al plegar/desplegar: encajar y marcar centrado pendiente */
   useLayoutEffect(() => {
     if (!fitZoomPending.current) return
     const stage = panRef.current
     if (!stage || plantSize.w < 8 || plantSize.h < 8) return
 
-    const pad = 28
+    const pad = 40
     const availW = Math.max(stage.clientWidth - pad, 80)
     const availH = Math.max(stage.clientHeight - pad, 80)
     const fit = Math.min(availW / plantSize.w, availH / plantSize.h)
@@ -713,25 +743,42 @@ export function CascadeView({
       Math.max(0.25, Math.round(fit * 100) / 100),
     )
     fitZoomPending.current = false
+    centerPending.current = true
+
     if (Math.abs(next - zoomRef.current) >= 0.01) {
       onZoomChange(next)
+    } else {
+      centerViewOnPlant()
+      // Re-centrar tras el layout definitivo del contenido plegado
+      requestAnimationFrame(() => {
+        centerViewOnPlant()
+        requestAnimationFrame(() => {
+          centerViewOnPlant()
+          centerPending.current = false
+        })
+      })
     }
-    // Centrar tras ajustar
-    requestAnimationFrame(() => {
-      const s = panRef.current
-      if (!s) return
-      s.scrollLeft = Math.max(0, (s.scrollWidth - s.clientWidth) / 2)
-      s.scrollTop = Math.max(0, (s.scrollHeight - s.clientHeight) / 2)
-    })
-  }, [plantSize, expandedBoards, focus, onZoomChange])
+  }, [plantSize, expandedBoards, expandedEquip, focus, onZoomChange, centerViewOnPlant])
 
-  // Si cambia el tamaño del viewport, reajustar cuando el usuario no ha hecho zoom manual reciente
+  /** Tras aplicar el nuevo zoom, centrar el unifilar en pantalla */
+  useLayoutEffect(() => {
+    if (!centerPending.current) return
+    centerViewOnPlant()
+    requestAnimationFrame(() => {
+      centerViewOnPlant()
+      requestAnimationFrame(() => {
+        centerViewOnPlant()
+        centerPending.current = false
+      })
+    })
+  }, [zoom, plantSize, centerViewOnPlant])
+
+  // Viewport del stage: reajustar y centrar
   useEffect(() => {
     const stage = panRef.current
     if (!stage || typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(() => {
       fitZoomPending.current = true
-      // dispara el efecto de fit vía plantSize “tocándolo”
       setPlantSize((ps) => ({ ...ps }))
     })
     ro.observe(stage)
@@ -740,6 +787,7 @@ export function CascadeView({
 
   const toggleBoard = (id: string) => {
     fitZoomPending.current = true
+    centerPending.current = true
     setExpandedBoards((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -750,6 +798,7 @@ export function CascadeView({
 
   const toggleEquip = (id: string) => {
     fitZoomPending.current = true
+    centerPending.current = true
     setExpandedEquip((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
