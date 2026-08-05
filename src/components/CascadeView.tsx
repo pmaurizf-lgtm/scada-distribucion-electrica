@@ -532,6 +532,9 @@ function BusTieInterconnect({
       aria-hidden
     >
       <path d={d} className="plant__tie-path" fill="none" />
+      {flowing ? (
+        <path d={d} className="plant__tie-halo" fill="none" aria-hidden />
+      ) : null}
       <text
         x={midX}
         y={geom.yTop - 6}
@@ -1298,14 +1301,16 @@ function BoardColumn({
             )}
           </div>
 
-          {/* Barra SB ── QBT (horizontal, centrado) ── SA */}
+          {/* Barra SB ── QBT (horizontal, centrado) ── SA · misma rejilla que las salidas */}
           <div className="plant-rack__rail-wrap">
             <div className="plant-rack__bus-row">
-              <span className="plant-rack__rail-tag">{leftTag}</span>
-              <div
-                className={`plant-rack__rail-seg${leftHalfLive ? ' plant-rack__rail-seg--live' : ''}`}
-                aria-hidden
-              />
+              <div className="plant-rack__bus-half">
+                <span className="plant-rack__rail-tag">{leftTag}</span>
+                <div
+                  className={`plant-rack__rail-seg${leftHalfLive ? ' plant-rack__rail-seg--live' : ''}`}
+                  aria-hidden
+                />
+              </div>
               <div className="plant-rack__coupler plant-rack__coupler--bus">
                 <BreakerChip
                   name={board.sectionCoupler.protectionName}
@@ -1319,11 +1324,13 @@ function BoardColumn({
                   onClick={(e) => onLocalBreaker(board.sectionCoupler, e)}
                 />
               </div>
-              <div
-                className={`plant-rack__rail-seg${rightHalfLive ? ' plant-rack__rail-seg--live' : ''}`}
-                aria-hidden
-              />
-              <span className="plant-rack__rail-tag">{rightTag}</span>
+              <div className="plant-rack__bus-half">
+                <span className="plant-rack__rail-tag">{rightTag}</span>
+                <div
+                  className={`plant-rack__rail-seg${rightHalfLive ? ' plant-rack__rail-seg--live' : ''}`}
+                  aria-hidden
+                />
+              </div>
             </div>
 
             {expanded && (

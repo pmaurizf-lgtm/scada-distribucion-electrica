@@ -1152,10 +1152,12 @@ body {
 }
 
 .plant-msb__vwire {
+  position: relative;
   width: 2px;
   height: 14px;
   background: #7dcfb0;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .plant-msb__vwire--to-bus {
@@ -1236,20 +1238,42 @@ body {
 }
 
 .plant-msb__bustie-down {
+  position: relative;
   width: 2px;
   flex: 1 0 auto;
   min-height: 1.15rem;
   background: #7dcfb0;
+  overflow: visible;
 }
 
 .plant-msb__bustie--flow .plant-msb__bustie-down {
-  background: #e0c040;
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.45);
+  /* Color original; halo en movimiento */
+  background: #7dcfb0;
+}
+
+.plant-msb__bustie--flow .plant-msb__bustie-down::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 28%;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    transparent
+  );
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.65);
+  animation: flow-halo-v 1.1s linear infinite;
+  pointer-events: none;
 }
 
 .plant-msb__qg-slot--flow .plant-msb__vwire--from-gen,
 .plant-msb__qg-slot--flow .plant-msb__vwire--to-rail {
-  background: #e0c040;
+  /* Mantener color de acometida gen→barra */
+  background: #b24ec4;
 }
 
 /* Rack unifilar: una sola barra por cuadro */
@@ -1281,7 +1305,8 @@ body {
 }
 
 .plant-rack {
-  --rail-label-h: 2.9rem;
+  /* Distancia vertical barra → inicio de salidas (bajantes --from-bus) */
+  --rail-label-h: 2.55rem;
   position: relative;
   padding: 0.15rem 0.75rem 0.85rem;
   width: max-content;
@@ -1296,32 +1321,68 @@ body {
   align-items: stretch;
   margin: 0;
   padding: 0;
+  /* La barra queda al inicio: empalme con bajantes QG* / bustie */
 }
 
-/* Barra partida con QBT horizontal centrado entre medias barras / consumidores */
+/*
+ * Misma rejilla que .plant-rack__drops (1fr | QBT | 1fr).
+ * Barra en el borde superior de la fila (donde nacen las bajantes).
+ */
 .plant-rack__bus-row {
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: auto 1fr auto 1fr auto;
-  align-items: center;
-  gap: 0.15rem;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 0;
   width: 100%;
-  min-height: 2.8rem;
-  padding: 0.1rem 0;
+  height: var(--rail-label-h);
+  min-height: var(--rail-label-h);
+  box-sizing: border-box;
+}
+
+.plant-rack__bus-half {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: 100%;
 }
 
 .plant-rack__rail-seg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
   height: 2px;
-  width: 100%;
   background: #b24ec4;
-  align-self: center;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .plant-rack__rail-seg--live {
-  background: #e0a0f0;
-  box-shadow: 0 0 8px rgba(224, 160, 240, 0.55);
-  animation: flow-pulse 0.9s linear infinite;
+  /* Color original de barra; halo horizontal */
+  background: #b24ec4;
+  overflow: visible;
+}
+
+.plant-rack__rail-seg--live::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 18%;
+  height: 8px;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    transparent
+  );
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  animation: flow-halo-h 1.4s linear infinite;
+  pointer-events: none;
 }
 
 .plant-rack__rail {
@@ -1333,14 +1394,22 @@ body {
 }
 
 .plant-rack__rail-tag {
+  position: absolute;
+  left: 50%;
+  /* Etiqueta bajo la barra, sin desplazarla */
+  top: 0.35rem;
+  transform: translateX(-50%);
+  z-index: 1;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--line-normal);
   letter-spacing: 0.04em;
   text-align: center;
   line-height: 1;
   pointer-events: none;
-  padding: 0 0.25rem;
+  white-space: nowrap;
+  background: rgba(18, 28, 36, 0.92);
+  padding: 0 0.3rem;
 }
 
 .plant-rack__coupler {
@@ -1357,6 +1426,12 @@ body {
 .plant-rack__coupler--bus {
   margin: 0;
   justify-self: center;
+  align-self: start;
+  width: 5.2rem;
+  flex-shrink: 0;
+  /* QBT centrado sobre la barra horizontal */
+  transform: translateY(calc(-50% + 1px));
+  background: rgba(18, 28, 36, 0.92);
 }
 
 .casc-brk--horizontal {
@@ -1399,7 +1474,6 @@ body {
   min-width: 5.8rem;
 }
 
-/* Hueco bajo QBT: mismo ancho que el acoplador, sin bajante falsa */
 .plant-rack__coupler-gap {
   width: 5.2rem;
   flex-shrink: 0;
@@ -1438,8 +1512,20 @@ body {
 }
 
 .plant__tie-svg--flow .plant__tie-path {
-  stroke: #e0c040;
-  filter: drop-shadow(0 0 4px rgba(230, 194, 0, 0.45));
+  /* Color original de interconexión */
+  stroke: #7dcfb0;
+}
+
+.plant__tie-halo {
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 14 36;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.75));
+  animation: flow-halo-dash 0.85s linear infinite;
+  pointer-events: none;
 }
 
 .plant__tie-label {
@@ -1638,15 +1724,38 @@ body {
 }
 
 .hbus-drop__leg--flow .hbus-drop__free-end {
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.45) !important;
+  /* Color ya fijado por NORM/ALT; solo halo */
+  box-shadow: none !important;
+}
+
+.hbus-drop__leg--flow .hbus-drop__free-end::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 40%;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    transparent
+  );
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+  animation: flow-halo-v 1.1s linear infinite;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .hbus-drop__wire {
   display: block;
+  position: relative;
   width: 2px;
   flex: 0 0 0.7rem;
   min-height: 0.7rem;
   background: var(--line-normal);
+  overflow: visible;
 }
 
 .hbus-drop__wire--mid {
@@ -1735,36 +1844,142 @@ body {
   color: var(--line-alt);
 }
 
+/* Flujo: color original del cable + halo claro en movimiento */
 .hbus-drop__leg--flow .hbus-drop__wire,
 .hbus-drop__wire--flow {
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.55);
-  animation: flow-pulse 0.9s linear infinite;
-  background-image: linear-gradient(
+  background-image: none;
+  box-shadow: none;
+  animation: none;
+}
+
+.hbus-drop__leg--flow .hbus-drop__wire::after,
+.hbus-drop__wire--flow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 32%;
+  min-height: 10px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
     180deg,
-    var(--line-normal) 40%,
-    #fff3a0 50%,
-    var(--line-normal) 60%
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
   );
-  background-size: 100% 220%;
-  animation: flow-pulse 0.9s linear infinite, flow-dash 0.7s linear infinite;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-v 1.05s linear infinite;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .hbus-drop__leg--alt.hbus-drop__leg--flow .hbus-drop__wire,
 .hbus-drop__leg--alt .hbus-drop__wire--flow {
-  background-image: linear-gradient(
-    180deg,
-    var(--line-alt) 40%,
-    #93c5fd 50%,
-    var(--line-alt) 60%
-  );
+  background: var(--line-alt);
+  background-image: none;
 }
 
-@keyframes flow-dash {
-  from {
-    background-position: 0 0;
+.hbus-drop__leg--norm.hbus-drop__leg--flow .hbus-drop__wire {
+  background: var(--line-normal);
+  background-image: none;
+}
+
+.plant-msb__vwire--flow {
+  box-shadow: none;
+  animation: none;
+}
+
+.plant-msb__vwire--flow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 36%;
+  min-height: 8px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(255, 255, 255, 0.95),
+    transparent
+  );
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-v 1.05s linear infinite;
+  pointer-events: none;
+}
+
+.plant-msb__vwire--into-box.plant-msb__vwire--flow,
+.plant-msb__vwire--from-gen.plant-msb__vwire--flow,
+.plant-msb__vwire--to-rail.plant-msb__vwire--flow {
+  background: #b24ec4 !important;
+}
+
+.plant__bridge-hwire--flow {
+  position: relative;
+  background: #7dcfb0 !important;
+  box-shadow: none;
+  animation: none;
+  overflow: visible;
+}
+
+.plant__bridge-hwire--flow::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 18%;
+  height: 8px;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.95),
+    transparent
+  );
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.65);
+  animation: flow-halo-h 1.3s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes flow-halo-v {
+  0% {
+    top: -15%;
+    opacity: 0;
   }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes flow-halo-h {
+  0% {
+    left: -5%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    left: 95%;
+    opacity: 0;
+  }
+}
+
+@keyframes flow-halo-dash {
   to {
-    background-position: 0 100%;
+    stroke-dashoffset: -50;
   }
 }
 
@@ -1798,33 +2013,6 @@ body {
 .hbus-drop__eq--live {
   border-color: rgba(230, 194, 0, 0.7);
   box-shadow: 0 0 10px rgba(230, 194, 0, 0.25);
-}
-
-.plant-msb__vwire--flow {
-  background: var(--line-normal) !important;
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.55);
-  animation: flow-pulse 0.9s linear infinite;
-}
-
-.plant__bridge-hwire--flow {
-  background: var(--line-normal) !important;
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.55);
-  animation: flow-pulse 0.9s linear infinite;
-}
-
-@keyframes flow-pulse {
-  0% {
-    filter: brightness(1);
-    opacity: 1;
-  }
-  50% {
-    filter: brightness(1.35);
-    opacity: 0.85;
-  }
-  100% {
-    filter: brightness(1);
-    opacity: 1;
-  }
 }
 
 /* Barra horizontal unifilar (salidas colgando) */
