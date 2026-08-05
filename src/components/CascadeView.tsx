@@ -40,6 +40,8 @@ interface CascadeViewProps {
   protectionStatus: Record<string, ProtectionState>
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
+  energizedBusHalves: Map<string, Set<'SA' | 'SB'>>
+  runningGenerators: Set<string>
   lockedCircuits: Set<string>
   lockTool: LockTool
   zoom: number
@@ -48,6 +50,7 @@ interface CascadeViewProps {
   onToggleProtection: (circuitId: string) => boolean | void
   onLockCircuit: (circuitId: string) => void
   onUnlockCircuit: (circuitId: string) => void
+  onToggleGenerator: (genId: string) => void
   onClearFocus?: () => void
 }
 
@@ -56,9 +59,27 @@ function halfTag(boardId: string, half: BusHalf): string {
   return `${n}${half}`
 }
 
-function GenSymbol({ short, title }: { short: string; title: string }) {
+function GenSymbol({
+  short,
+  title,
+  running,
+  onToggle,
+}: {
+  short: string
+  title: string
+  running: boolean
+  onToggle: () => void
+}) {
   return (
-    <div className="casc-gen" title={title}>
+    <button
+      type="button"
+      className={`casc-gen${running ? ' casc-gen--running' : ''}`}
+      title={`${title} · ${running ? 'EN MARCHA (clic para parar)' : 'PARADO (clic para arrancar)'}`}
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+    >
       <svg viewBox="0 0 56 70" className="casc-gen__svg" aria-hidden>
         <line
           x1="28"
@@ -72,7 +93,7 @@ function GenSymbol({ short, title }: { short: string; title: string }) {
           cx="28"
           cy="34"
           r="18"
-          fill="none"
+          fill={running ? 'rgba(230, 194, 0, 0.2)' : 'none'}
           stroke="currentColor"
           strokeWidth="2"
         />
@@ -97,7 +118,8 @@ function GenSymbol({ short, title }: { short: string; title: string }) {
         />
       </svg>
       <span className="casc-gen__label">{short}</span>
-    </div>
+      <span className="casc-gen__state">{running ? 'ON' : 'OFF'}</span>
+    </button>
   )
 }
 
@@ -111,6 +133,7 @@ function BreakerChip({
   flowing,
   locked,
   title,
+  orientation = 'vertical',
 }: {
   name: string
   state?: ProtectionState
@@ -120,12 +143,13 @@ function BreakerChip({
   flowing?: boolean
   locked?: boolean
   title?: string
+  orientation?: 'vertical' | 'horizontal'
 }) {
   const open = state !== 'cerrada'
   return (
     <button
       type="button"
-      className={`casc-brk${state ? ` casc-brk--${state}` : ''}${compact ? ' casc-brk--compact' : ''}${flowing ? ' casc-brk--flow' : ''}${locked ? ' casc-brk--locked' : ''}`}
+      className={`casc-brk${state ? ` casc-brk--${state}` : ''}${compact ? ' casc-brk--compact' : ''}${flowing ? ' casc-brk--flow' : ''}${locked ? ' casc-brk--locked' : ''}${orientation === 'horizontal' ? ' casc-brk--horizontal' : ''}`}
       onClick={onClick}
       title={
         title ??
@@ -134,7 +158,7 @@ function BreakerChip({
       data-circuit-id={circuitId}
     >
       <span className="casc-brk__sym">
-        <MotorizedBreakerSymbol state={state} />
+        <MotorizedBreakerSymbol state={state} orientation={orientation} />
       </span>
       {locked && <LockBadge />}
       <span className="casc-brk__name">{name}</span>
@@ -254,6 +278,7 @@ function BusDrop({
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
   const [eqHover, setEqHover] = useState(false)
+  const eqWrapRef = useRef<HTMLDivElement>(null)
 
   const childItems = useMemo(() => {
     const all = children.map(({ circuit: c, equipment: eq }) => ({
@@ -346,6 +371,7 @@ function BusDrop({
       </div>
 
       <div
+        ref={eqWrapRef}
         className="hbus-drop__eq-wrap"
         onMouseEnter={() => setEqHover(true)}
         onMouseLeave={() => setEqHover(false)}
@@ -367,7 +393,11 @@ function BusDrop({
           )}
         </button>
         {eqHover && (
-          <EquipmentBalloon equipment={equipment} feeds={feedSummaries} />
+          <EquipmentBalloon
+            equipment={equipment}
+            feeds={feedSummaries}
+            anchorRef={eqWrapRef}
+          />
         )}
       </div>
 
@@ -518,6 +548,8 @@ export function CascadeView({
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
+  energizedBusHalves,
+  runningGenerators,
   lockedCircuits,
   lockTool,
   zoom,
@@ -526,6 +558,7 @@ export function CascadeView({
   onToggleProtection,
   onLockCircuit,
   onUnlockCircuit,
+  onToggleGenerator,
   onClearFocus,
 }: CascadeViewProps) {
   const boards = useMemo(() => buildBoardModels(system690), [])
@@ -699,91 +732,114 @@ export function CascadeView({
     return () => ro.disconnect()
   }, [expandedBoards, focus, expandedEquip])
 
-  /** Centra el diagrama en el viewport (también si es más pequeño que la pantalla) */
-  const centerViewOnPlant = useCallback(() => {
+  /** Mide el planta real (no el plantSize en estado, que puede ir retrasado) */
+  const fitAndCenterView = useCallback(() => {
     const stage = panRef.current
     const plant = plantRef.current
     if (!stage || !plant) return
     const space = plant.parentElement as HTMLElement | null
     if (!space || !space.classList.contains('plant-zoom-space')) return
 
-    const z = zoomRef.current
-    const contentW = Math.max(plant.offsetWidth * z, 1)
-    const contentH = Math.max(plant.offsetHeight * z, 1)
-    const basePad = 24
+    // Reset padding antes de medir / encajar
+    space.style.padding = '24px'
 
-    // Si el unifilar cabe en pantalla, el padding lo centra; si no, deja margen mínimo
-    const padX = Math.max(basePad, (stage.clientWidth - contentW) / 2)
-    const padY = Math.max(basePad, (stage.clientHeight - contentH) / 2)
-    space.style.paddingLeft = `${padX}px`
-    space.style.paddingRight = `${padX}px`
-    space.style.paddingTop = `${padY}px`
-    space.style.paddingBottom = `${padY}px`
+    const w = plant.offsetWidth
+    const h = plant.offsetHeight
+    if (w < 8 || h < 8) return
 
-    const left = padX + contentW / 2 - stage.clientWidth / 2
-    const top = padY + contentH / 2 - stage.clientHeight / 2
-    const maxLeft = Math.max(0, stage.scrollWidth - stage.clientWidth)
-    const maxTop = Math.max(0, stage.scrollHeight - stage.clientHeight)
-    stage.scrollLeft = Math.min(Math.max(0, left), maxLeft)
-    stage.scrollTop = Math.min(Math.max(0, top), maxTop)
-  }, [])
-
-  /** Zoom dinámico al plegar/desplegar: encajar y marcar centrado pendiente */
-  useLayoutEffect(() => {
-    if (!fitZoomPending.current) return
-    const stage = panRef.current
-    if (!stage || plantSize.w < 8 || plantSize.h < 8) return
-
-    const pad = 40
+    const pad = 48
     const availW = Math.max(stage.clientWidth - pad, 80)
     const availH = Math.max(stage.clientHeight - pad, 80)
-    const fit = Math.min(availW / plantSize.w, availH / plantSize.h)
-    const next = Math.min(
-      2.5,
-      Math.max(0.25, Math.round(fit * 100) / 100),
-    )
+    const fit = Math.min(availW / w, availH / h, 1.35)
+    const next = Math.min(2.5, Math.max(0.35, Math.round(fit * 100) / 100))
+
+    setPlantSize({ w, h })
     fitZoomPending.current = false
     centerPending.current = true
 
     if (Math.abs(next - zoomRef.current) >= 0.01) {
       onZoomChange(next)
+      // el centrado se aplica en el effect de `zoom` cuando el DOM ya refleja el scale
     } else {
-      centerViewOnPlant()
-      // Re-centrar tras el layout definitivo del contenido plegado
+      // Mismo zoom: centrar en el siguiente frame
       requestAnimationFrame(() => {
-        centerViewOnPlant()
-        requestAnimationFrame(() => {
-          centerViewOnPlant()
+        centerPending.current = true
+        // forzar el effect de centrado midiendo otra vez
+        const s = panRef.current
+        const p = plantRef.current
+        const sp = p?.parentElement
+        if (!s || !p || !sp) {
           centerPending.current = false
-        })
-      })
-    }
-  }, [plantSize, expandedBoards, expandedEquip, focus, onZoomChange, centerViewOnPlant])
-
-  /** Tras aplicar el nuevo zoom, centrar el unifilar en pantalla */
-  useLayoutEffect(() => {
-    if (!centerPending.current) return
-    centerViewOnPlant()
-    requestAnimationFrame(() => {
-      centerViewOnPlant()
-      requestAnimationFrame(() => {
-        centerViewOnPlant()
+          return
+        }
+        const z = zoomRef.current
+        const cw = p.offsetWidth * z
+        const ch = p.offsetHeight * z
+        const padX = Math.max(24, (s.clientWidth - cw) / 2)
+        const padY = Math.max(24, (s.clientHeight - ch) / 2)
+        sp.style.paddingLeft = `${padX}px`
+        sp.style.paddingRight = `${padX}px`
+        sp.style.paddingTop = `${padY}px`
+        sp.style.paddingBottom = `${padY}px`
+        s.scrollLeft = Math.max(0, padX + cw / 2 - s.clientWidth / 2)
+        s.scrollTop = Math.max(0, padY + ch / 2 - s.clientHeight / 2)
         centerPending.current = false
       })
-    })
-  }, [zoom, plantSize, centerViewOnPlant])
+    }
+  }, [onZoomChange])
 
-  // Viewport del stage: reajustar y centrar
+  /** Tras aplicar zoom nuevo: centrar con el tamaño real del zoom-space */
+  useLayoutEffect(() => {
+    if (!centerPending.current) return
+    const stage = panRef.current
+    const plant = plantRef.current
+    const space = plant?.parentElement
+    if (!stage || !plant || !space?.classList.contains('plant-zoom-space')) {
+      centerPending.current = false
+      return
+    }
+    const z = zoom
+    const cw = plant.offsetWidth * z
+    const ch = plant.offsetHeight * z
+    const padX = Math.max(24, (stage.clientWidth - cw) / 2)
+    const padY = Math.max(24, (stage.clientHeight - ch) / 2)
+    space.style.paddingLeft = `${padX}px`
+    space.style.paddingRight = `${padX}px`
+    space.style.paddingTop = `${padY}px`
+    space.style.paddingBottom = `${padY}px`
+    stage.scrollLeft = Math.max(0, padX + cw / 2 - stage.clientWidth / 2)
+    stage.scrollTop = Math.max(0, padY + ch / 2 - stage.clientHeight / 2)
+    centerPending.current = false
+  }, [zoom])
+
+  /** Tras plegar/desplegar: esperar a que el layout se estabilice y entonces encajar */
+  useEffect(() => {
+    if (!fitZoomPending.current) return
+    const t = window.setTimeout(() => {
+      if (!fitZoomPending.current) return
+      fitAndCenterView()
+    }, 60)
+    return () => window.clearTimeout(t)
+  }, [expandedBoards, expandedEquip, focus, plantSize.w, plantSize.h, fitAndCenterView])
+
+  // Viewport del stage: reajustar
   useEffect(() => {
     const stage = panRef.current
     if (!stage || typeof ResizeObserver === 'undefined') return
+    let t: number | undefined
     const ro = new ResizeObserver(() => {
-      fitZoomPending.current = true
-      setPlantSize((ps) => ({ ...ps }))
+      window.clearTimeout(t)
+      t = window.setTimeout(() => {
+        fitZoomPending.current = true
+        fitAndCenterView()
+      }, 80)
     })
     ro.observe(stage)
-    return () => ro.disconnect()
-  }, [])
+    return () => {
+      ro.disconnect()
+      window.clearTimeout(t)
+    }
+  }, [fitAndCenterView])
 
   const toggleBoard = (id: string) => {
     fitZoomPending.current = true
@@ -955,6 +1011,8 @@ export function CascadeView({
             protectionStatus={protectionStatus}
             energizedCircuitIds={energizedCircuitIds}
             energizedEquipmentIds={energizedEquipmentIds}
+            energizedBusHalves={energizedBusHalves}
+            runningGenerators={runningGenerators}
             lockedCircuits={lockedCircuits}
             focusCircuitIds={focusCircuitIds}
             focusEquipmentIds={focusEquipmentIds}
@@ -963,6 +1021,7 @@ export function CascadeView({
             onToggleEquip={toggleEquip}
             onLocalBreaker={onLocalBreaker}
             onJumpToCircuit={onJumpToCircuit}
+            onToggleGenerator={onToggleGenerator}
           />
 
           {/* Separador entre cuadros; la U QT2A↔QT1B la dibuja el SVG medido */}
@@ -975,6 +1034,8 @@ export function CascadeView({
             protectionStatus={protectionStatus}
             energizedCircuitIds={energizedCircuitIds}
             energizedEquipmentIds={energizedEquipmentIds}
+            energizedBusHalves={energizedBusHalves}
+            runningGenerators={runningGenerators}
             lockedCircuits={lockedCircuits}
             focusCircuitIds={focusCircuitIds}
             focusEquipmentIds={focusEquipmentIds}
@@ -983,6 +1044,7 @@ export function CascadeView({
             onToggleEquip={toggleEquip}
             onLocalBreaker={onLocalBreaker}
             onJumpToCircuit={onJumpToCircuit}
+            onToggleGenerator={onToggleGenerator}
           />
 
           {ties.qt2a && ties.qt1b && (
@@ -1023,6 +1085,8 @@ function BoardColumn({
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
+  energizedBusHalves,
+  runningGenerators,
   lockedCircuits,
   focusCircuitIds,
   focusEquipmentIds,
@@ -1031,6 +1095,7 @@ function BoardColumn({
   onToggleEquip,
   onLocalBreaker,
   onJumpToCircuit,
+  onToggleGenerator,
 }: {
   board: BoardModel
   expanded: boolean
@@ -1038,6 +1103,8 @@ function BoardColumn({
   protectionStatus: Record<string, ProtectionState>
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
+  energizedBusHalves: Map<string, Set<'SA' | 'SB'>>
+  runningGenerators: Set<string>
   lockedCircuits: Set<string>
   focusCircuitIds: Set<string> | null
   focusEquipmentIds: Set<string> | null
@@ -1047,6 +1114,7 @@ function BoardColumn({
   onToggleEquip: (id: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
+  onToggleGenerator: (genId: string) => void
 }) {
   let sb = board.feeders.filter((f) => f.half === 'SB')
   let sa = board.feeders.filter((f) => f.half === 'SA')
@@ -1115,15 +1183,18 @@ function BoardColumn({
       )
     }
     const flowing = genFlowing(genEntry.breaker.id)
+    const running = runningGenerators.has(genEntry.gen.id)
     return (
       <div className="plant-msb__half-out">
         <span className="plant-rack__half-tag">{tag}</span>
         <div
-          className={`plant-msb__gen-leg${flowing ? ' plant-msb__gen-leg--flow' : ''}`}
+          className={`plant-msb__gen-leg${flowing ? ' plant-msb__gen-leg--flow' : ''}${running ? ' plant-msb__gen-leg--running' : ''}`}
         >
           <GenSymbol
             short={genShortLabel(half, board.id)}
             title={`${genEntry.gen.id} · ${genEntry.gen.name}`}
+            running={running}
+            onToggle={() => onToggleGenerator(genEntry.gen.id)}
           />
           <div
             className={`plant-msb__vwire plant-msb__vwire--into-box${flowing ? ' plant-msb__vwire--flow' : ''}`}
@@ -1171,6 +1242,10 @@ function BoardColumn({
   const rightHalf: BusHalf = mirror ? 'SB' : 'SA'
   const leftDrops = mirror ? sa : sb
   const rightDrops = mirror ? sb : sa
+  const liveHalves = energizedBusHalves.get(board.id) ?? new Set<'SA' | 'SB'>()
+  const leftHalfLive = liveHalves.has(leftHalf)
+  const rightHalfLive = liveHalves.has(rightHalf)
+  const qbtLive = energizedCircuitIds.has(board.sectionCoupler.id)
 
   return (
     <div
@@ -1188,7 +1263,7 @@ function BoardColumn({
         </span>
       </button>
 
-      {/* Generadores fuera del recuadro; cable continuo entra al MSB */}
+      {/* Generadores fuera del recuadro; clic = arrancar/parar */}
       <div className="plant-msb__outside">
         {renderGenOutside(leftHalf, leftTag, leftGen)}
         <div className="plant-msb__outside-gap" aria-hidden />
@@ -1208,7 +1283,6 @@ function BoardColumn({
               <div
                 className={`plant-msb__bustie plant-msb__bustie--${tieSide}${tieFlowing ? ' plant-msb__bustie--flow' : ''}`}
               >
-                {/* La bajante desde el puente llega por arriba (plant__bridge-legs) */}
                 <BreakerChip
                   name={tie.protectionName}
                   state={protectionStatus[tie.id]}
@@ -1224,38 +1298,38 @@ function BoardColumn({
             )}
           </div>
 
+          {/* Barra SB ── QBT (horizontal, centrado) ── SA */}
           <div className="plant-rack__rail-wrap">
-            <div
-              className={`plant-rack__rail${
-                energizedEquipmentIds.has(board.id)
-                  ? ' plant-rack__rail--live'
-                  : ''
-              }`}
-              aria-hidden
-            />
-            <div className="plant-rack__rail-labels">
+            <div className="plant-rack__bus-row">
               <span className="plant-rack__rail-tag">{leftTag}</span>
-              <div className="plant-rack__coupler">
+              <div
+                className={`plant-rack__rail-seg${leftHalfLive ? ' plant-rack__rail-seg--live' : ''}`}
+                aria-hidden
+              />
+              <div className="plant-rack__coupler plant-rack__coupler--bus">
                 <BreakerChip
                   name={board.sectionCoupler.protectionName}
                   state={protectionStatus[board.sectionCoupler.id]}
                   circuitId={board.sectionCoupler.id}
-                  flowing={energizedCircuitIds.has(board.sectionCoupler.id)}
+                  flowing={qbtLive}
                   locked={lockedCircuits.has(board.sectionCoupler.id)}
                   compact
-                  title={`${board.sectionCoupler.name} · acoplador de sección`}
+                  orientation="horizontal"
+                  title={`${board.sectionCoupler.name} · acoplador de sección (horizontal en barra)`}
                   onClick={(e) => onLocalBreaker(board.sectionCoupler, e)}
                 />
               </div>
+              <div
+                className={`plant-rack__rail-seg${rightHalfLive ? ' plant-rack__rail-seg--live' : ''}`}
+                aria-hidden
+              />
               <span className="plant-rack__rail-tag">{rightTag}</span>
             </div>
 
             {expanded && (
               <div className="plant-rack__drops">
                 <div className="plant-rack__half-drops">{renderDrops(leftDrops)}</div>
-                <div className="plant-rack__coupler-drop" aria-hidden>
-                  <div className="hbus-drop__wire hbus-drop__wire--from-bus" />
-                </div>
+                <div className="plant-rack__coupler-gap" aria-hidden />
                 <div className="plant-rack__half-drops">{renderDrops(rightDrops)}</div>
               </div>
             )}

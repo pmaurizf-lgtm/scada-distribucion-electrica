@@ -5,19 +5,24 @@ import type { ProtectionState } from '../types'
 /** Interruptor automático motorizado (estilo IEC): abierto = verde, cerrado = rojo */
 export function MotorizedBreakerSymbol({
   state,
+  orientation = 'vertical',
 }: {
   state?: ProtectionState
+  /** vertical = bajante; horizontal = acoplador de barras QBT */
+  orientation?: 'vertical' | 'horizontal'
 }) {
   const open = state !== 'cerrada'
   const color = open ? 'var(--prot-open)' : 'var(--prot-closed)'
+  const horizontal = orientation === 'horizontal'
 
   return (
     <svg
-      className="casc-brk__iec"
+      className={`casc-brk__iec${horizontal ? ' casc-brk__iec--horizontal' : ''}`}
       viewBox="0 0 28 40"
-      width="22"
-      height="30"
+      width={horizontal ? 30 : 22}
+      height={horizontal ? 22 : 30}
       aria-hidden
+      style={horizontal ? { transform: 'rotate(90deg)' } : undefined}
     >
       {/* Conductor superior */}
       <line

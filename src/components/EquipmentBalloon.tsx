@@ -1,3 +1,5 @@
+import { useLayoutEffect, useState, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import type { Equipment } from '../types'
 
 const KIND_LABEL: Record<Equipment['kind'], string> = {
@@ -11,12 +13,46 @@ const KIND_LABEL: Record<Equipment['kind'], string> = {
 interface EquipmentBalloonProps {
   equipment: Equipment
   feeds?: { name: string; lineType: string; originId: string }[]
+  /** Ancla del hover (botón/caja del equipo) */
+  anchorRef: RefObject<HTMLElement | null>
 }
 
-export function EquipmentBalloon({ equipment, feeds }: EquipmentBalloonProps) {
-  return (
+export function EquipmentBalloon({
+  equipment,
+  feeds,
+  anchorRef,
+}: EquipmentBalloonProps) {
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const update = () => {
+      const el = anchorRef.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      setPos({
+        left: r.left + r.width / 2,
+        top: r.top - 10,
+      })
+    }
+
+    update()
+    const stage = anchorRef.current?.closest('.casc__stage--pan')
+    stage?.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      stage?.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [anchorRef, equipment.id])
+
+  if (!pos || typeof document === 'undefined') return null
+
+  return createPortal(
     <div
-      className="equip-balloon"
+      className="equip-balloon equip-balloon--portal"
+      style={{ left: pos.left, top: pos.top }}
       role="tooltip"
       aria-label={`Equipo ${equipment.id}`}
     >
@@ -74,6 +110,7 @@ export function EquipmentBalloon({ equipment, feeds }: EquipmentBalloonProps) {
           </>
         )}
       </dl>
-    </div>
+    </div>,
+    document.body,
   )
 }

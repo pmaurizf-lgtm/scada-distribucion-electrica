@@ -1,22 +1,40 @@
 import type { Circuit, DistributionData, ProtectionStatusMap } from '../types'
-import { allSectionCouplers, halfFromPanel } from './cascadeModel'
+import {
+  allSectionCouplers,
+  boardFromOrigin,
+  halfFromPanel,
+} from './cascadeModel'
 
 /**
- * Nodos y circuitos energizados desde generadores a través de interruptores
- * «cerrada». Enlaces virtuales de barra conducen, pero el cruce SA↔SB de un
- * MSB exige QBT1/QBT2 cerrado.
+ * Nodos y circuitos energizados desde generadores en marcha a través de
+ * interruptores «cerrada». Sin generador arrancado no hay flujo.
+ * El cruce SA↔SB de un MSB exige QBT1/QBT2 cerrado.
  */
 export function computeEnergyFlow(
   data: DistributionData,
   protectionStatus: ProtectionStatusMap,
+  runningGeneratorIds: Set<string> = new Set(),
 ): {
   energizedEquipmentIds: Set<string>
   energizedCircuitIds: Set<string>
+  energizedBusHalves: Map<string, Set<'SA' | 'SB'>>
 } {
-  const gens = data.equipment.filter((e) => e.kind === 'generador')
+  const gens = data.equipment.filter(
+    (e) => e.kind === 'generador' && runningGeneratorIds.has(e.id),
+  )
   const energizedEquipmentIds = new Set<string>(gens.map((g) => g.id))
   const energizedCircuitIds = new Set<string>()
   const msbHalfSources = new Map<string, Set<'SA' | 'SB'>>()
+
+  const markPanelHalf = (panelId: string) => {
+    const half = halfFromPanel(panelId)
+    const board = boardFromOrigin(panelId)
+    if (!half || !board) return
+    const set = msbHalfSources.get(board) ?? new Set()
+    set.add(half)
+    msbHalfSources.set(board, set)
+    energizedEquipmentIds.add(board)
+  }
 
   const byOrigin = new Map<string, Circuit[]>()
   const add = (c: Circuit) => {
@@ -36,7 +54,7 @@ export function computeEnergyFlow(
 
   const canReachPanelFromMsb = (msbId: string, destHalf: 'SA' | 'SB') => {
     const sources = msbHalfSources.get(msbId)
-    if (!sources || sources.size === 0) return true
+    if (!sources || sources.size === 0) return false
     if (sources.has(destHalf)) return true
     return protectionStatus[qbtIdForMsb(msbId)] === 'cerrada'
   }
@@ -55,10 +73,16 @@ export function computeEnergyFlow(
 
       if (isQbt) {
         if (protectionStatus[statusId] !== 'cerrada') continue
+        const sources = msbHalfSources.get(
+          statusId === 'synth-QBT1' ? 'MSB-6PWS0001' : 'MSB-6PWS0002',
+        )
+        // Solo conduce si ya hay tensión en alguna media barra
+        if (!sources || sources.size === 0) continue
         energizedCircuitIds.add(statusId)
         const msb =
           statusId === 'synth-QBT1' ? 'MSB-6PWS0001' : 'MSB-6PWS0002'
         msbHalfSources.set(msb, new Set(['SA', 'SB']))
+        energizedEquipmentIds.add(msb)
       } else if (circuit.virtual) {
         if (
           circuit.originId.startsWith('MSB-6PWS') &&
@@ -76,17 +100,18 @@ export function computeEnergyFlow(
           /^PNL-MSB/.test(circuit.originId) &&
           circuit.destinationId.startsWith('MSB-6PWS')
         ) {
-          const srcHalf = halfFromPanel(circuit.originId)
-          if (srcHalf) {
-            const set = msbHalfSources.get(circuit.destinationId) ?? new Set()
-            set.add(srcHalf)
-            msbHalfSources.set(circuit.destinationId, set)
-          }
+          markPanelHalf(circuit.originId)
         }
       } else if (protectionStatus[circuit.id] !== 'cerrada') {
         continue
       } else {
         energizedCircuitIds.add(circuit.id)
+        if (/^PNL-MSB/.test(circuit.destinationId)) {
+          markPanelHalf(circuit.destinationId)
+        }
+        if (/^PNL-MSB/.test(circuit.originId)) {
+          markPanelHalf(circuit.originId)
+        }
       }
 
       if (!energizedEquipmentIds.has(circuit.destinationId)) {
@@ -96,7 +121,11 @@ export function computeEnergyFlow(
     }
   }
 
-  return { energizedEquipmentIds, energizedCircuitIds }
+  return {
+    energizedEquipmentIds,
+    energizedCircuitIds,
+    energizedBusHalves: msbHalfSources,
+  }
 }
 
 /** Invierte abierta ↔ cerrada en los circuitos indicados */

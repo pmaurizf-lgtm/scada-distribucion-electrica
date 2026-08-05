@@ -39,17 +39,32 @@ export function ScadaCanvas() {
   const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(
     () => new Set(),
   )
+  const [runningGenerators, setRunningGenerators] = useState<Set<string>>(
+    () => new Set(),
+  )
   const [lockTool, setLockTool] = useState<LockTool>('none')
   const [zoom, setZoom] = useState(1)
-  const [statusSource, setStatusSource] = useState('todos abiertos')
+  const [statusSource, setStatusSource] = useState('todos abiertos · gens parados')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchHint, setSearchHint] = useState<string | null>(null)
   const [focus, setFocus] = useState<CascadeFocus | null>(null)
 
-  const { energizedCircuitIds, energizedEquipmentIds } = useMemo(
-    () => computeEnergyFlow(system690, protectionStatus),
-    [protectionStatus],
-  )
+  const { energizedCircuitIds, energizedEquipmentIds, energizedBusHalves } =
+    useMemo(
+      () =>
+        computeEnergyFlow(system690, protectionStatus, runningGenerators),
+      [protectionStatus, runningGenerators],
+    )
+
+  const toggleGenerator = useCallback((genId: string) => {
+    setRunningGenerators((prev) => {
+      const next = new Set(prev)
+      if (next.has(genId)) next.delete(genId)
+      else next.add(genId)
+      return next
+    })
+    setStatusSource('simulación · generador conmutado')
+  }, [])
 
   const applyStatusEntries = useCallback(
     (entries: ProtectionStatusEntry[], source: string) => {
@@ -307,6 +322,13 @@ export function ScadaCanvas() {
               : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
           </div>
         )}
+        {runningGenerators.size === 0 && lockTool === 'none' && !searchHint && (
+          <div className="banner">
+            Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG*
+            y luego los interruptores de salida / QBT para ver el flujo de
+            energía.
+          </div>
+        )}
       </div>
 
       <main className="workspace workspace--cascade">
@@ -314,6 +336,8 @@ export function ScadaCanvas() {
           protectionStatus={protectionStatus}
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
+          energizedBusHalves={energizedBusHalves}
+          runningGenerators={runningGenerators}
           lockedCircuits={lockedCircuits}
           lockTool={lockTool}
           zoom={zoom}
@@ -322,6 +346,7 @@ export function ScadaCanvas() {
           onToggleProtection={handleToggleProtection}
           onLockCircuit={handleLockCircuit}
           onUnlockCircuit={handleUnlockCircuit}
+          onToggleGenerator={toggleGenerator}
           onClearFocus={() => {
             setFocus(null)
             setSearchHint(null)
@@ -334,8 +359,9 @@ export function ScadaCanvas() {
           Cascada 690 V · protecciones:{' '}
           <span className="swatch swatch--cerrada" /> {closedCount} cerradas ·{' '}
           <span className="swatch swatch--abierta" /> {openCount} abiertas ·
-          candados: {lockedCircuits.size} · flujo: {energizedCircuitIds.size}{' '}
-          circ. · zoom {Math.round(zoom * 100)}% · {statusSource}
+          gens: {runningGenerators.size} en marcha · candados:{' '}
+          {lockedCircuits.size} · flujo: {energizedCircuitIds.size} circ. · zoom{' '}
+          {Math.round(zoom * 100)}% · {statusSource}
         </span>
       </footer>
     </div>
