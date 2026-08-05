@@ -179,31 +179,28 @@ function HorizontalBus({
         <strong>{label}</strong>
         <span>{voltage}</span>
       </div>
-      <div className="hbus__rail-wrap">
-        <div className="hbus__rail" aria-hidden />
-        <div className="hbus__drops">
-          {list.map((item) => (
-            <div key={item.key} className="hbus__slot">
-              <BusDrop
-                circuit={item.circuit}
-                equipment={item.equipment}
-                protectionStatus={protectionStatus}
-                energizedCircuitIds={energizedCircuitIds}
-                energizedEquipmentIds={energizedEquipmentIds}
-                lockedCircuits={lockedCircuits}
-                expanded={expandedEquip?.has(item.equipment.id) ?? false}
-                onToggleEquip={
-                  onToggleEquip
-                    ? () => onToggleEquip(item.equipment.id)
-                    : undefined
-                }
-                onLocalBreaker={onLocalBreaker}
-                onJumpToCircuit={onJumpToCircuit}
-                focusCircuitIds={focusCircuitIds}
-              />
-            </div>
-          ))}
-        </div>
+      <div className="hbus__drops">
+        {list.map((item) => (
+          <div key={item.key} className="hbus__slot">
+            <BusDrop
+              circuit={item.circuit}
+              equipment={item.equipment}
+              protectionStatus={protectionStatus}
+              energizedCircuitIds={energizedCircuitIds}
+              energizedEquipmentIds={energizedEquipmentIds}
+              lockedCircuits={lockedCircuits}
+              expanded={expandedEquip?.has(item.equipment.id) ?? false}
+              onToggleEquip={
+                onToggleEquip
+                  ? () => onToggleEquip(item.equipment.id)
+                  : undefined
+              }
+              onLocalBreaker={onLocalBreaker}
+              onJumpToCircuit={onJumpToCircuit}
+              focusCircuitIds={focusCircuitIds}
+            />
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -275,7 +272,8 @@ function BusDrop({
             <div
               key={remote.id}
               className={`hbus-drop__leg hbus-drop__leg--remote${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${energizedCircuitIds.has(remote.id) ? ' hbus-drop__leg--flow' : ''}`}
-              title={`Alimentación ${lineBadge(remote.lineType)} desde ${remote.originId}. Pulsa para ir a esa barra.`}
+              title={`Alimentación ${lineBadge(remote.lineType)} desde ${remote.originId}. Pulsa el interruptor para ir a ese alimentador.`}
+              data-remote-circuit={remote.id}
             >
               {/* Extremo libre: no unido a la barra local */}
               <span className="hbus-drop__free-end" aria-hidden />
@@ -302,6 +300,7 @@ function BusDrop({
 
         <div
           className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+          data-circuit-id={localFeed.id}
         >
           <span className="hbus-drop__wire hbus-drop__wire--from-bus" aria-hidden />
           <BreakerChip
@@ -322,9 +321,7 @@ function BusDrop({
         </div>
       </div>
 
-      {/* Empalme hacia el equipo (líneas unidas) */}
       <div className="hbus-drop__join" aria-hidden>
-        {remoteFeeds.length > 0 && <span className="hbus-drop__join-bar" />}
         <span
           className={`hbus-drop__wire hbus-drop__wire--to-eq${localFlowing || remoteFeeds.some((r) => energizedCircuitIds.has(r.id)) ? ' hbus-drop__wire--flow' : ''}${isAltLocal && remoteFeeds.length === 0 ? ' hbus-drop__wire--alt' : ''}`}
         />
@@ -619,20 +616,39 @@ export function CascadeView({
     if (boardId) {
       setExpandedBoards((prev) => new Set(prev).add(boardId))
     }
-    requestAnimationFrame(() => {
-      const el =
-        document.querySelector(`.hbus-drop[data-circuit-id="${circuit.id}"]`) ??
-        document.querySelector(
-          `.hbus-drop__local [data-circuit-id="${circuit.id}"]`,
-        )
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
-      const brk =
-        el?.querySelector?.(`[data-circuit-id="${circuit.id}"]`) ??
-        (el as HTMLElement | null)
-      brk?.classList.add('casc-brk--flash')
+
+    const focusOrigin = () => {
+      // Instancia LOCAL del alimentador (no el chip remoto desde el que saltamos)
+      const drop = document.querySelector(
+        `.hbus-drop[data-circuit-id="${circuit.id}"]`,
+      ) as HTMLElement | null
+      const localBrk = (drop?.querySelector(
+        `.hbus-drop__leg--local [data-circuit-id="${circuit.id}"]`,
+      ) ??
+        drop?.querySelector(
+          `.hbus-drop__leg--local[data-circuit-id="${circuit.id}"]`,
+        )) as HTMLElement | null
+
+      const target = localBrk ?? drop
+      if (!target) return false
+
+      target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center',
+      })
+      const flashEl = localBrk ?? target
+      flashEl.classList.add('casc-brk--flash')
       window.setTimeout(() => {
-        brk?.classList.remove('casc-brk--flash')
+        flashEl.classList.remove('casc-brk--flash')
       }, 1600)
+      return true
+    }
+
+    requestAnimationFrame(() => {
+      if (!focusOrigin()) {
+        window.setTimeout(focusOrigin, 120)
+      }
     })
   }, [])
 
@@ -643,11 +659,11 @@ export function CascadeView({
       <header className="casc__intro">
         <h2>Planta eléctrica 690 V · esquema funcional</h2>
         <p>
-          Alimentación local unida a la barra; la de otra barra aparece arriba
-          sin conectar (pulsa para ir a su origen). Símbolo IEC motorizado:
-          verde = abierto, rojo = cerrado. Candado rojo = bloqueado. Despliega
-          / pliega cada MSB para ver u ocultar salidas; los generadores quedan
-          fuera del recuadro.
+          Alimentación local en cada salida; la de otro alimentador aparece
+          aparte sin unir (pulsa su interruptor para ir a ese origen). Símbolo
+          IEC motorizado: verde = abierto, rojo = cerrado. Candado rojo =
+          bloqueado. Despliega / pliega cada MSB para ver u ocultar salidas; los
+          generadores quedan fuera del recuadro.
         </p>
         {focus && (
           <div className="casc__focus-bar">

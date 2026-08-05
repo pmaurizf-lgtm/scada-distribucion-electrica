@@ -1489,11 +1489,11 @@ body {
   background: var(--line-normal);
 }
 
-/* Por defecto (barra de salidas hbus): nace en la barra y baja al interruptor */
+/* Por defecto (salidas hbus): sin barra horizontal; stub mínimo sobre el interruptor */
 .hbus-drop__wire--from-bus {
   margin-top: 0;
-  min-height: 0.65rem;
-  flex: 0 0 0.65rem;
+  min-height: 0.35rem;
+  flex: 0 0 0.35rem;
   position: relative;
   z-index: 1;
 }
@@ -1506,6 +1506,17 @@ body {
   margin-top: calc(-1 * var(--rail-label-h, 2.55rem));
   min-height: calc(var(--rail-label-h, 2.55rem) + 0.45rem);
   flex: 0 0 calc(var(--rail-label-h, 2.55rem) + 0.45rem);
+}
+
+/* Salidas hbus: sin barra de bus; el extremo libre ALT queda junto al chip */
+.hbus .hbus-drop__wire--from-bus {
+  min-height: 0.35rem;
+  flex: 0 0 0.35rem;
+}
+
+.hbus .hbus-drop__free-end {
+  flex: 0 0 0.35rem;
+  height: 0.35rem;
 }
 
 .hbus-drop__wire--to-eq {
@@ -1559,21 +1570,6 @@ body {
   gap: 0;
   position: relative;
   margin-top: 0;
-}
-
-.hbus-drop--dual .hbus-drop__join-bar {
-  position: absolute;
-  top: 0;
-  /* une los centros de las dos piernas (3.4rem + gap) */
-  left: 50%;
-  width: 3.55rem;
-  transform: translateX(-50%);
-  height: 2px;
-  background: linear-gradient(90deg, var(--line-alt), var(--line-normal));
-}
-
-.hbus-drop--dual.hbus-drop--alt .hbus-drop__join-bar {
-  background: linear-gradient(90deg, var(--line-normal), var(--line-alt));
 }
 
 .hbus-drop__eq--live {
@@ -1653,21 +1649,10 @@ body {
   font-size: 0.68rem;
 }
 
-.hbus__rail-wrap {
-  position: relative;
-  padding-top: 0;
-}
-
+/* La barra horizontal de salidas se eliminó a propósito */
+.hbus__rail-wrap,
 .hbus__rail {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: var(--line-normal);
-  box-shadow: 0 0 0 1px rgba(230, 194, 0, 0.25);
-  z-index: 2;
-  pointer-events: none;
+  display: none;
 }
 
 .hbus__drops {
