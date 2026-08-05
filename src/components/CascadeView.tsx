@@ -24,6 +24,7 @@ import {
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
 import { CircuitBalloon } from './CircuitBalloon'
+import { EquipmentBalloon } from './EquipmentBalloon'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
 import { SearchTreeView } from './SearchTreeView'
 
@@ -248,6 +249,7 @@ function BusDrop({
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
+  const [eqHover, setEqHover] = useState(false)
 
   const childItems = useMemo(() => {
     const all = children.map(({ circuit: c, equipment: eq }) => ({
@@ -259,6 +261,75 @@ function BusDrop({
     return all.filter((it) => focusCircuitIds.has(it.circuit.id))
   }, [children, focusCircuitIds])
 
+  const feedSummaries = useMemo(
+    () =>
+      feeds.map((f) => ({
+        name: f.protectionName,
+        lineType: f.lineType,
+        originId: f.originId,
+      })),
+    [feeds],
+  )
+
+  const renderLeg = (
+    feed: Circuit,
+    kind: 'local' | 'remote',
+  ) => {
+    const isAlt = feed.lineType === 'alternativa'
+    const flowing = energizedCircuitIds.has(feed.id)
+    return (
+      <div
+        key={feed.id}
+        className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}`}
+        data-circuit-id={kind === 'local' ? feed.id : undefined}
+        data-remote-circuit={kind === 'remote' ? feed.id : undefined}
+        title={
+          kind === 'remote'
+            ? `Alimentación ${lineBadge(feed.lineType)} desde ${feed.originId}. Pulsa el interruptor para ir a ese alimentador.`
+            : undefined
+        }
+      >
+        {kind === 'remote' ? (
+          <span className="hbus-drop__free-end" aria-hidden />
+        ) : (
+          <span
+            className="hbus-drop__wire hbus-drop__wire--from-bus"
+            aria-hidden
+          />
+        )}
+        <BreakerChip
+          name={feed.protectionName}
+          state={protectionStatus[feed.id]}
+          compact
+          circuitId={feed.id}
+          flowing={flowing}
+          locked={lockedCircuits.has(feed.id)}
+          title={
+            kind === 'remote'
+              ? `Ir a ${feed.protectionName} en ${feed.originId}`
+              : undefined
+          }
+          onClick={(e) => {
+            e.stopPropagation()
+            if (kind === 'remote') onJumpToCircuit(feed)
+            else onLocalBreaker(feed, e)
+          }}
+        />
+        <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
+        <span
+          className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
+        >
+          {lineBadge(feed.lineType)}
+        </span>
+        {/* Cada pierna baja hasta el equipo (sin barra horizontal de empalme) */}
+        <span
+          className={`hbus-drop__wire hbus-drop__wire--to-eq${flowing ? ' hbus-drop__wire--flow' : ''}`}
+          aria-hidden
+        />
+      </div>
+    )
+  }
+
   return (
     <div
       className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}`}
@@ -266,84 +337,35 @@ function BusDrop({
       data-circuit-id={localFeed.id}
     >
       <div className="hbus-drop__tops">
-        {remoteFeeds.map((remote) => {
-          const isAlt = remote.lineType === 'alternativa'
-          return (
-            <div
-              key={remote.id}
-              className={`hbus-drop__leg hbus-drop__leg--remote${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${energizedCircuitIds.has(remote.id) ? ' hbus-drop__leg--flow' : ''}`}
-              title={`Alimentación ${lineBadge(remote.lineType)} desde ${remote.originId}. Pulsa el interruptor para ir a ese alimentador.`}
-              data-remote-circuit={remote.id}
-            >
-              {/* Extremo libre: no unido a la barra local */}
-              <span className="hbus-drop__free-end" aria-hidden />
-              <BreakerChip
-                name={remote.protectionName}
-                state={protectionStatus[remote.id]}
-                compact
-                circuitId={remote.id}
-                flowing={energizedCircuitIds.has(remote.id)}
-                locked={lockedCircuits.has(remote.id)}
-                title={`Ir a ${remote.protectionName} en ${remote.originId}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onJumpToCircuit(remote)
-                }}
-              />
-              <span className="hbus-drop__wire" aria-hidden />
-              <span className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}>
-                {lineBadge(remote.lineType)}
-              </span>
-            </div>
-          )
-        })}
-
-        <div
-          className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
-          data-circuit-id={localFeed.id}
-        >
-          <span className="hbus-drop__wire hbus-drop__wire--from-bus" aria-hidden />
-          <BreakerChip
-            name={localFeed.protectionName}
-            state={protectionStatus[localFeed.id]}
-            compact
-            circuitId={localFeed.id}
-            flowing={localFlowing}
-            locked={lockedCircuits.has(localFeed.id)}
-            onClick={(e) => onLocalBreaker(localFeed, e)}
-          />
-          <span className="hbus-drop__wire" aria-hidden />
-          <span
-            className={`hbus-drop__tag${isAltLocal ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
-          >
-            {lineBadge(localFeed.lineType)}
-          </span>
-        </div>
+        {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
+        {renderLeg(localFeed, 'local')}
       </div>
 
-      <div className="hbus-drop__join" aria-hidden>
-        <span
-          className={`hbus-drop__wire hbus-drop__wire--to-eq${localFlowing || remoteFeeds.some((r) => energizedCircuitIds.has(r.id)) ? ' hbus-drop__wire--flow' : ''}${isAltLocal && remoteFeeds.length === 0 ? ' hbus-drop__wire--alt' : ''}`}
-        />
-      </div>
-
-      <button
-        type="button"
-        className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}`}
-        data-equip={equipment.id}
-        onClick={onToggleEquip}
-        disabled={!canExpand}
-        title={equipment.name}
+      <div
+        className="hbus-drop__eq-wrap"
+        onMouseEnter={() => setEqHover(true)}
+        onMouseLeave={() => setEqHover(false)}
       >
-        <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
-        <span className="hbus-drop__id">{equipment.id}</span>
-        <span className="hbus-drop__name">{equipment.name}</span>
-        {canExpand && (
-          <span className="hbus-drop__more">
-            {children.length} {expanded ? '▴' : '▾'}
-          </span>
+        <button
+          type="button"
+          className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}`}
+          data-equip={equipment.id}
+          onClick={onToggleEquip}
+          disabled={!canExpand}
+        >
+          <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
+          <span className="hbus-drop__id">{equipment.id}</span>
+          <span className="hbus-drop__name">{equipment.name}</span>
+          {canExpand && (
+            <span className="hbus-drop__more">
+              {children.length} {expanded ? '▴' : '▾'}
+            </span>
+          )}
+        </button>
+        {eqHover && (
+          <EquipmentBalloon equipment={equipment} feeds={feedSummaries} />
         )}
-      </button>
+      </div>
 
       {expanded && childItems.length > 0 && (
         <HorizontalBus
