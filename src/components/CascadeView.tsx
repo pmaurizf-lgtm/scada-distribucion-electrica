@@ -180,6 +180,9 @@ function HorizontalBus({
         <strong>{label}</strong>
         <span>{voltage}</span>
       </div>
+      <div className="hbus__rail-wrap" aria-hidden>
+        <div className="hbus__rail" />
+      </div>
       <div className="hbus__drops">
         {list.map((item) => (
           <div key={item.key} className="hbus__slot">

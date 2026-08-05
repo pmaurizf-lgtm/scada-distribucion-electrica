@@ -480,7 +480,7 @@ body {
   left: 50%;
   bottom: calc(100% + 0.55rem);
   transform: translateX(-50%);
-  z-index: 40;
+  z-index: 61;
   width: max(16rem, 100%);
   min-width: 15rem;
   max-width: 22rem;
@@ -1595,16 +1595,17 @@ body {
   flex: 0 0 calc(var(--rail-label-h, 2.55rem) + 0.45rem);
 }
 
-/* Salidas anidadas (.hbus): sin barra; stub corto */
+/* Salidas anidadas (.hbus): acometida continua desde la barra hasta el interruptor */
 .hbus .hbus-drop__tops .hbus-drop__wire--from-bus {
   margin-top: 0;
-  min-height: 0.35rem;
-  flex: 0 0 0.35rem;
+  min-height: 1.2rem;
+  flex: 0 0 1.2rem;
 }
 
 .hbus .hbus-drop__free-end {
-  flex: 0 0 0.35rem;
-  height: 0.35rem;
+  flex: 0 0 1.2rem;
+  height: 1.2rem;
+  margin-top: 0;
 }
 
 /* Cada pierna baja hasta el borde superior del equipo */
@@ -1663,6 +1664,17 @@ body {
   position: relative;
   width: 100%;
   z-index: 0;
+}
+
+/* Al mostrar el globo, subir por encima de cables, QT y salidas vecinas */
+.hbus-drop__eq-wrap:has(.equip-balloon) {
+  z-index: 60;
+}
+
+.hbus-drop:has(.equip-balloon),
+.hbus__slot:has(.equip-balloon) {
+  position: relative;
+  z-index: 60;
 }
 
 .hbus-drop__eq--live {
@@ -1725,7 +1737,7 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.25rem;
   padding: 0 0.35rem;
   font-size: 0.72rem;
 }
@@ -1742,10 +1754,32 @@ body {
   font-size: 0.68rem;
 }
 
-/* La barra horizontal de salidas se eliminó a propósito */
+/* Barra del CCM / cuadro anidado (amarilla NORM) + bajantes sin hueco */
 .hbus__rail-wrap,
 .hbus__rail {
   display: none;
+}
+
+.hbus--nested .hbus__rail-wrap {
+  display: block;
+  position: relative;
+  z-index: 2;
+  height: 2px;
+  margin: 0 0.2rem;
+  pointer-events: none;
+}
+
+.hbus--nested .hbus__rail {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--line-normal);
+}
+
+.hbus--nested .hbus__drops {
+  /* Solapa la barra: las acometidas nacen exactamente en ella */
+  margin-top: -2px;
+  padding-top: 0;
 }
 
 .hbus__drops {
@@ -1756,6 +1790,26 @@ body {
   gap: 0.35rem;
   padding: 0 0.25rem;
   min-height: 0;
+}
+
+.hbus--nested .hbus-drop__tops {
+  margin-top: 0;
+}
+
+.hbus--nested .hbus-drop__leg {
+  /* El tramo superior toca barra e interruptor sin gap de flex */
+  justify-content: flex-start;
+}
+
+.hbus--nested .hbus-drop__tops .hbus-drop__wire--from-bus {
+  margin-top: 0;
+  margin-bottom: 0;
+  min-height: 1.25rem;
+  flex: 0 0 1.25rem;
+}
+
+.hbus--nested .casc-brk--compact {
+  margin-top: 0;
 }
 
 .hbus__slot {
