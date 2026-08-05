@@ -727,7 +727,7 @@ export function CascadeView({
             onJumpToCircuit={onJumpToCircuit}
           />
 
-          {/* Solo el puente superior QT2A ↔ QT1B (interruptores van dentro de cada cuadro) */}
+          {/* U invertida por encima: une QT2A ↔ QT1B y baja a cada interruptor */}
           <div
             className={`plant__bridge${
               ties.qt2a &&
@@ -977,7 +977,7 @@ function BoardColumn({
               <div
                 className={`plant-msb__bustie plant-msb__bustie--${tieSide}${tieFlowing ? ' plant-msb__bustie--flow' : ''}`}
               >
-                <div className="plant-msb__bustie-rise" aria-hidden />
+                {/* La bajante desde el puente llega por arriba (plant__bridge-legs) */}
                 <BreakerChip
                   name={tie.protectionName}
                   state={protectionStatus[tie.id]}
