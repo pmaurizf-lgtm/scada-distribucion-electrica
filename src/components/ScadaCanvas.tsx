@@ -26,7 +26,7 @@ import {
 } from './CascadeView'
 
 const emptyStatus: ProtectionStatusMap = {}
-const ZOOM_MIN = 0.35
+const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
 const ZOOM_STEP = 0.15
 
@@ -161,151 +161,153 @@ export function ScadaCanvas() {
 
   return (
     <div className="app-shell app-shell--cascade">
-      <header className="topbar">
-        <div className="topbar__brand">
-          <span className="topbar__mark" aria-hidden />
-          <div>
-            <h1>{system690.title}</h1>
-            <p>{system690.vessel} · vista cascada tipo planta eléctrica</p>
-          </div>
-        </div>
-
-        <div className="topbar__controls">
-          <div className="topbar__actions">
-            <button type="button" className="btn" onClick={handleSimulateToggle}>
-              Simular estado
-            </button>
-            <button
-              type="button"
-              className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
-              onClick={() =>
-                setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
-              }
-            >
-              Poner candado
-            </button>
-            <button
-              type="button"
-              className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
-              onClick={() =>
-                setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
-              }
-            >
-              Quitar candado
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() =>
-                applyStatusEntries(sampleProtectionStatus, 'todos abiertos')
-              }
-            >
-              Todos abiertos
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Cargar archivo
-            </button>
-            <button type="button" className="btn" onClick={handleClearStatus}>
-              Quitar estados
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json,.json"
-              className="sr-only"
-              onChange={handleFileChange}
-            />
-
-            <div className="zoom-controls" role="group" aria-label="Zoom">
-              <button
-                type="button"
-                className="btn btn--zoom"
-                onClick={zoomOut}
-                title="Alejar"
-              >
-                −
-              </button>
-              <button
-                type="button"
-                className="btn btn--zoom btn--zoom-label"
-                onClick={zoomReset}
-                title="Restablecer zoom 100%"
-              >
-                {Math.round(zoom * 100)}%
-              </button>
-              <button
-                type="button"
-                className="btn btn--zoom"
-                onClick={zoomIn}
-                title="Acercar"
-              >
-                +
-              </button>
+      <div className="app-shell__chrome">
+        <header className="topbar">
+          <div className="topbar__brand">
+            <span className="topbar__mark" aria-hidden />
+            <div>
+              <h1>{system690.title}</h1>
+              <p>{system690.vessel} · vista cascada tipo planta eléctrica</p>
             </div>
           </div>
 
-          <form className="search" onSubmit={handleSearch}>
-            <label>
-              <span className="sr-only">Buscar equipo</span>
-              <input
-                type="search"
-                placeholder="Buscar equipo (ej. CCM-6PWS0003)…"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setSearchHint(null)
-                }}
-                list="equipment-suggestions"
-              />
-            </label>
-            <datalist id="equipment-suggestions">
-              {system690.equipment.map((eq) => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.name}
-                </option>
-              ))}
-            </datalist>
-            <button type="submit" className="btn btn--primary">
-              Buscar
-            </button>
-            {focus && (
+          <div className="topbar__controls">
+            <div className="topbar__actions">
+              <button type="button" className="btn" onClick={handleSimulateToggle}>
+                Simular estado
+              </button>
+              <button
+                type="button"
+                className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
+                onClick={() =>
+                  setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
+                }
+              >
+                Poner candado
+              </button>
+              <button
+                type="button"
+                className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
+                onClick={() =>
+                  setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
+                }
+              >
+                Quitar candado
+              </button>
               <button
                 type="button"
                 className="btn"
-                onClick={() => {
-                  setFocus(null)
-                  setSearchHint(null)
-                  setSearchQuery('')
-                }}
+                onClick={() =>
+                  applyStatusEntries(sampleProtectionStatus, 'todos abiertos')
+                }
               >
-                Limpiar
+                Todos abiertos
               </button>
-            )}
-          </form>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Cargar archivo
+              </button>
+              <button type="button" className="btn" onClick={handleClearStatus}>
+                Quitar estados
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="sr-only"
+                onChange={handleFileChange}
+              />
 
-          <label className="toggle">
-            <span className="legend-line legend-line--normal" />
-            Normal
-          </label>
-          <label className="toggle">
-            <span className="legend-line legend-line--alt" />
-            Alternativa
-          </label>
-        </div>
-      </header>
+              <div className="zoom-controls" role="group" aria-label="Zoom">
+                <button
+                  type="button"
+                  className="btn btn--zoom"
+                  onClick={zoomOut}
+                  title="Alejar"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--zoom btn--zoom-label"
+                  onClick={zoomReset}
+                  title="Ajustar a vista / 100%"
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--zoom"
+                  onClick={zoomIn}
+                  title="Acercar"
+                >
+                  +
+                </button>
+              </div>
+            </div>
 
-      {searchHint && <div className="banner">{searchHint}</div>}
-      {lockTool !== 'none' && (
-        <div className="banner banner--tool">
-          {lockTool === 'lock'
-            ? 'Modo poner candado activo: pulsa un interruptor para abrirlo y bloquearlo.'
-            : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
-        </div>
-      )}
+            <form className="search" onSubmit={handleSearch}>
+              <label>
+                <span className="sr-only">Buscar equipo</span>
+                <input
+                  type="search"
+                  placeholder="Buscar equipo (ej. CCM-6PWS0003)…"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setSearchHint(null)
+                  }}
+                  list="equipment-suggestions"
+                />
+              </label>
+              <datalist id="equipment-suggestions">
+                {system690.equipment.map((eq) => (
+                  <option key={eq.id} value={eq.id}>
+                    {eq.name}
+                  </option>
+                ))}
+              </datalist>
+              <button type="submit" className="btn btn--primary">
+                Buscar
+              </button>
+              {focus && (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setFocus(null)
+                    setSearchHint(null)
+                    setSearchQuery('')
+                  }}
+                >
+                  Limpiar
+                </button>
+              )}
+            </form>
+
+            <label className="toggle">
+              <span className="legend-line legend-line--normal" />
+              Normal
+            </label>
+            <label className="toggle">
+              <span className="legend-line legend-line--alt" />
+              Alternativa
+            </label>
+          </div>
+        </header>
+
+        {searchHint && <div className="banner">{searchHint}</div>}
+        {lockTool !== 'none' && (
+          <div className="banner banner--tool">
+            {lockTool === 'lock'
+              ? 'Modo poner candado activo: pulsa un interruptor para abrirlo y bloquearlo.'
+              : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
+          </div>
+        )}
+      </div>
 
       <main className="workspace workspace--cascade">
         <CascadeView

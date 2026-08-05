@@ -7,6 +7,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
+  type RefObject,
 } from 'react'
 import { system690 } from '../data/system690'
 import type { Circuit, Equipment, ProtectionState } from '../types'
@@ -402,6 +403,117 @@ function genShortLabel(half: BusHalf, boardId: string): string {
   return `G${n}${half === 'SA' ? 'A' : 'B'}`
 }
 
+/** U invertida QT2A ↔ QT1B anclada a la geometría real de los interruptores */
+function BusTieInterconnect({
+  leftId,
+  rightId,
+  flowing,
+  zoom,
+  plantRef,
+  layoutKey,
+}: {
+  leftId: string
+  rightId: string
+  flowing: boolean
+  zoom: number
+  plantRef: RefObject<HTMLDivElement | null>
+  layoutKey: string
+}) {
+  const [geom, setGeom] = useState<{
+    x1: number
+    y1: number
+    x2: number
+    y2: number
+    yTop: number
+    w: number
+    h: number
+  } | null>(null)
+
+  const measure = useCallback(() => {
+    const plant = plantRef.current
+    if (!plant) return
+    const left = plant.querySelector(
+      `.plant-msb__bustie [data-circuit-id="${leftId}"]`,
+    ) as HTMLElement | null
+    const right = plant.querySelector(
+      `.plant-msb__bustie [data-circuit-id="${rightId}"]`,
+    ) as HTMLElement | null
+    if (!left || !right) {
+      setGeom(null)
+      return
+    }
+    const pr = plant.getBoundingClientRect()
+    const lr = left.getBoundingClientRect()
+    const rr = right.getBoundingClientRect()
+    const z = zoom > 0 ? zoom : 1
+    const x1 = (lr.left + lr.width / 2 - pr.left) / z
+    const y1 = (lr.top - pr.top) / z
+    const x2 = (rr.left + rr.width / 2 - pr.left) / z
+    const y2 = (rr.top - pr.top) / z
+    const rise = 30
+    setGeom({
+      x1,
+      y1,
+      x2,
+      y2,
+      yTop: Math.min(y1, y2) - rise,
+      w: Math.max(plant.offsetWidth, plant.scrollWidth),
+      h: Math.max(plant.offsetHeight, plant.scrollHeight),
+    })
+  }, [leftId, rightId, zoom, plantRef])
+
+  useLayoutEffect(() => {
+    measure()
+    const plant = plantRef.current
+    if (!plant) return
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => measure())
+        : null
+    ro?.observe(plant)
+    const left = plant.querySelector(
+      `.plant-msb__bustie [data-circuit-id="${leftId}"]`,
+    )
+    const right = plant.querySelector(
+      `.plant-msb__bustie [data-circuit-id="${rightId}"]`,
+    )
+    if (left) ro?.observe(left)
+    if (right) ro?.observe(right)
+    window.addEventListener('resize', measure)
+    const t = window.setTimeout(measure, 50)
+    return () => {
+      ro?.disconnect()
+      window.removeEventListener('resize', measure)
+      window.clearTimeout(t)
+    }
+  }, [measure, leftId, rightId, layoutKey])
+
+  if (!geom) return null
+
+  const d = `M ${geom.x1} ${geom.y1} V ${geom.yTop} H ${geom.x2} V ${geom.y2}`
+  const midX = (geom.x1 + geom.x2) / 2
+
+  return (
+    <svg
+      className={`plant__tie-svg${flowing ? ' plant__tie-svg--flow' : ''}`}
+      width={geom.w}
+      height={geom.h}
+      viewBox={`0 0 ${geom.w} ${geom.h}`}
+      aria-hidden
+    >
+      <path d={d} className="plant__tie-path" fill="none" />
+      <text
+        x={midX}
+        y={geom.yTop - 6}
+        textAnchor="middle"
+        className="plant__tie-label"
+      >
+        INTERCONEXIÓN CUADROS
+      </text>
+    </svg>
+  )
+}
+
 export function CascadeView({
   protectionStatus,
   energizedCircuitIds,
@@ -425,6 +537,8 @@ export function CascadeView({
   zoomRef.current = zoom
   /** Tras zoom con rueda: reposicionar scroll para fijar el punto bajo el puntero */
   const pendingZoomScroll = useRef<{ left: number; top: number } | null>(null)
+  /** Tras plegar/desplegar MSB: ajustar zoom al viewport */
+  const fitZoomPending = useRef(true)
   const [plantSize, setPlantSize] = useState({ w: 0, h: 0 })
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(
     () => new Set(['MSB-6PWS0002', 'MSB-6PWS0001']),
@@ -448,6 +562,7 @@ export function CascadeView({
 
   useEffect(() => {
     if (!focus) return
+    fitZoomPending.current = true
     const boardsToOpen = new Set<string>()
     for (const c of focus.trace.circuits) {
       const b = boardFromOrigin(c.originId)
@@ -527,11 +642,12 @@ export function CascadeView({
     const onWheel = (e: WheelEvent) => {
       // Zoom con la rueda hacia el puntero (sin Ctrl)
       e.preventDefault()
+      fitZoomPending.current = false
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
       const current = zoomRef.current
       const next = Math.min(
         2.5,
-        Math.max(0.35, Math.round(current * factor * 100) / 100),
+        Math.max(0.25, Math.round(current * factor * 100) / 100),
       )
       if (next === current) return
 
@@ -582,7 +698,48 @@ export function CascadeView({
     return () => ro.disconnect()
   }, [expandedBoards, focus, expandedEquip])
 
+  /** Zoom dinámico: encajar el unifilar en el área visible al plegar/desplegar */
+  useLayoutEffect(() => {
+    if (!fitZoomPending.current) return
+    const stage = panRef.current
+    if (!stage || plantSize.w < 8 || plantSize.h < 8) return
+
+    const pad = 28
+    const availW = Math.max(stage.clientWidth - pad, 80)
+    const availH = Math.max(stage.clientHeight - pad, 80)
+    const fit = Math.min(availW / plantSize.w, availH / plantSize.h)
+    const next = Math.min(
+      2.5,
+      Math.max(0.25, Math.round(fit * 100) / 100),
+    )
+    fitZoomPending.current = false
+    if (Math.abs(next - zoomRef.current) >= 0.01) {
+      onZoomChange(next)
+    }
+    // Centrar tras ajustar
+    requestAnimationFrame(() => {
+      const s = panRef.current
+      if (!s) return
+      s.scrollLeft = Math.max(0, (s.scrollWidth - s.clientWidth) / 2)
+      s.scrollTop = Math.max(0, (s.scrollHeight - s.clientHeight) / 2)
+    })
+  }, [plantSize, expandedBoards, focus, onZoomChange])
+
+  // Si cambia el tamaño del viewport, reajustar cuando el usuario no ha hecho zoom manual reciente
+  useEffect(() => {
+    const stage = panRef.current
+    if (!stage || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      fitZoomPending.current = true
+      // dispara el efecto de fit vía plantSize “tocándolo”
+      setPlantSize((ps) => ({ ...ps }))
+    })
+    ro.observe(stage)
+    return () => ro.disconnect()
+  }, [])
+
   const toggleBoard = (id: string) => {
+    fitZoomPending.current = true
     setExpandedBoards((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -592,6 +749,7 @@ export function CascadeView({
   }
 
   const toggleEquip = (id: string) => {
+    fitZoomPending.current = true
     setExpandedEquip((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -681,29 +839,19 @@ export function CascadeView({
 
   return (
     <div className="casc" ref={stageRef} onClick={() => setBalloon(null)}>
-      <header className="casc__intro">
-        <h2>Planta eléctrica 690 V · esquema funcional</h2>
-        <p>
-          Alimentación local en cada salida; la de otro alimentador aparece
-          aparte sin unir (pulsa su interruptor para ir a ese origen). Símbolo
-          IEC motorizado: verde = abierto, rojo = cerrado. Candado rojo =
-          bloqueado. Despliega / pliega cada MSB para ver u ocultar salidas; los
-          generadores quedan fuera del recuadro.
-        </p>
-        {focus && (
-          <div className="casc__focus-bar">
-            <span>
-              Búsqueda: <strong>{focus.equipmentId}</strong> · árbol de
-              alimentaciones (equipo único)
-            </span>
-            {onClearFocus && (
-              <button type="button" className="btn" onClick={onClearFocus}>
-                Ver planta completa
-              </button>
-            )}
-          </div>
-        )}
-      </header>
+      {focus && (
+        <div className="casc__focus-bar casc__focus-bar--overlay">
+          <span>
+            Búsqueda: <strong>{focus.equipmentId}</strong> · árbol de
+            alimentaciones
+          </span>
+          {onClearFocus && (
+            <button type="button" className="btn" onClick={onClearFocus}>
+              Ver planta completa
+            </button>
+          )}
+        </div>
+      )}
 
       <div
         className="casc__stage casc__stage--plant casc__stage--pan"
@@ -768,29 +916,8 @@ export function CascadeView({
             onJumpToCircuit={onJumpToCircuit}
           />
 
-          {/* U invertida por encima: une QT2A ↔ QT1B y baja a cada interruptor */}
-          <div
-            className={`plant__bridge${
-              ties.qt2a &&
-              ties.qt1b &&
-              energizedCircuitIds.has(ties.qt2a.id) &&
-              energizedCircuitIds.has(ties.qt1b.id)
-                ? ' plant__bridge--flow'
-                : ''
-            }`}
-            title="Interconexión cuadros · QT2A ↔ QT1B"
-          >
-            <div className="plant__bridge-cap" aria-hidden />
-            <div className="plant__bridge-bar">
-              <div className="plant__bridge-hwire" />
-              <span className="plant__bridge-label">INTERCONEXIÓN CUADROS</span>
-              <div className="plant__bridge-hwire" />
-            </div>
-            <div className="plant__bridge-legs" aria-hidden>
-              <div className="plant__bridge-rise" />
-              <div className="plant__bridge-rise" />
-            </div>
-          </div>
+          {/* Separador entre cuadros; la U QT2A↔QT1B la dibuja el SVG medido */}
+          <div className="plant__bridge-gap" aria-hidden />
 
           <BoardColumn
             board={boardProa}
@@ -808,6 +935,20 @@ export function CascadeView({
             onLocalBreaker={onLocalBreaker}
             onJumpToCircuit={onJumpToCircuit}
           />
+
+          {ties.qt2a && ties.qt1b && (
+            <BusTieInterconnect
+              leftId={ties.qt2a.id}
+              rightId={ties.qt1b.id}
+              flowing={
+                energizedCircuitIds.has(ties.qt2a.id) &&
+                energizedCircuitIds.has(ties.qt1b.id)
+              }
+              zoom={zoom}
+              plantRef={plantRef}
+              layoutKey={`${plantSize.w}x${plantSize.h}-${[...expandedBoards].join(',')}`}
+            />
+          )}
           </div>
         </div>
         )}

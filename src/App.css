@@ -61,6 +61,8 @@ body {
   display: grid;
   grid-template-rows: auto 1fr auto;
   height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
   background:
     radial-gradient(ellipse 80% 50% at 10% 0%, rgba(61, 155, 143, 0.12), transparent 50%),
     radial-gradient(ellipse 60% 40% at 90% 100%, rgba(59, 130, 246, 0.06), transparent 45%),
@@ -68,7 +70,12 @@ body {
 }
 
 .app-shell--cascade {
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+}
+
+.app-shell__chrome {
+  flex-shrink: 0;
+  z-index: 20;
 }
 
 .sheet-tabs {
@@ -214,7 +221,11 @@ body {
 
 .plant-zoom-space {
   position: relative;
+  /* Superficie de arrastre ≥ viewport del stage */
   min-width: 100%;
+  min-height: 100%;
+  box-sizing: content-box;
+  padding: 2rem;
 }
 
 .search {
@@ -474,24 +485,26 @@ body {
   word-break: break-word;
 }
 
-/* Globo de equipo al hover */
+/* Globo de equipo al hover — fondo opaco (sin ver cables detrás) */
 .equip-balloon {
   position: absolute;
   left: 50%;
   bottom: calc(100% + 0.55rem);
   transform: translateX(-50%);
-  z-index: 61;
+  z-index: 80;
   width: max(16rem, 100%);
   min-width: 15rem;
   max-width: 22rem;
   padding: 0.7rem 0.8rem 0.85rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(18, 28, 25, 0.97);
+  background: #121c19;
+  background-color: #121c19;
+  opacity: 1;
+  isolation: isolate;
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.5),
+    0 10px 28px rgba(0, 0, 0, 0.65),
     0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  backdrop-filter: blur(8px);
   pointer-events: none;
   animation: balloon-in 0.16s ease-out;
 }
@@ -867,7 +880,9 @@ body {
   font-size: 0.72rem;
   color: var(--muted);
   font-family: var(--mono);
-  background: rgba(14, 22, 20, 0.95);
+  background: rgba(14, 22, 20, 0.97);
+  flex-shrink: 0;
+  z-index: 20;
 }
 
 .banner {
@@ -883,41 +898,49 @@ body {
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  height: 100%;
 }
 
 .casc {
   position: relative;
-  padding: 1rem 1.25rem 0.5rem;
+  padding: 0;
   flex: 1;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.casc__intro h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.05rem;
-}
-
-.casc__intro p {
-  margin: 0 0 0.65rem;
-  max-width: 70rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-  line-height: 1.45;
-}
-
 .casc__intro {
-  flex-shrink: 0;
+  display: none;
+}
+
+.casc__focus-bar--overlay {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(230, 194, 0, 0.35);
+  background: rgba(14, 22, 20, 0.92);
+  font-size: 0.8rem;
+  pointer-events: auto;
 }
 
 .casc__stage--plant {
   flex: 1;
   min-height: 0;
+  width: 100%;
+  height: 100%;
   overflow: auto;
-  padding-bottom: 1rem;
-  max-width: 100%;
+  padding: 0.75rem;
+  max-width: none;
 }
 
 .casc__stage--pan {
@@ -925,6 +948,8 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
   user-select: none;
+  /* Área completa arrastrable, aunque el diagrama no ocupe todo */
+  touch-action: none;
 }
 
 .casc__stage--pan::-webkit-scrollbar {
@@ -1314,92 +1339,55 @@ body {
 }
 
 /*
- * Puente QT2A ↔ QT1B: U invertida por encima de ambos interruptores.
- * Se ensancha hacia cada cuadro para caer justo sobre el QT del lado
- * que mira al puente (POPA right / PROA left).
+ * Hueco entre MSB; la interconexión QT2A↔QT1B la dibuja .plant__tie-svg
+ * midiendo la posición real de cada interruptor.
  */
-.plant__bridge {
-  --tie-reach: 2.1rem; /* centro del bustie desde el borde del cuadro */
-  flex: 0 0 auto;
-  width: 10rem;
-  align-self: flex-start;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  /* cabeza + generadores → justo por encima de los QT */
-  padding-top: 6.55rem;
-  gap: 0;
+.plant__bridge-gap {
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+  align-self: stretch;
+  pointer-events: none;
+}
+
+.plant__tie-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 8;
+  pointer-events: none;
   overflow: visible;
-  position: relative;
-  z-index: 5;
 }
 
-.plant__bridge-cap {
-  display: none;
+.plant__tie-path {
+  stroke: #7dcfb0;
+  stroke-width: 2;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
 }
 
-.plant__bridge-bar {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  width: calc(100% + 2 * var(--tie-reach));
-  margin-left: calc(-1 * var(--tie-reach));
-  box-sizing: border-box;
-  padding: 0.15rem 0;
+.plant__tie-svg--flow .plant__tie-path {
+  stroke: #e0c040;
+  filter: drop-shadow(0 0 4px rgba(230, 194, 0, 0.45));
 }
 
-.plant__bridge-hwire {
-  flex: 1 1 auto;
-  min-width: 0.6rem;
-  height: 2px;
-  background: #7dcfb0;
-}
-
-.plant__bridge-label {
+.plant__tie-label {
+  fill: #8fa39b;
   font-family: var(--mono);
-  font-size: 0.52rem;
-  letter-spacing: 0.03em;
-  color: var(--muted);
-  white-space: nowrap;
+  font-size: 9px;
+  letter-spacing: 0.04em;
 }
 
+/* Legacy bridge (sustituido por SVG) */
+.plant__bridge,
+.plant__bridge-cap,
+.plant__bridge-bar,
+.plant__bridge-hwire,
+.plant__bridge-label,
 .plant__bridge-legs,
-.plant__bridge-down {
-  display: flex;
-  justify-content: space-between;
-  width: calc(100% + 2 * var(--tie-reach));
-  margin-left: calc(-1 * var(--tie-reach));
-  box-sizing: border-box;
-  padding: 0;
-}
-
+.plant__bridge-down,
 .plant__bridge-rise {
-  width: 2px;
-  /* baja desde la barra horizontal hasta la tapa de QT2A / QT1B */
-  height: 1.35rem;
-  background: #7dcfb0;
-}
-
-.plant__bridge--flow .plant__bridge-hwire,
-.plant__bridge--flow .plant__bridge-rise {
-  background: #e0c040;
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.45);
-}
-
-@media (max-width: 900px) {
-  .plant__bridge {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    --tie-reach: 0px;
-  }
-
-  .plant__bridge-legs,
-  .plant__bridge-down {
-    display: none;
-  }
+  display: none;
 }
 
 .casc-brk {
@@ -1416,6 +1404,10 @@ body {
   font-size: 0.68rem;
   cursor: pointer;
   flex-shrink: 0;
+  /* Por encima del tramo --from-bus (margen negativo solapa el chip) */
+  position: relative;
+  z-index: 4;
+  isolation: isolate;
 }
 
 .casc-brk:hover {
@@ -1527,28 +1519,43 @@ body {
 }
 
 .hbus-drop__free-end {
-  /* Misma huella vertical que --from-bus; stub horizontal en la barra */
+  /*
+   * Alimentación del otro cuadro: stub horizontal libre (no une a la barra local)
+   * + tramo vertical hasta el interruptor.
+   */
   position: relative;
-  flex: 0 0 0.65rem;
-  width: 12px;
-  height: 0.65rem;
-  margin: 0;
+  display: block;
+  flex: 0 0 0.85rem;
+  width: 2px;
+  height: 0.85rem;
+  margin: 0 auto;
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: transparent !important;
+  background: var(--line-normal) !important;
   box-shadow: none !important;
+  align-self: center;
+  z-index: 1;
+}
+
+.hbus-drop__leg--alt .hbus-drop__free-end {
+  background: var(--line-alt) !important;
+}
+
+.hbus-drop__leg--norm .hbus-drop__free-end {
+  background: var(--line-normal) !important;
 }
 
 .hbus-drop__free-end::after {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
   height: 2px;
   border-radius: 1px;
-  background: var(--line-normal);
+  background: inherit;
 }
 
 .hbus-drop__leg--alt .hbus-drop__free-end::after {
@@ -1559,8 +1566,8 @@ body {
   background: var(--line-normal);
 }
 
-.hbus-drop__leg--flow .hbus-drop__free-end::after {
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.45);
+.hbus-drop__leg--flow .hbus-drop__free-end {
+  box-shadow: 0 0 6px rgba(230, 194, 0, 0.45) !important;
 }
 
 .hbus-drop__wire {
@@ -1605,6 +1612,14 @@ body {
 .hbus .hbus-drop__free-end {
   flex: 0 0 1.2rem;
   height: 1.2rem;
+  width: 2px;
+  margin-top: 0;
+}
+
+/* En planta MSB: stub corto unido al interruptor, sin llegar a la barra local */
+.plant-rack__half-drops .hbus-drop__free-end {
+  flex: 0 0 0.9rem;
+  height: 0.9rem;
   margin-top: 0;
 }
 
@@ -1668,13 +1683,18 @@ body {
 
 /* Al mostrar el globo, subir por encima de cables, QT y salidas vecinas */
 .hbus-drop__eq-wrap:has(.equip-balloon) {
-  z-index: 60;
+  z-index: 80;
 }
 
 .hbus-drop:has(.equip-balloon),
 .hbus__slot:has(.equip-balloon) {
   position: relative;
-  z-index: 60;
+  z-index: 80;
+}
+
+.plant-rack__half-drops .hbus__slot:has(.equip-balloon),
+.plant-rack__half-drops .hbus-drop:has(.equip-balloon) {
+  z-index: 90;
 }
 
 .hbus-drop__eq--live {
