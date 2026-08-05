@@ -907,9 +907,10 @@ body {
 
 .plant-msb__vwire--into-box {
   width: 2px;
-  height: 0.95rem;
+  height: 0.85rem;
   background: #b24ec4;
-  margin-bottom: -0.35rem; /* entra al cuadro y encuentra el QG */
+  /* Empalma con .plant-msb__vwire--from-gen dentro del cuadro */
+  margin-bottom: -2px;
   flex-shrink: 0;
 }
 
@@ -1017,10 +1018,14 @@ body {
 .plant-msb__inner-top {
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
   min-height: 4.25rem;
+  margin-bottom: 0;
 }
 
 .plant-msb__qg-row {
+  flex: 1 1 auto;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: stretch;
@@ -1038,25 +1043,29 @@ body {
   justify-content: flex-start;
   gap: 0;
   min-width: 8rem;
+  height: 100%;
 }
 
 .plant-msb__vwire--from-gen {
-  height: 0.7rem;
+  height: 0.55rem;
   background: #b24ec4;
   margin-top: 0;
 }
 
 .plant-msb__vwire--to-rail {
-  height: 1.6rem;
+  /* Llega al borde inferior de inner-top = inicio de la barra (top: 0) */
+  flex: 1 0 auto;
+  min-height: 0.85rem;
+  height: auto;
   background: #b24ec4;
-  margin-bottom: -1.2rem; /* llega al centro de la barra */
+  margin-bottom: 0;
 }
 
 /* QT anclado al lado del puente: el puente baja por arriba; QT baja a la barra */
 .plant-msb__bustie {
   position: absolute;
   top: 0.15rem;
-  bottom: -1.2rem; /* hasta el centro de la barra */
+  bottom: 0; /* empalma con el inicio de la barra */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1123,6 +1132,7 @@ body {
 }
 
 .plant-rack {
+  --rail-label-h: 2.55rem;
   position: relative;
   padding: 0.15rem 0.75rem 0.85rem;
   width: max-content;
@@ -1132,9 +1142,9 @@ body {
 .plant-rack__rail-wrap {
   position: relative;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 2.35rem;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
   margin: 0;
   padding: 0;
 }
@@ -1143,11 +1153,11 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
   height: 2px;
   background: #b24ec4;
-  z-index: 0;
+  z-index: 2;
+  transform: none;
 }
 
 .plant-rack__rail--live {
@@ -1157,12 +1167,15 @@ body {
 
 .plant-rack__rail-labels {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  align-items: start;
   width: 100%;
-  min-height: 2.35rem;
+  height: var(--rail-label-h);
+  min-height: var(--rail-label-h);
+  padding-top: 0;
+  box-sizing: border-box;
 }
 
 .plant-rack__rail-tag {
@@ -1173,17 +1186,21 @@ body {
   text-align: center;
   line-height: 1;
   pointer-events: none;
+  /* etiqueta junto a la barra, no encima del cable */
+  margin-top: 0.35rem;
 }
 
 .plant-rack__coupler {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   border: 0;
   background: transparent;
+  /* el chip cuelga desde la barra */
+  margin-top: -1px;
 }
 
 .plant-rack__drops {
@@ -1191,8 +1208,7 @@ body {
   grid-template-columns: 1fr auto 1fr;
   align-items: flex-start;
   gap: 0;
-  /* sube hasta el centro de la barra (rail-wrap) */
-  margin-top: -1.2rem;
+  margin-top: 0;
   position: relative;
   z-index: 1;
 }
@@ -1232,7 +1248,7 @@ body {
   align-items: stretch;
   justify-content: flex-start;
   /* cabeza + generadores → justo por encima de los QT */
-  padding-top: 6.35rem;
+  padding-top: 6.55rem;
   gap: 0;
   overflow: visible;
   position: relative;
@@ -1442,9 +1458,15 @@ body {
 }
 
 .hbus-drop__wire--from-bus {
-  min-height: 1.35rem;
-  flex: 0 0 1.35rem;
-  margin-top: 0; /* el overlap lo hace .plant-rack__drops */
+  /*
+   * Las salidas viven debajo de la fila QBT/etiquetas; el cable sube
+   * hasta top:0 de .plant-rack__rail-wrap, donde está la barra.
+   */
+  margin-top: calc(-1 * var(--rail-label-h, 2.55rem));
+  min-height: calc(var(--rail-label-h, 2.55rem) + 0.45rem);
+  flex: 0 0 calc(var(--rail-label-h, 2.55rem) + 0.45rem);
+  position: relative;
+  z-index: 1;
 }
 
 .hbus-drop__wire--to-eq {
@@ -1637,9 +1659,10 @@ body {
 .hbus__coupler-id {
   font-family: var(--mono);
   font-size: 0.62rem;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
   letter-spacing: 0.04em;
+  writing-mode: horizontal-tb;
+  transform: none;
+  text-align: center;
 }
 
 .hbus-drop {
@@ -1671,8 +1694,8 @@ body {
   align-items: center;
   gap: 0.2rem;
   width: 100%;
-  min-height: 7.5rem;
-  padding: 0.3rem 0.2rem;
+  min-height: 0;
+  padding: 0.3rem 0.35rem;
   border: 1px solid var(--border);
   border-radius: 2px;
   background: var(--bg-elevated);
@@ -1726,25 +1749,27 @@ body {
   font-family: var(--mono);
   font-size: 0.58rem;
   font-weight: 600;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  writing-mode: horizontal-tb;
+  transform: none;
   letter-spacing: 0.02em;
-  max-height: 4.8rem;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: center;
 }
 
 .hbus-drop__name {
   font-size: 0.52rem;
   color: var(--muted);
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  max-height: 3.6rem;
+  writing-mode: horizontal-tb;
+  transform: none;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.15;
+  text-align: center;
 }
 
 .hbus-drop__more {

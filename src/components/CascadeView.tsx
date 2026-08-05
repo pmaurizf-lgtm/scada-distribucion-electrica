@@ -1018,17 +1018,17 @@ function BoardColumn({
               </div>
               <span className="plant-rack__rail-tag">{rightTag}</span>
             </div>
-          </div>
 
-          {expanded && (
-            <div className="plant-rack__drops">
-              <div className="plant-rack__half-drops">{renderDrops(leftDrops)}</div>
-              <div className="plant-rack__coupler-drop" aria-hidden>
-                <div className="hbus-drop__wire hbus-drop__wire--from-bus" />
+            {expanded && (
+              <div className="plant-rack__drops">
+                <div className="plant-rack__half-drops">{renderDrops(leftDrops)}</div>
+                <div className="plant-rack__coupler-drop" aria-hidden>
+                  <div className="hbus-drop__wire hbus-drop__wire--from-bus" />
+                </div>
+                <div className="plant-rack__half-drops">{renderDrops(rightDrops)}</div>
               </div>
-              <div className="plant-rack__half-drops">{renderDrops(rightDrops)}</div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
     </div>
