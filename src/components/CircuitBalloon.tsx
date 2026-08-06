@@ -104,6 +104,30 @@ export function CircuitBalloon({
             </dd>
           </>
         )}
+        {circuit.voltage && (
+          <>
+            <dt>Tensión</dt>
+            <dd>{circuit.voltage}</dd>
+          </>
+        )}
+        {circuit.circuitRef && (
+          <>
+            <dt>Ref. circuito</dt>
+            <dd>{circuit.circuitRef}</dd>
+          </>
+        )}
+        {(circuit.parallelCables != null || circuit.cableSection) && (
+          <>
+            <dt>Cable</dt>
+            <dd>
+              {circuit.parallelCables != null ? `${circuit.parallelCables}×` : ''}
+              {circuit.cableSection ?? '—'}
+              {circuit.cableSection && !String(circuit.cableSection).includes('mm')
+                ? ' mm²'
+                : ''}
+            </dd>
+          </>
+        )}
         {state && (
           <>
             <dt>Estado</dt>
@@ -122,6 +146,12 @@ export function CircuitBalloon({
         <dd>
           <DenomPair pumaId={circuit.destinationId} />
         </dd>
+        {circuit.notes && (
+          <>
+            <dt>Notas</dt>
+            <dd>{circuit.notes}</dd>
+          </>
+        )}
         {circuit.spare && (
           <>
             <dt>Nota</dt>
