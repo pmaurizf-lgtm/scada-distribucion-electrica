@@ -495,13 +495,11 @@ function BusDrop({
       }
       onDoubleClick={toggleExpand}
     >
-      {/* Cerrado: pierna + caja. Abierto LCS: QVS vive sobre barra VS en LcsDualView */}
-      {!lcsOpen && (
-        <div className="hbus-drop__tops">
-          {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
-          {renderLeg(localFeed, 'local')}
-        </div>
-      )}
+      {/* Pierna de acometida (QVS): también con LCS abierto, para unir TRF → LCS */}
+      <div className="hbus-drop__tops">
+        {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
+        {renderLeg(localFeed, 'local')}
+      </div>
 
       {!lcsOpen && (
         <div
@@ -575,30 +573,17 @@ function BusDrop({
           onMouseEnter={() => setEqHover(true)}
           onMouseLeave={() => setEqHover(false)}
           onDoubleClick={toggleExpand}
+          title={`${equipment.id} · doble clic para plegar`}
         >
-          <button
-            type="button"
-            className="equip-chassis__head"
-            data-equip={equipment.id}
-            title="Doble clic para plegar el LCS"
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={toggleExpand}
-          >
-            <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
+          <div className="equip-chassis__label">
             <span className="equip-chassis__id">{equipment.id}</span>
-            {equipment.dcp10Id && (
-              <span className="hbus-drop__dcp" title="Denominación DCP-10">
-                {equipment.dcp10Id}
-              </span>
-            )}
-            <span className="equip-chassis__name">{equipment.name}</span>
-            <span className="equip-chassis__more">▴ 440 V</span>
-          </button>
+            <span className="equip-chassis__hint">440 V · doble clic para plegar</span>
+          </div>
           <div className="equip-chassis__body">
             <LcsDualView
               lcsId={equipment.id}
               inline
-              incoming={localFeed}
+              feedExternal
               protectionStatus={protectionStatus}
               energizedCircuitIds={energizedCircuitIds}
               energizedEquipmentIds={energizedEquipmentIds}

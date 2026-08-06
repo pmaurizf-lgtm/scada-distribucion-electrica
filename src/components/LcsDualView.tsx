@@ -348,6 +348,7 @@ function BusDrops({
 export function Lcs440Board({
   bus,
   incoming,
+  feedExternal = false,
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
@@ -360,12 +361,14 @@ export function Lcs440Board({
   bus: LcsVoltageBus
   /** QVS: se dibuja sobre la barra VS (enlace TRF → VS). */
   incoming?: Circuit
+  /** QVS ya está en la pierna exterior (TRF→LCS); aquí solo el tramo hasta la barra. */
+  feedExternal?: boolean
 } & SharedProps) {
   const vs = sectionOf(bus, 'VS')
   const vm = sectionOf(bus, 'VM')
   const nv = sectionOf(bus, 'NV')
   const feed = incoming ?? bus.incoming
-  const inFlow = energizedCircuitIds.has(feed.id)
+  const inFlow = !!(feed && energizedCircuitIds.has(feed.id))
   const qvm = vm?.sectionBreaker
   const qnv = nv?.sectionBreaker
   const qvmFlow = !!(qvm && energizedCircuitIds.has(qvm.id))
@@ -384,13 +387,15 @@ export function Lcs440Board({
     onHoverInfoEnd,
   }
 
+  const showInlineQvs = !!(incoming && !feedExternal)
+
   return (
     <div
-      className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}${incoming ? ' lcs440-board--fed' : ''}`}
+      className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}${incoming || feedExternal ? ' lcs440-board--fed' : ''}`}
     >
       <div className="lcs440-rail">
         {/* —— Columna VS —— */}
-        {incoming ? (
+        {showInlineQvs && feed ? (
           <div className={`lcs440-vs-feed${inFlow ? ' lcs440-vs-feed--flow' : ''}`}>
             <span className="lcs440-vs-feed__from" title="desde TRF" aria-hidden />
             <MiniBreaker
@@ -404,6 +409,13 @@ export function Lcs440Board({
               onHoverInfoEnd={onHoverInfoEnd}
             />
             <span className="lcs440-vs-feed__to" aria-hidden />
+          </div>
+        ) : feedExternal ? (
+          <div
+            className={`lcs440-vs-feed lcs440-vs-feed--entry${inFlow ? ' lcs440-vs-feed--flow' : ''}`}
+            aria-hidden
+          >
+            <span className="lcs440-vs-feed__to" />
           </div>
         ) : (
           <div className="lcs440-vs-feed lcs440-vs-feed--empty" aria-hidden />
@@ -487,16 +499,18 @@ export function Lcs440Board({
   )
 }
 
-/** Expandir LCS: barras 440 V. `inline` + `incoming` = QVS sobre VS, sin caja. */
+/** Expandir LCS: barras 440 V. `inline` + `feedExternal` = QVS en pierna TRF→LCS. */
 export function LcsDualView({
   lcsId,
   inline = false,
   incoming,
+  feedExternal = false,
   ...props
 }: SharedProps & {
   lcsId: string
   inline?: boolean
   incoming?: Circuit
+  feedExternal?: boolean
 }) {
   const board = useMemo(() => {
     const full = buildLcsBoardModel(system690, lcsId)
@@ -530,7 +544,14 @@ export function LcsDualView({
       )}
       <Lcs440Board
         bus={board.buses[0]}
-        incoming={inline ? incoming ?? board.buses[0].incoming : undefined}
+        incoming={
+          inline
+            ? feedExternal
+              ? undefined
+              : incoming ?? board.buses[0].incoming
+            : undefined
+        }
+        feedExternal={inline && feedExternal}
         {...props}
       />
     </div>
