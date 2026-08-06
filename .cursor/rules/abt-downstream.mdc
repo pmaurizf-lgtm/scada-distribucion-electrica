@@ -1,0 +1,23 @@
+---
+description: Extensión aguas abajo de ABT (TRF → LCS 440/230) — módulo aislado del MSB
+globs: src/abtDownstream/**/*
+alwaysApply: false
+---
+
+# Aguas abajo de ABT
+
+Filosofía del plano ABT/TRF/LCS:
+
+```
+ABT-…  →  TRF-… (690/440-230)  →  LCS dual
+                              ├─ barra / salidas 440 V
+                              └─ barra / salidas 230 V
+```
+
+## Reglas
+
+- Toda la lógica y UI de esta cadena vive en `src/abtDownstream/`.
+- Los LCS y circuitos 440/230 **no** se inventan en `system690.json` hasta tener fuente (Excel 440/230 o plano). Usar `src/data/abtDownstream.json` (o similar) cuando existan datos.
+- Hoy el 690 V ya tiene **ABT → TRF**; el modelo `buildAbtChains` enlaza eso y deja `loadCenters` vacío hasta cargar datos.
+- No modificar layout MSB, bus-tie, RESPETO ni `energyFlow` desde aquí; si hace falta energía en LCS, extender con funciones en este módulo o ganchos explícitos, no reescribir el núcleo.
+- UX: mismo criterio que el resto (clic = conmutar; globo ~1,8 s hover; doble clic expandir).

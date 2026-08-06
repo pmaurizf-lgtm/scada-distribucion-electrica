@@ -1,0 +1,40 @@
+---
+description: Invariantes congelados del unifilar MSB 690 V — no romper al extender aguas abajo de ABT
+alwaysApply: true
+---
+
+# MSB 690 V — baseline congelado (`v0.1-msb-690`)
+
+Tag de restauración: `git checkout v0.1-msb-690` (o crear rama desde ese tag).
+
+## Qué está congelado (no cambiar salvo petición explícita del usuario)
+
+1. **Layout MSB**: ambos cuadros `SB izquierda | SA derecha`. POPA (`MSB-6PWS0002`) izquierda, PROA (`MSB-6PWS0001`) derecha.
+2. **Bus-tie intercuadro**: solo entre **1SB ↔ 2SA** (QT1B / QT2A: `PNL-MSB1008B` ↔ `PNL-MSB2008A`).
+3. **Acopladores de sección** QBT1 / QBT2 (sintéticos en `cascadeModel.ts`).
+4. **Flujo de energía** (`energyFlow.ts`): gens en marcha → barras → salidas con interruptor cerrado; paneles virtuales MSB↔PNL; sin bucles.
+5. **RESPETO**: solo la lista fija de 31 filas en `spareCircuits.ts` — no inventar huecos.
+6. **PUMA / DCP-10**: `id` = PUMA; `dcp10Id` aparte (`dcp10Map.json`).
+7. **Árbol de búsqueda**: solo del cuadro principal hacia abajo (sin SDG/QG*); zoom centrado sin recentrado continuo.
+8. **UX interruptores**: clic = conmutar; globo info tras hover ~1,8 s; pan con capture diferida (>3 px) para no romper doble clic MSB.
+
+## Archivos núcleo (tocar solo con causa justificada)
+
+- `src/components/CascadeView.tsx` — planta MSB
+- `src/components/SearchTreeView.tsx`
+- `src/utils/energyFlow.ts`
+- `src/utils/cascadeModel.ts`
+- `src/utils/spareCircuits.ts`
+- `src/utils/viewFilter.ts`
+- `src/data/system690.json` — topología 690 V existente (MSB, feeders, ABT→TRF)
+
+Al editar el núcleo: cambios mínimos, sin reordenar layout ni reescribir el flujo completo.
+
+## Extensión permitida (aguas abajo de ABT)
+
+Seguir la cadena del plano: **ABT → TRF → LCS (440 V / 230 V)**.
+
+- Código nuevo en `src/abtDownstream/` (tipos, modelo, UI futura).
+- Datos 440/230 en JSON/módulo propio (p. ej. `src/data/abtDownstream*.json`), no mezclar inventando LCS dentro de lógica MSB.
+- Componentes nuevos (`AbtChainView`, etc.) se montan desde puntos de extensión; no rehacer `plant-msb`.
+- Reutilizar patrones UX (globos, doble clic expandir, energía) sin copiar el layout MSB.
