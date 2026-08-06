@@ -167,11 +167,13 @@ function HbusStyleDrop({
           }}
         />
         <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
-        <span
-          className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
-        >
-          {lineBadge(feed.lineType)}
-        </span>
+        {dual && (
+          <span
+            className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
+          >
+            {lineBadge(feed.lineType)}
+          </span>
+        )}
         <span
           className={`hbus-drop__wire hbus-drop__wire--to-eq${flowing ? ' hbus-drop__wire--flow' : ''}`}
           aria-hidden
@@ -312,12 +314,12 @@ export function Lcs440Board({
       className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}${feed ? ' lcs440-board--fed' : ''}`}
     >
       <div className="lcs440-rail">
-        <div
-          className={`lcs440-cell__bus lcs440-rail__vs-bus${vsLive ? ' lcs440-cell__bus--live' : ''}`}
-        />
         <span className="lcs440-cell__tag lcs440-cell__tag--VS lcs440-rail__vs-tag">
           VS 440 V
         </span>
+        <div
+          className={`lcs440-cell__bus lcs440-rail__vs-bus${vsLive ? ' lcs440-cell__bus--live' : ''}`}
+        />
         <div className="lcs440-rail__vs-drops">
           <BusDrops outlets={vs?.outlets ?? []} {...shared} />
         </div>
@@ -344,12 +346,12 @@ export function Lcs440Board({
           <div className="lcs440-tie lcs440-rail__qvm" aria-hidden />
         )}
 
-        <div
-          className={`lcs440-cell__bus lcs440-rail__vm-bus${vmLive ? ' lcs440-cell__bus--live' : ''}`}
-        />
         <span className="lcs440-cell__tag lcs440-cell__tag--VM lcs440-rail__vm-tag">
           VM 440 V
         </span>
+        <div
+          className={`lcs440-cell__bus lcs440-rail__vm-bus${vmLive ? ' lcs440-cell__bus--live' : ''}`}
+        />
         <div className="lcs440-rail__vm-drops">
           <BusDrops outlets={vm?.outlets ?? []} {...shared} />
         </div>
@@ -376,12 +378,12 @@ export function Lcs440Board({
           <div className="lcs440-tie lcs440-rail__qnv" aria-hidden />
         )}
 
-        <div
-          className={`lcs440-cell__bus lcs440-rail__nv-bus${nvLive ? ' lcs440-cell__bus--live' : ''}`}
-        />
         <span className="lcs440-cell__tag lcs440-cell__tag--NV lcs440-rail__nv-tag">
           NV 440 V
         </span>
+        <div
+          className={`lcs440-cell__bus lcs440-rail__nv-bus${nvLive ? ' lcs440-cell__bus--live' : ''}`}
+        />
         <div className="lcs440-rail__nv-drops">
           <BusDrops outlets={nv?.outlets ?? []} {...shared} />
         </div>

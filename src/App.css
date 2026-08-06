@@ -2209,7 +2209,7 @@ body {
 
 /*
  * LCS desplegado: QVS en pierna exterior (criterio MSB) → barra VS;
- * etiqueta de sección bajo la barra (no encima del QVS).
+ * etiquetas de barra encima y a la izquierda de cada tramo.
  */
 .hbus-drop--lcs-open {
   display: flex;
@@ -2217,14 +2217,16 @@ body {
   align-items: flex-start;
   width: max-content;
   max-width: none;
+  --lcs-vs-col: 7.2rem;
 }
 
-/* Pierna QVS: misma geometría que salidas MSB; eje bajo el TRF */
+/* Pierna QVS: centrada sobre la barra VS; baja hasta la barra (etiqueta a la izquierda) */
 .hbus-drop--lcs-open > .hbus-drop__tops--lcs-qvs {
   align-self: flex-start;
   justify-content: center;
-  margin-left: 0.55rem;
-  width: 7.2rem;
+  /* padding chasis 0.55rem + centrado en columna VS */
+  margin-left: calc(0.55rem + (var(--lcs-vs-col) - 3.4rem) / 2);
+  width: 3.4rem;
   margin-bottom: -2px;
   z-index: 4;
 }
@@ -2235,17 +2237,21 @@ body {
 }
 
 .hbus-drop--lcs-open > .hbus-drop__tops--lcs-qvs .hbus-drop__wire--from-bus {
-  /* Une al recuadro del TRF (cadena directa) */
-  min-height: 1.6rem;
-  flex: 0 0 1.6rem;
+  min-height: 1.1rem;
+  flex: 0 0 1.1rem;
   margin-top: 0;
 }
 
 .hbus-drop--lcs-open > .hbus-drop__tops--lcs-qvs .hbus-drop__wire--to-eq {
-  /* Baja hasta la barra VS dentro del chasis */
-  min-height: 1.35rem;
-  flex: 0 0 1.35rem;
+  /* Cruza la fila de etiqueta (izq.) hasta la barra VS */
+  min-height: 1.15rem;
+  flex: 0 0 1.15rem;
   margin-bottom: -2px;
+}
+
+/* Sin etiqueta NORM/ALT en QVS (una sola alimentación) */
+.hbus-drop--lcs-open > .hbus-drop__tops--lcs-qvs .hbus-drop__tag {
+  display: none;
 }
 
 .hbus-drop--lcs-open .lcs-dual--inline {
@@ -2357,11 +2363,11 @@ body {
   width: 7.6rem;
 }
 
-/* Local: nace en la barra (como MSB) */
+/* Local: nace en la barra (como MSB), cable corto */
 .hbus--lcs-section .hbus-drop__leg--local .hbus-drop__wire--from-bus {
   margin-top: -2px;
-  min-height: 1.2rem;
-  flex: 0 0 1.2rem;
+  min-height: 0.55rem;
+  flex: 0 0 0.55rem;
 }
 
 /*
@@ -2404,6 +2410,17 @@ body {
 
 .hbus-drop__eq--fam-abt .hbus-drop__id {
   color: #6dcfb5;
+}
+
+/* Nombre/descripción: tipografía y color del MSB (no heredar tono de familia) */
+.hbus-drop__eq--fam-abt .hbus-drop__name,
+.hbus-drop__eq--fam-trf .hbus-drop__name,
+.hbus-drop__eq--fam-lcs .hbus-drop__name,
+.hbus-drop__eq--fam-sec .hbus-drop__name {
+  font-family: inherit;
+  font-size: 0.52rem;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .hbus-drop__eq--fam-trf {
@@ -3220,12 +3237,14 @@ body {
   font-family: var(--mono);
 }
 
-/* Barra LCS 440: bus → etiqueta → salidas (QVS llega desde fuera) */
+/* Barra LCS 440: etiqueta (arriba-izq) → bus → salidas (QVS llega desde fuera) */
 .lcs440-board {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   width: max-content;
+  /* Espacio mínimo para que el QVS exterior toque la barra */
+  padding-top: 0.15rem;
 }
 
 .lcs440-rail {
@@ -3239,8 +3258,8 @@ body {
     var(--lcs-tie-w)
     max-content;
   grid-template-rows:
-    [bus] 4px
     [label] auto
+    [bus] 4px
     [drops] auto;
   column-gap: 0;
   row-gap: 0;
@@ -3270,8 +3289,9 @@ body {
 .lcs440-rail__nv-tag {
   position: relative;
   z-index: 3;
-  justify-self: center;
-  margin: 0.35rem 0 0.2rem;
+  justify-self: start;
+  align-self: end;
+  margin: 0 0 0.15rem 0.1rem;
 }
 
 .lcs440-rail__vs-tag {

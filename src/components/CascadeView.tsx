@@ -376,11 +376,13 @@ function BusDrop({
           }}
         />
         <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
-        <span
-          className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
-        >
-          {lineBadge(feed.lineType)}
-        </span>
+        {remoteFeeds.length > 0 && (
+          <span
+            className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
+          >
+            {lineBadge(feed.lineType)}
+          </span>
+        )}
         {/* Cada pierna baja hasta el equipo (sin barra horizontal de empalme) */}
         <span
           className={`hbus-drop__wire hbus-drop__wire--to-eq${flowing ? ' hbus-drop__wire--flow' : ''}`}
