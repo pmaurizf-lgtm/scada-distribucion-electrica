@@ -11,6 +11,9 @@ import type {
   ServiceClass,
 } from '../types'
 import raw from '../data/abtDownstream.json'
+import dcp10Map from '../data/dcp10Map.json'
+
+const dcp10ByPuma = dcp10Map as Record<string, string>
 
 interface RawEq {
   id: string
@@ -79,7 +82,11 @@ function cleanEq(e: RawEq): Equipment {
     kind: e.kind,
   }
   if (e.local) out.local = e.local
-  if (e.dcp10Id) out.dcp10Id = e.dcp10Id
+  // Misma regla que system690.ts: mapa DCP-10 o, si no hay, el PUMA.
+  // RESPETO no muestra DCP en la tarjeta (el UI omite dcp si spare).
+  if (!e.spare) {
+    out.dcp10Id = e.dcp10Id || dcp10ByPuma[e.id] || e.id
+  }
   if (e.voltage) out.voltage = e.voltage.includes('V') ? e.voltage : `${e.voltage} V`
   if (e.spare) out.spare = true
   if (e.virtual) out.virtual = true

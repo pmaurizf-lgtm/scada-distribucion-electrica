@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   type MouseEvent as ReactMouseEvent,
-  type ReactNode,
   type RefObject,
 } from 'react'
 import { system690 } from '../data/system690'
@@ -18,14 +17,12 @@ import {
   childFeeders,
   incomingFeeds,
   isPendingFeed,
-  lineBadge,
   type BoardId,
   type BoardModel,
   type BusHalf,
   type FeederOutlet,
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
-import { isSpareEquipment } from '../utils/spareCircuits'
 import {
   isLcsEquipment,
   isTrfWithLoadCenter,
@@ -35,6 +32,10 @@ import {
 import { CircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { BreakerChip } from './BreakerChip'
+import {
+  EquipmentBusDrop,
+  equipFamOf,
+} from './EquipmentBusDrop'
 import { LcsDualView } from './LcsDualView'
 import { SearchTreeView } from './SearchTreeView'
 
@@ -281,11 +282,8 @@ function BusDrop({
     isLcsEquipment(equipment.id)
 
   const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
-  const remoteFeeds = feeds.filter((c) => c.id !== localFeed.id)
-
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
-  const spare = isSpareEquipment(equipment) || !!localFeed.spare
   const isAltLocal = localFeed.lineType === 'alternativa'
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
@@ -320,78 +318,6 @@ function BusDrop({
     [feeds],
   )
 
-  const renderLeg = (
-    feed: Circuit,
-    kind: 'local' | 'remote',
-  ) => {
-    const isAlt = feed.lineType === 'alternativa'
-    const flowing = energizedCircuitIds.has(feed.id)
-    const pending = isPendingFeed(feed)
-    return (
-      <div
-        key={feed.id}
-        className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}`}
-        data-circuit-id={kind === 'local' ? feed.id : undefined}
-        data-remote-circuit={kind === 'remote' ? feed.id : undefined}
-        title={
-          kind === 'remote'
-            ? pending
-              ? `Alimentación ${lineBadge(feed.lineType)} · origen pendiente de identificar`
-              : `Alimentación ${lineBadge(feed.lineType)} desde ${feed.originId}. Pulsa el interruptor para ir a ese alimentador.`
-            : undefined
-        }
-      >
-        {kind === 'remote' ? (
-          <span className="hbus-drop__free-end" aria-hidden />
-        ) : (
-          <span
-            className="hbus-drop__wire hbus-drop__wire--from-bus"
-            aria-hidden
-          />
-        )}
-        <BreakerChip
-          name={feed.protectionName}
-          state={protectionStatus[feed.id]}
-          compact
-          circuitId={feed.id}
-          circuit={feed}
-          flowing={flowing}
-          locked={lockedCircuits.has(feed.id) || pending}
-          title={
-            kind === 'remote'
-              ? pending
-                ? `Origen pendiente de identificar (${lineBadge(feed.lineType)})`
-                : `Ir a ${feed.protectionName} en ${feed.originId}`
-              : undefined
-          }
-          onHoverInfo={onHoverInfo}
-          onHoverInfoEnd={onHoverInfoEnd}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (kind === 'remote') {
-              if (!pending) onJumpToCircuit(feed)
-              return
-            }
-            onLocalBreaker(feed, e)
-          }}
-        />
-        <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
-        {remoteFeeds.length > 0 && (
-          <span
-            className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
-          >
-            {lineBadge(feed.lineType)}
-          </span>
-        )}
-        {/* Cada pierna baja hasta el equipo (sin barra horizontal de empalme) */}
-        <span
-          className={`hbus-drop__wire hbus-drop__wire--to-eq${flowing ? ' hbus-drop__wire--flow' : ''}`}
-          aria-hidden
-        />
-      </div>
-    )
-  }
-
   const toggleExpand = (e: ReactMouseEvent) => {
     if (!canExpand) return
     e.preventDefault()
@@ -400,119 +326,29 @@ function BusDrop({
   }
 
   const lcsOpen = isLcsEquipment(equipment.id) && expanded
-  const equipFam = equipment.id.startsWith('ABT-')
-    ? 'abt'
-    : equipment.id.startsWith('TRF-')
-      ? 'trf'
-      : isLcsEquipment(equipment.id)
-        ? 'lcs'
-        : equipment.kind === 'cuadro_secundario'
-          ? 'sec'
-          : equipment.kind === 'conversion'
-            ? 'trf'
-            : 'eq'
+  const equipFam = equipFamOf(equipment, isLcsEquipment(equipment.id))
+  const expandLabel = isTrfWithLoadCenter(system690, equipment.id)
+    ? expanded
+      ? '▴ LCS'
+      : '▾ LCS'
+    : isLcsEquipment(equipment.id)
+      ? expanded
+        ? '▴ 440 V'
+        : '▾ 440 V'
+      : `${children.length} ${expanded ? '▴' : '▾'}`
 
-  return (
-    <div
-      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${lcsOpen ? ' hbus-drop--lcs-open' : ''}${expanded && childItems.length > 0 ? ' hbus-drop--chain-open' : ''}`}
-      data-equip={equipment.id}
-      data-circuit-id={localFeed.id}
-      title={
-        spare
-          ? `${localFeed.protectionName} · RESPETO (reserva)`
-          : canExpand
-            ? `${equipment.id} · doble clic para ${expanded ? 'plegar' : 'desplegar'}`
-            : undefined
-      }
-      onDoubleClick={toggleExpand}
-    >
-      {/* LCS abierto: cable desde TRF; QVS va centrado sobre VS dentro del chasis */}
-      {lcsOpen ? (
-        <div
-          className={`hbus-drop__tops hbus-drop__tops--lcs-feed${localFlowing ? ' hbus-drop__tops--lcs-feed-flow' : ''}`}
-          aria-hidden
-        >
-          <span
-            className={`hbus-drop__wire hbus-drop__wire--from-bus${localFlowing ? ' hbus-drop__wire--flow' : ''}${isAltLocal ? ' hbus-drop__wire--alt' : ''}`}
-          />
-        </div>
-      ) : (
-        <div className="hbus-drop__tops">
-          {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
-          {renderLeg(localFeed, 'local')}
-        </div>
-      )}
-
-      {!lcsOpen && (
+  if (lcsOpen) {
+    return (
+      <div
+        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--lcs-open`}
+        data-equip={equipment.id}
+        data-circuit-id={localFeed.id}
+        title={`${equipment.id} · doble clic para plegar`}
+        onDoubleClick={toggleExpand}
+      >
         <div
           ref={eqWrapRef}
-          className="hbus-drop__eq-wrap"
-          onMouseEnter={() => setEqHover(true)}
-          onMouseLeave={() => setEqHover(false)}
-        >
-          <button
-            type="button"
-            className={`hbus-drop__eq hbus-drop__eq--fam-${equipFam}${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
-            data-equip={equipment.id}
-            title={
-              spare
-                ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
-                : canExpand
-                  ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
-                  : undefined
-            }
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={toggleExpand}
-            disabled={!canExpand}
-          >
-            <span className="hbus-drop__sym">
-              {spare ? 'R' : symbolFor(equipment.kind)}
-            </span>
-            <span className="hbus-drop__id">
-              {spare ? localFeed.protectionName : equipment.id}
-            </span>
-            {!spare && equipment.dcp10Id && (
-              <span className="hbus-drop__dcp" title="Denominación DCP-10">
-                {equipment.dcp10Id}
-              </span>
-            )}
-            <span className="hbus-drop__name">
-              {spare ? 'RESPETO' : equipment.name}
-            </span>
-            {trfBankNote && (
-              <span className="hbus-drop__bank" title={trfBankNote}>
-                690/440-230
-              </span>
-            )}
-            {canExpand && (
-              <span className="hbus-drop__more">
-                {isTrfWithLoadCenter(system690, equipment.id)
-                  ? expanded
-                    ? '▴ LCS'
-                    : '▾ LCS'
-                  : isLcsEquipment(equipment.id)
-                    ? expanded
-                      ? '▴ 440 V'
-                      : '▾ 440 V'
-                    : `${children.length} ${expanded ? '▴' : '▾'}`}
-              </span>
-            )}
-          </button>
-          {showEqBalloon && (
-            <EquipmentBalloon
-              equipment={equipment}
-              feeds={feedSummaries}
-              circuits={feeds}
-              anchorRef={eqWrapRef}
-            />
-          )}
-        </div>
-      )}
-
-      {lcsOpen && (
-        <div
-          ref={eqWrapRef}
-          className={`equip-chassis equip-chassis--lcs${eqEnergized ? ' equip-chassis--live' : ''}`}
+          className={`equip-chassis equip-chassis--lcs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}`}
           onMouseEnter={() => setEqHover(true)}
           onMouseLeave={() => setEqHover(false)}
           onDoubleClick={toggleExpand}
@@ -546,8 +382,43 @@ function BusDrop({
             />
           )}
         </div>
-      )}
+      </div>
+    )
+  }
 
+  const feedsOpenLcs =
+    isTrfWithLoadCenter(system690, equipment.id) &&
+    expanded &&
+    childItems.some(
+      (it) =>
+        isLcsEquipment(it.equipment.id) && expandedEquip.has(it.equipment.id),
+    )
+
+  return (
+    <EquipmentBusDrop
+      circuit={circuit}
+      equipment={equipment}
+      protectionStatus={protectionStatus}
+      energizedCircuitIds={energizedCircuitIds}
+      energizedEquipmentIds={energizedEquipmentIds}
+      lockedCircuits={lockedCircuits}
+      onLocalBreaker={onLocalBreaker}
+      onJumpToCircuit={onJumpToCircuit}
+      onHoverInfo={onHoverInfo}
+      onHoverInfoEnd={onHoverInfoEnd}
+      canExpand={canExpand}
+      expanded={expanded}
+      expandLabel={expandLabel}
+      onToggleExpand={() => onToggleEquip(equipment.id)}
+      equipFam={equipFam}
+      bankNote={trfBankNote}
+      rootClassName={[
+        expanded && childItems.length > 0 ? 'hbus-drop--chain-open' : '',
+        feedsOpenLcs ? 'hbus-drop--feeds-lcs-open' : '',
+      ]
+        .filter(Boolean)
+        .join(' ') || undefined}
+    >
       {expanded && childItems.length > 0 && (
         <HorizontalBus
           nested
@@ -567,7 +438,7 @@ function BusDrop({
           focusCircuitIds={focusCircuitIds}
         />
       )}
-    </div>
+    </EquipmentBusDrop>
   )
 }
 
@@ -1668,17 +1539,4 @@ function BoardColumn({
   )
 }
 
-function symbolFor(kind: Equipment['kind']): ReactNode {
-  switch (kind) {
-    case 'generador':
-      return 'G'
-    case 'conversion':
-      return 'T'
-    case 'cuadro_principal':
-      return '▣'
-    case 'cuadro_secundario':
-      return '▦'
-    default:
-      return 'M'
-  }
-}
+
