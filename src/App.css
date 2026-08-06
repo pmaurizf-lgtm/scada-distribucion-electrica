@@ -228,6 +228,12 @@ body {
   padding: 1.5rem;
 }
 
+/* Vista de búsqueda: el espacio de zoom se ajusta al árbol (sin vacío enorme) */
+.plant-zoom-space--focus {
+  min-width: 0;
+  min-height: 0;
+}
+
 .search {
   display: flex;
   flex-wrap: wrap;
@@ -2414,12 +2420,19 @@ body {
   gap: 0;
 }
 
+.stree-feed {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+}
+
 .stree-node__parents {
   display: flex;
   flex-wrap: nowrap;
   align-items: flex-end;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 1.75rem;
 }
 
 .stree-branch {
@@ -2427,7 +2440,14 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 0;
-  min-width: 5.5rem;
+  min-width: 5.75rem;
+}
+
+.stree-branch__leg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .stree-branch__wire {
@@ -2435,15 +2455,23 @@ body {
   min-height: 0.85rem;
   background: var(--line-normal);
   flex-shrink: 0;
+  margin-inline: auto;
 }
 
-.stree-branch__wire--short {
-  min-height: 0.55rem;
-}
-
-.stree-branch__wire--into {
+.stree-branch__wire--foot {
   min-height: 0.7rem;
-  margin-bottom: -1px;
+  margin-bottom: 0;
+}
+
+/* Alimentación única: el pie del cable empalma con la caja del equipo */
+.stree-feed--single .stree-branch__wire--foot {
+  min-height: 0.85rem;
+}
+
+.stree-branch__wire--stem {
+  min-height: 0.85rem;
+  align-self: center;
+  margin-top: 0;
 }
 
 .stree-branch__wire--alt,
@@ -2471,22 +2499,34 @@ body {
   border: 1px dashed var(--border);
 }
 
+/*
+ * Barra de unión dual: de centro a centro de cada rama
+ * (mitad del min-width de .stree-branch ≈ 2.875rem).
+ */
 .stree-join {
-  width: min(70%, 14rem);
   height: 2px;
-  margin-top: 0;
+  margin: 0 2.875rem;
   background: linear-gradient(
     90deg,
     var(--line-alt),
-    var(--line-normal),
+    var(--line-normal) 45%,
+    var(--line-normal) 55%,
     var(--line-alt)
   );
+  flex-shrink: 0;
 }
 
-.stree-node--dual .stree-node__self {
+.stree-node__self {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 0;
+}
+
+/* Empalme sin hueco: pie/stem tocan el borde superior de la caja */
+.stree-feed--single + .stree-node__self,
+.stree-feed--dual + .stree-node__self {
+  margin-top: -1px;
 }
 
 .stree-eq {

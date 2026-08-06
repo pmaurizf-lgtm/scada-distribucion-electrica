@@ -658,6 +658,8 @@ export function CascadeView({
   const plantRef = useRef<HTMLDivElement>(null)
   const zoomRef = useRef(zoom)
   zoomRef.current = zoom
+  const focusRef = useRef(focus)
+  focusRef.current = focus
   /** Tras zoom con rueda: reposicionar scroll para fijar el punto bajo el puntero */
   const pendingZoomScroll = useRef<{ left: number; top: number } | null>(null)
   /** Solo montaje / resize de ventana: encajar planta en viewport */
@@ -706,11 +708,6 @@ export function CascadeView({
       const next = new Set(prev)
       for (const b of boardsToOpen) next.add(b)
       return next
-    })
-
-    requestAnimationFrame(() => {
-      const el = document.querySelector(`[data-equip="${focus.equipmentId}"]`)
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
     })
   }, [focus])
 
@@ -780,6 +777,14 @@ export function CascadeView({
       )
       if (next === current) return
 
+      // En búsqueda: el zoom permanece centrado en el árbol unifilar
+      if (focusRef.current) {
+        pendingZoomScroll.current = null
+        centerPending.current = true
+        onZoomChange(next)
+        return
+      }
+
       const rect = el.getBoundingClientRect()
       const offsetX = e.clientX - rect.left
       const offsetY = e.clientY - rect.top
@@ -807,15 +812,6 @@ export function CascadeView({
     }
   }, [onZoomChange])
 
-  useLayoutEffect(() => {
-    const pending = pendingZoomScroll.current
-    const el = panRef.current
-    if (!pending || !el) return
-    pendingZoomScroll.current = null
-    el.scrollLeft = pending.left
-    el.scrollTop = pending.top
-  }, [zoom])
-
   useEffect(() => {
     const el = plantRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
@@ -841,7 +837,6 @@ export function CascadeView({
     const w = plant.offsetWidth
     const h = plant.offsetHeight
     if (w < 8 || h < 8) {
-      // Layout aún no listo: reintentar sin perder el pending
       window.setTimeout(() => {
         if (fitZoomPending.current) fitAndCenterView()
       }, 120)
@@ -886,9 +881,7 @@ export function CascadeView({
     }
   }, [onZoomChange])
 
-  /** Tras aplicar zoom nuevo: centrar con el tamaño real del zoom-space */
   useLayoutEffect(() => {
-    if (!centerPending.current) return
     const stage = panRef.current
     const plant = plantRef.current
     const space = plant?.parentElement
@@ -896,6 +889,22 @@ export function CascadeView({
       centerPending.current = false
       return
     }
+
+    // Zoom a puntero (planta completa)
+    const pending = pendingZoomScroll.current
+    if (pending && !focusRef.current) {
+      pendingZoomScroll.current = null
+      stage.scrollLeft = pending.left
+      stage.scrollTop = pending.top
+      centerPending.current = false
+      return
+    }
+    pendingZoomScroll.current = null
+
+    // Centrar esquema (búsqueda, fit inicial, botones +/-)
+    if (!centerPending.current && !focusRef.current) return
+    centerPending.current = false
+
     const z = zoom
     const cw = plant.offsetWidth * z
     const ch = plant.offsetHeight * z
@@ -907,8 +916,7 @@ export function CascadeView({
     space.style.paddingBottom = `${padY}px`
     stage.scrollLeft = Math.max(0, padX + cw / 2 - stage.clientWidth / 2)
     stage.scrollTop = Math.max(0, padY + ch / 2 - stage.clientHeight / 2)
-    centerPending.current = false
-  }, [zoom])
+  }, [zoom, focus])
 
   /** Tras plegar/desplegar o montaje: encajar en viewport (solo si fitZoomPending) */
   useEffect(() => {
@@ -1148,7 +1156,7 @@ export function CascadeView({
       >
         {focus ? (
           <div
-            className="plant-zoom-space"
+            className="plant-zoom-space plant-zoom-space--focus"
             style={{
               width: plantSize.w ? plantSize.w * zoom : undefined,
               height: plantSize.h ? plantSize.h * zoom : undefined,

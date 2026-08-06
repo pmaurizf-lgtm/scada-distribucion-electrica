@@ -149,66 +149,73 @@ function TreeNode({
 
   return (
     <div
-      className={`stree-node${isTarget ? ' stree-node--target' : ''}${dual ? ' stree-node--dual' : ''}`}
+      className={`stree-node${isTarget ? ' stree-node--target' : ''}${dual ? ' stree-node--dual' : ''}${feeds.length === 1 ? ' stree-node--single' : ''}`}
     >
       {feeds.length > 0 && (
-        <div className="stree-node__parents">
-          {feeds.map((feed) => {
-            const isAlt = feed.lineType === 'alternativa'
-            return (
-              <div
-                key={feed.id}
-                className={`stree-branch${isAlt ? ' stree-branch--alt' : ' stree-branch--norm'}`}
-              >
-                <TreeNode
-                  equipmentId={feed.originId}
-                  visited={nextVisited}
-                  protectionStatus={protectionStatus}
-                  lockedCircuits={lockedCircuits}
-                  energizedCircuitIds={energizedCircuitIds}
-                  energizedEquipmentIds={energizedEquipmentIds}
-                  onBreaker={onBreaker}
-                />
-                <div className="stree-branch__wire" aria-hidden />
-                {!feed.virtual ? (
-                  <>
-                    <BreakerMini
-                      circuit={feed}
-                      state={protectionStatus[feed.id]}
-                      locked={lockedCircuits.has(feed.id)}
-                      flowing={energizedCircuitIds.has(feed.id)}
-                      onClick={(e) => onBreaker(feed, e)}
+        <div
+          className={`stree-feed${dual ? ' stree-feed--dual' : ' stree-feed--single'}`}
+        >
+          <div className="stree-node__parents">
+            {feeds.map((feed) => {
+              const isAlt = feed.lineType === 'alternativa'
+              return (
+                <div
+                  key={feed.id}
+                  className={`stree-branch${isAlt ? ' stree-branch--alt' : ' stree-branch--norm'}`}
+                >
+                  <TreeNode
+                    equipmentId={feed.originId}
+                    visited={nextVisited}
+                    protectionStatus={protectionStatus}
+                    lockedCircuits={lockedCircuits}
+                    energizedCircuitIds={energizedCircuitIds}
+                    energizedEquipmentIds={energizedEquipmentIds}
+                    onBreaker={onBreaker}
+                  />
+                  <div className="stree-branch__leg">
+                    <div className="stree-branch__wire" aria-hidden />
+                    {!feed.virtual ? (
+                      <>
+                        <BreakerMini
+                          circuit={feed}
+                          state={protectionStatus[feed.id]}
+                          locked={lockedCircuits.has(feed.id)}
+                          flowing={energizedCircuitIds.has(feed.id)}
+                          onClick={(e) => onBreaker(feed, e)}
+                        />
+                        <span
+                          className={`stree-branch__tag${isAlt ? ' stree-branch__tag--alt' : ''}`}
+                        >
+                          {lineBadge(feed.lineType)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="stree-branch__bus" title="Enlace de barra">
+                        barra
+                      </span>
+                    )}
+                    <div
+                      className={`stree-branch__wire stree-branch__wire--foot${
+                        isAlt ? ' stree-branch__wire--alt' : ''
+                      }`}
+                      aria-hidden
                     />
-                    <span
-                      className={`stree-branch__tag${isAlt ? ' stree-branch__tag--alt' : ''}`}
-                    >
-                      {lineBadge(feed.lineType)}
-                    </span>
-                  </>
-                ) : (
-                  <span className="stree-branch__bus" title="Enlace de barra">
-                    barra
-                  </span>
-                )}
-                <div className="stree-branch__wire stree-branch__wire--short" aria-hidden />
-              </div>
-            )
-          })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {dual && (
+            <>
+              <div className="stree-join" aria-hidden />
+              <div className="stree-branch__wire stree-branch__wire--stem" aria-hidden />
+            </>
+          )}
         </div>
       )}
 
-      {dual && <div className="stree-join" aria-hidden />}
-
       <div className="stree-node__self">
-        {!dual && feeds.length === 1 && (
-          <div
-            className={`stree-branch__wire stree-branch__wire--into${
-              feeds[0].lineType === 'alternativa' ? ' stree-branch__wire--alt' : ''
-            }`}
-            aria-hidden
-          />
-        )}
-        {dual && <div className="stree-branch__wire stree-branch__wire--into" aria-hidden />}
         <EquipCard
           equipment={equipment}
           live={energizedEquipmentIds.has(equipment.id)}
