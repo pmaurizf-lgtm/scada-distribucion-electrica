@@ -95,6 +95,12 @@ export function CircuitBalloon({
         <dd>{circuit.originId}</dd>
         <dt>Destino</dt>
         <dd>{circuit.destinationId}</dd>
+        {circuit.spare && (
+          <>
+            <dt>Nota</dt>
+            <dd>Interruptor de reserva (RESPETO · Excel col. L)</dd>
+          </>
+        )}
       </dl>
     </div>
   )

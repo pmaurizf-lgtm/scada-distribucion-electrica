@@ -24,6 +24,8 @@ export interface Equipment {
   description?: string
   /** Nodo sintético (p. ej. barra de cuadro principal) */
   virtual?: boolean
+  /** Hueco de reserva (RESPETO / SPARE, Excel col. L) */
+  spare?: boolean
 }
 
 export interface Circuit {
@@ -54,6 +56,8 @@ export interface Circuit {
   voltage?: string
   parallelCables?: number
   virtual?: boolean
+  /** Circuito RESPETO (Excel col. L) */
+  spare?: boolean
   excelRow?: number | null
   cableSection?: string
   notes?: string

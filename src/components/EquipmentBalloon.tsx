@@ -89,6 +89,12 @@ export function EquipmentBalloon({
             <dd>Nodo de barra (sintético)</dd>
           </>
         )}
+        {equipment.spare && (
+          <>
+            <dt>Nota</dt>
+            <dd>Interruptor de reserva (RESPETO · Excel col. L)</dd>
+          </>
+        )}
         {feeds && feeds.length > 0 && (
           <>
             <dt>Alimentaciones</dt>

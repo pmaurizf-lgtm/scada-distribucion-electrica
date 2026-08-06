@@ -7,6 +7,7 @@ import type {
   ServiceClass,
 } from '../types'
 import raw from './system690.json'
+import { augmentSpareCircuits } from '../utils/spareCircuits'
 
 interface RawEquipment {
   id: string
@@ -47,7 +48,7 @@ interface RawSystem {
 
 const system = raw as RawSystem
 
-export const system690: DistributionData = {
+const base: DistributionData = {
   title: system.title,
   vessel: system.vessel,
   equipment: system.equipment.map(
@@ -84,3 +85,6 @@ export const system690: DistributionData = {
     }),
   ),
 }
+
+/** Datos 690 V + circuitos RESPETO (SPARE) de la col. L del Excel */
+export const system690: DistributionData = augmentSpareCircuits(base)

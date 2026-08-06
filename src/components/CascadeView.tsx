@@ -24,6 +24,7 @@ import {
   type FeederOutlet,
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
+import { isSpareEquipment } from '../utils/spareCircuits'
 import { CircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
@@ -319,6 +320,7 @@ function BusDrop({
 
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
+  const spare = isSpareEquipment(equipment) || !!localFeed.spare
   const isAltLocal = localFeed.lineType === 'alternativa'
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
@@ -424,13 +426,15 @@ function BusDrop({
 
   return (
     <div
-      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}`}
+      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}`}
       data-equip={equipment.id}
       data-circuit-id={localFeed.id}
       title={
-        canExpand
-          ? `${equipment.id} · doble clic para ${expanded ? 'plegar' : 'desplegar'}`
-          : undefined
+        spare
+          ? `${localFeed.protectionName} · RESPETO (reserva)`
+          : canExpand
+            ? `${equipment.id} · doble clic para ${expanded ? 'plegar' : 'desplegar'}`
+            : undefined
       }
       onDoubleClick={toggleExpand}
     >
@@ -447,20 +451,28 @@ function BusDrop({
       >
         <button
           type="button"
-          className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}`}
+          className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
           data-equip={equipment.id}
           title={
-            canExpand
-              ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
-              : undefined
+            spare
+              ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
+              : canExpand
+                ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
+                : undefined
           }
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={toggleExpand}
           disabled={!canExpand}
         >
-          <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
-          <span className="hbus-drop__id">{equipment.id}</span>
-          <span className="hbus-drop__name">{equipment.name}</span>
+          <span className="hbus-drop__sym">
+            {spare ? 'R' : symbolFor(equipment.kind)}
+          </span>
+          <span className="hbus-drop__id">
+            {spare ? localFeed.protectionName : equipment.id}
+          </span>
+          <span className="hbus-drop__name">
+            {spare ? 'RESPETO' : equipment.name}
+          </span>
           {canExpand && (
             <span className="hbus-drop__more">
               {children.length} {expanded ? '▴' : '▾'}
