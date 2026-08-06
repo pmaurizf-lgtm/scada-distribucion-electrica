@@ -89,8 +89,9 @@ export function computeEnergyFlow(
           /^PNL-MSB/.test(circuit.destinationId)
         ) {
           const destHalf = halfFromPanel(circuit.destinationId)
+          // Sin media barra conocida o sin tensión en ese lado → no alimenta el panel
           if (
-            destHalf &&
+            !destHalf ||
             !canReachPanelFromMsb(circuit.originId, destHalf)
           ) {
             continue
@@ -114,6 +115,7 @@ export function computeEnergyFlow(
         }
       }
 
+      // Solo propagar si el destino queda realmente energizable
       if (!energizedEquipmentIds.has(circuit.destinationId)) {
         energizedEquipmentIds.add(circuit.destinationId)
         queue.push(circuit.destinationId)

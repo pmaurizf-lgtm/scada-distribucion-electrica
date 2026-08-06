@@ -60,9 +60,11 @@ export function allSectionCouplers(): Circuit[] {
 }
 
 export function halfFromPanel(panelId: string): BusHalf | null {
-  const m = panelId.match(/MSB[12]\d{2}([AB])$/i)
+  // PNL-MSB1001A → barra 1, sección 001, mitad A (SA)
+  // PNL-MSB2008B → barra 2, sección 008, mitad B (SB)
+  const m = panelId.match(/MSB([12])\d{3}([AB])$/i)
   if (!m) return null
-  return m[1].toUpperCase() === 'A' ? 'SA' : 'SB'
+  return m[2].toUpperCase() === 'A' ? 'SA' : 'SB'
 }
 
 export function halfFromFeeder(circuit: Circuit): BusHalf | null {

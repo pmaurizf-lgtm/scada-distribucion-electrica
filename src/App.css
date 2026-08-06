@@ -1361,8 +1361,9 @@ body {
 }
 
 .plant-rack__rail-seg--live {
-  /* Color original de barra; halo horizontal */
-  background: #b24ec4;
+  /* Color original de barra; halo horizontal de flujo */
+  background: #e0a0f0;
+  box-shadow: 0 0 8px rgba(224, 160, 240, 0.55);
   overflow: visible;
 }
 

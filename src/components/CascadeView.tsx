@@ -281,7 +281,17 @@ function BusDrop({
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
   const [eqHover, setEqHover] = useState(false)
+  const [showEqBalloon, setShowEqBalloon] = useState(false)
   const eqWrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!eqHover) {
+      setShowEqBalloon(false)
+      return
+    }
+    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
+    return () => window.clearTimeout(t)
+  }, [eqHover])
 
   const childItems = useMemo(() => {
     const all = children.map(({ circuit: c, equipment: eq }) => ({
@@ -414,7 +424,7 @@ function BusDrop({
             </span>
           )}
         </button>
-        {eqHover && (
+        {showEqBalloon && (
           <EquipmentBalloon
             equipment={equipment}
             feeds={feedSummaries}
