@@ -18,7 +18,7 @@ import {
   toggleProtectionState,
 } from '../utils/energyFlow'
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
-import { allSectionCouplers } from '../utils/cascadeModel'
+import { allSectionCouplers, isPendingFeed } from '../utils/cascadeModel'
 import {
   CascadeView,
   type CascadeFocus,
@@ -79,7 +79,11 @@ export function ScadaCanvas() {
       const ids = [
         ...system690.circuits.map((c) => c.id),
         ...allSectionCouplers().map((c) => c.id),
-      ].filter((id) => !lockedCircuits.has(id))
+      ].filter(
+        (id) =>
+          !lockedCircuits.has(id) &&
+          !system690.circuits.some((c) => c.id === id && isPendingFeed(c)),
+      )
       return invertProtectionStatus(prev, ids)
     })
     setStatusSource('simulación · estados invertidos (excepto bloqueados)')
@@ -87,6 +91,13 @@ export function ScadaCanvas() {
 
   const handleToggleProtection = useCallback(
     (circuitId: string) => {
+      const circuit = system690.circuits.find((c) => c.id === circuitId)
+      if (circuit && isPendingFeed(circuit)) {
+        setSearchHint(
+          'Alimentación pendiente de identificar: no se puede operar hasta conocer el origen.',
+        )
+        return false
+      }
       if (lockedCircuits.has(circuitId)) {
         setSearchHint(
           `Interruptor bloqueado con candado: no se puede cerrar hasta quitar el candado.`,

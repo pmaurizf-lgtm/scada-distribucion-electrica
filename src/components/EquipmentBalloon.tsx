@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import type { Equipment } from '../types'
+import { originLabel } from '../utils/cascadeModel'
 
 const KIND_LABEL: Record<Equipment['kind'], string> = {
   generador: 'Generador',
@@ -119,7 +120,10 @@ export function EquipmentBalloon({
                       {f.lineType === 'alternativa' ? 'ALT' : 'NORM'}
                     </span>{' '}
                     {f.name}
-                    <span className="equip-balloon__from"> ← {f.originId}</span>
+                    <span className="equip-balloon__from">
+                      {' '}
+                      ← {originLabel(f.originId)}
+                    </span>
                   </li>
                 ))}
               </ul>

@@ -14,7 +14,11 @@ import {
   type LcsVoltageBus,
 } from '../abtDownstream'
 import { isSpareEquipment } from '../utils/spareCircuits'
-import { lineBadge } from '../utils/cascadeModel'
+import {
+  incomingFeeds,
+  isPendingFeed,
+  lineBadge,
+} from '../utils/cascadeModel'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
 import { EquipmentBalloon } from './EquipmentBalloon'
 
@@ -91,6 +95,7 @@ function OutletChip({
   energizedEquipmentIds,
   lockedCircuits,
   onLocalBreaker,
+  onJumpToCircuit,
   onHoverInfo,
   onHoverInfoEnd,
 }: {
@@ -101,11 +106,19 @@ function OutletChip({
   energizedEquipmentIds: Set<string>
   lockedCircuits: Set<string>
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
+  onJumpToCircuit?: (c: Circuit) => void
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
 }) {
   const spare = isSpareEquipment(equipment) || !!circuit.spare
-  const flowing = energizedCircuitIds.has(circuit.id)
+  const feeds = useMemo(
+    () => (spare ? [circuit] : incomingFeeds(system690, equipment.id)),
+    [spare, circuit, equipment.id],
+  )
+  const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
+  const remoteFeeds = feeds.filter((c) => c.id !== localFeed.id)
+  const dual = remoteFeeds.length > 0
+  const flowing = energizedCircuitIds.has(localFeed.id)
   const live = energizedEquipmentIds.has(equipment.id)
   const [hover, setHover] = useState(false)
   const [showBall, setShowBall] = useState(false)
@@ -120,9 +133,128 @@ function OutletChip({
     return () => window.clearTimeout(t)
   }, [hover])
 
+  const feedSummaries = feeds.map((f) => ({
+    name: f.protectionName,
+    lineType: f.lineType,
+    originId: f.originId,
+  }))
+
+  const renderLeg = (feed: Circuit, kind: 'local' | 'remote') => {
+    const isAlt = feed.lineType === 'alternativa'
+    const legFlow = energizedCircuitIds.has(feed.id)
+    const pending = isPendingFeed(feed)
+    const locked = lockedCircuits.has(feed.id) || pending
+    return (
+      <div
+        key={feed.id}
+        className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${legFlow ? ' hbus-drop__leg--flow' : ''}`}
+        data-circuit-id={kind === 'local' ? feed.id : undefined}
+        title={
+          kind === 'remote'
+            ? pending
+              ? `Alimentación ${lineBadge(feed.lineType)} · origen pendiente de identificar`
+              : `Alimentación ${lineBadge(feed.lineType)} desde ${feed.originId}`
+            : undefined
+        }
+      >
+        {kind === 'remote' ? (
+          <span className="hbus-drop__free-end" aria-hidden />
+        ) : (
+          <span className="lcs-out__stub" aria-hidden />
+        )}
+        <MiniBreaker
+          name={feed.protectionName}
+          state={protectionStatus[feed.id]}
+          circuit={feed}
+          flowing={legFlow}
+          locked={locked}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (kind === 'remote') {
+              if (!pending) onJumpToCircuit?.(feed)
+              return
+            }
+            onLocalBreaker(feed, e)
+          }}
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
+        />
+        <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
+        <span
+          className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
+        >
+          {lineBadge(feed.lineType)}
+        </span>
+        <span
+          className={`hbus-drop__wire hbus-drop__wire--to-eq${legFlow ? ' hbus-drop__wire--flow' : ''}`}
+          aria-hidden
+        />
+      </div>
+    )
+  }
+
+  if (dual) {
+    const fam = equipment.id.startsWith('ABT-')
+      ? 'abt'
+      : equipment.id.startsWith('TRF-')
+        ? 'trf'
+        : equipment.id.startsWith('LCS-')
+          ? 'lcs'
+          : equipment.kind === 'cuadro_secundario'
+            ? 'sec'
+            : 'eq'
+    return (
+      <div
+        className={`lcs-out lcs-out--dual lcs-out--fam-${fam}${spare ? ' lcs-out--spare' : ''}${live ? ' lcs-out--live' : ''}${flowing ? ' lcs-out--flow' : ''}`}
+        data-equip={equipment.id}
+        data-circuit-id={localFeed.id}
+      >
+        <div className="hbus-drop__tops">
+          {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
+          {renderLeg(localFeed, 'local')}
+        </div>
+        <div
+          ref={wrapRef}
+          className={`lcs-out__eq lcs-out__eq--fam-${fam}${spare ? ' lcs-out__eq--spare' : ''}`}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+          title={
+            remoteFeeds.some(isPendingFeed)
+              ? `${equipment.id} · doble alimentación (una pendiente de identificar)`
+              : undefined
+          }
+        >
+          <span className="lcs-out__id">{equipment.id}</span>
+          <span className="lcs-out__name">{equipment.name}</span>
+        </div>
+        {showBall && (
+          <EquipmentBalloon
+            equipment={equipment}
+            feeds={feedSummaries}
+            anchorRef={wrapRef}
+          />
+        )}
+      </div>
+    )
+  }
+
+  const fam = spare
+    ? 'eq'
+    : equipment.id.startsWith('ABT-')
+      ? 'abt'
+      : equipment.id.startsWith('TRF-')
+        ? 'trf'
+        : equipment.id.startsWith('SSB-')
+          ? 'sec'
+          : equipment.kind === 'cuadro_secundario'
+            ? 'sec'
+            : equipment.kind === 'conversion'
+              ? 'trf'
+              : 'eq'
+
   return (
     <div
-      className={`lcs-out${spare ? ' lcs-out--spare' : ''}${live ? ' lcs-out--live' : ''}${flowing ? ' lcs-out--flow' : ''}`}
+      className={`lcs-out lcs-out--fam-${fam}${spare ? ' lcs-out--spare' : ''}${live ? ' lcs-out--live' : ''}${flowing ? ' lcs-out--flow' : ''}`}
     >
       <span className="lcs-out__stub" aria-hidden />
       <MiniBreaker
@@ -138,7 +270,7 @@ function OutletChip({
       <span className="lcs-out__wire" aria-hidden />
       <div
         ref={wrapRef}
-        className={`lcs-out__eq${spare ? ' lcs-out__eq--spare' : ''}`}
+        className={`lcs-out__eq lcs-out__eq--fam-${fam}${spare ? ' lcs-out__eq--spare' : ''}`}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
@@ -155,13 +287,7 @@ function OutletChip({
       {showBall && (
         <EquipmentBalloon
           equipment={equipment}
-          feeds={[
-            {
-              name: circuit.protectionName,
-              lineType: circuit.lineType,
-              originId: circuit.originId,
-            },
-          ]}
+          feeds={feedSummaries}
           anchorRef={wrapRef}
         />
       )}
@@ -179,6 +305,7 @@ type SharedProps = {
   energizedEquipmentIds: Set<string>
   lockedCircuits: Set<string>
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
+  onJumpToCircuit?: (c: Circuit) => void
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
 }
@@ -190,6 +317,7 @@ function BusDrops({
   energizedEquipmentIds,
   lockedCircuits,
   onLocalBreaker,
+  onJumpToCircuit,
   onHoverInfo,
   onHoverInfoEnd,
 }: {
@@ -207,6 +335,7 @@ function BusDrops({
           energizedEquipmentIds={energizedEquipmentIds}
           lockedCircuits={lockedCircuits}
           onLocalBreaker={onLocalBreaker}
+          onJumpToCircuit={onJumpToCircuit}
           onHoverInfo={onHoverInfo}
           onHoverInfoEnd={onHoverInfoEnd}
         />
@@ -224,6 +353,7 @@ export function Lcs440Board({
   energizedEquipmentIds,
   lockedCircuits,
   onLocalBreaker,
+  onJumpToCircuit,
   onHoverInfo,
   onHoverInfoEnd,
 }: {
@@ -249,6 +379,7 @@ export function Lcs440Board({
     energizedEquipmentIds,
     lockedCircuits,
     onLocalBreaker,
+    onJumpToCircuit,
     onHoverInfo,
     onHoverInfoEnd,
   }
@@ -257,32 +388,41 @@ export function Lcs440Board({
     <div
       className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}${incoming ? ' lcs440-board--fed' : ''}`}
     >
-      {incoming && (
-        <div className={`lcs440-vs-feed${inFlow ? ' lcs440-vs-feed--flow' : ''}`}>
-          <span className="lcs440-vs-feed__from" title="desde TRF" aria-hidden />
-          <MiniBreaker
-            name={feed.protectionName}
-            state={protectionStatus[feed.id]}
-            circuit={feed}
-            flowing={inFlow}
-            locked={lockedCircuits.has(feed.id)}
-            onClick={(e) => onLocalBreaker(feed, e)}
-            onHoverInfo={onHoverInfo}
-            onHoverInfoEnd={onHoverInfoEnd}
-          />
-          <span className="lcs440-vs-feed__to" aria-hidden />
-        </div>
-      )}
-
       <div className="lcs440-rail">
-        <div className={`lcs440-cell lcs440-cell--vs${vsLive ? ' lcs440-cell--live' : ''}`}>
-          <span className="lcs440-cell__tag lcs440-cell__tag--VS">VS 440 V</span>
-          <div className="lcs440-cell__bus" />
+        {/* —— Columna VS —— */}
+        {incoming ? (
+          <div className={`lcs440-vs-feed${inFlow ? ' lcs440-vs-feed--flow' : ''}`}>
+            <span className="lcs440-vs-feed__from" title="desde TRF" aria-hidden />
+            <MiniBreaker
+              name={feed.protectionName}
+              state={protectionStatus[feed.id]}
+              circuit={feed}
+              flowing={inFlow}
+              locked={lockedCircuits.has(feed.id)}
+              onClick={(e) => onLocalBreaker(feed, e)}
+              onHoverInfo={onHoverInfo}
+              onHoverInfoEnd={onHoverInfoEnd}
+            />
+            <span className="lcs440-vs-feed__to" aria-hidden />
+          </div>
+        ) : (
+          <div className="lcs440-vs-feed lcs440-vs-feed--empty" aria-hidden />
+        )}
+
+        <span className="lcs440-cell__tag lcs440-cell__tag--VS lcs440-rail__vs-tag">
+          VS 440 V
+        </span>
+        <div
+          className={`lcs440-cell__bus lcs440-rail__vs-bus${vsLive ? ' lcs440-cell__bus--live' : ''}`}
+        />
+        <div className="lcs440-rail__vs-drops">
           <BusDrops outlets={vs?.outlets ?? []} {...shared} />
         </div>
 
-        {qvm && (
-          <div className={`lcs440-tie${qvmFlow ? ' lcs440-tie--flow' : ''}`}>
+        {/* —— QVM —— */}
+        {qvm ? (
+          <div className={`lcs440-tie lcs440-rail__qvm${qvmFlow ? ' lcs440-tie--flow' : ''}`}>
+            <span className="lcs440-tie__bridge lcs440-tie__bridge--left" aria-hidden />
             <MiniBreaker
               name={qvm.protectionName}
               state={protectionStatus[qvm.id]}
@@ -294,17 +434,27 @@ export function Lcs440Board({
               onHoverInfo={onHoverInfo}
               onHoverInfoEnd={onHoverInfoEnd}
             />
+            <span className="lcs440-tie__bridge lcs440-tie__bridge--right" aria-hidden />
           </div>
+        ) : (
+          <div className="lcs440-tie lcs440-rail__qvm" aria-hidden />
         )}
 
-        <div className={`lcs440-cell lcs440-cell--vm${vmLive ? ' lcs440-cell--live' : ''}`}>
-          <span className="lcs440-cell__tag lcs440-cell__tag--VM">VM 440 V</span>
-          <div className="lcs440-cell__bus" />
+        {/* —— Columna VM —— */}
+        <span className="lcs440-cell__tag lcs440-cell__tag--VM lcs440-rail__vm-tag">
+          VM 440 V
+        </span>
+        <div
+          className={`lcs440-cell__bus lcs440-rail__vm-bus${vmLive ? ' lcs440-cell__bus--live' : ''}`}
+        />
+        <div className="lcs440-rail__vm-drops">
           <BusDrops outlets={vm?.outlets ?? []} {...shared} />
         </div>
 
-        {qnv && (
-          <div className={`lcs440-tie${qnvFlow ? ' lcs440-tie--flow' : ''}`}>
+        {/* —— QNV —— */}
+        {qnv ? (
+          <div className={`lcs440-tie lcs440-rail__qnv${qnvFlow ? ' lcs440-tie--flow' : ''}`}>
+            <span className="lcs440-tie__bridge lcs440-tie__bridge--left" aria-hidden />
             <MiniBreaker
               name={qnv.protectionName}
               state={protectionStatus[qnv.id]}
@@ -316,12 +466,20 @@ export function Lcs440Board({
               onHoverInfo={onHoverInfo}
               onHoverInfoEnd={onHoverInfoEnd}
             />
+            <span className="lcs440-tie__bridge lcs440-tie__bridge--right" aria-hidden />
           </div>
+        ) : (
+          <div className="lcs440-tie lcs440-rail__qnv" aria-hidden />
         )}
 
-        <div className={`lcs440-cell lcs440-cell--nv${nvLive ? ' lcs440-cell--live' : ''}`}>
-          <span className="lcs440-cell__tag lcs440-cell__tag--NV">NV 440 V</span>
-          <div className="lcs440-cell__bus" />
+        {/* —— Columna NV —— */}
+        <span className="lcs440-cell__tag lcs440-cell__tag--NV lcs440-rail__nv-tag">
+          NV 440 V
+        </span>
+        <div
+          className={`lcs440-cell__bus lcs440-rail__nv-bus${nvLive ? ' lcs440-cell__bus--live' : ''}`}
+        />
+        <div className="lcs440-rail__nv-drops">
           <BusDrops outlets={nv?.outlets ?? []} {...shared} />
         </div>
       </div>

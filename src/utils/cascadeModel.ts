@@ -178,6 +178,22 @@ export function childFeeders(
     )
 }
 
+/** Origen stub cuando la 2.ª alimentación aún no está identificada en Excel. */
+export const PENDING_ORIGIN_ID = 'ORIGEN-PENDIENTE'
+
+export function isPendingOrigin(originId: string): boolean {
+  return originId === PENDING_ORIGIN_ID
+}
+
+export function isPendingFeed(circuit: Circuit): boolean {
+  return isPendingOrigin(circuit.originId)
+}
+
+/** Etiqueta de origen para UI / globos. */
+export function originLabel(originId: string): string {
+  return isPendingOrigin(originId) ? 'PENDIENTE' : originId
+}
+
 /** Todas las alimentaciones entrantes a un equipo (normal / alt.) */
 export function incomingFeeds(
   data: DistributionData,

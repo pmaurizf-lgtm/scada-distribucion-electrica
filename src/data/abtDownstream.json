@@ -113,6 +113,16 @@
                           "spare":  false
                       },
                       {
+                          "id":  "ORIGEN-PENDIENTE",
+                          "name":  "Origen pendiente de identificar",
+                          "local":  null,
+                          "dcp10Id":  null,
+                          "voltage":  null,
+                          "kind":  "cuadro_secundario",
+                          "spare":  false,
+                          "virtual":  true
+                      },
+                      {
                           "id":  "RCK-GUNS0003",
                           "name":  "RCK-GUNS0003",
                           "local":  null,
@@ -648,6 +658,46 @@
                          "spare":  false,
                          "virtual":  false,
                          "notes":  null
+                     },
+                     {
+                         "id":  "abt-pend-abt4pws0001-norm",
+                         "excelRow":  null,
+                         "circuitRef":  null,
+                         "name":  "PENDIENTE → ABT-4PWS0001 (NORM)",
+                         "originId":  "ORIGEN-PENDIENTE",
+                         "destinationId":  "ABT-4PWS0001",
+                         "lineType":  "normal",
+                         "service":  "VM",
+                         "protectionName":  "PEND",
+                         "protectionModel":  null,
+                         "protectionCurrentA":  null,
+                         "pnKW":  null,
+                         "voltage":  "440",
+                         "parallelCables":  null,
+                         "cableSection":  null,
+                         "spare":  false,
+                         "virtual":  false,
+                         "notes":  "Alimentación normal pendiente de identificar (solo conocida la ALT desde LCS-4PWS0001-2Q01)"
+                     },
+                     {
+                         "id":  "abt-pend-abt4pws0002-alt",
+                         "excelRow":  null,
+                         "circuitRef":  null,
+                         "name":  "PENDIENTE → ABT-4PWS0002 (ALT)",
+                         "originId":  "ORIGEN-PENDIENTE",
+                         "destinationId":  "ABT-4PWS0002",
+                         "lineType":  "alternativa",
+                         "service":  "VM",
+                         "protectionName":  "PEND",
+                         "protectionModel":  null,
+                         "protectionCurrentA":  null,
+                         "pnKW":  null,
+                         "voltage":  "440",
+                         "parallelCables":  null,
+                         "cableSection":  null,
+                         "spare":  false,
+                         "virtual":  false,
+                         "notes":  "Alimentación alternativa pendiente de identificar (solo conocida la NORM desde LCS-4PWS0001-2Q02)"
                      },
                      {
                          "id":  "abt-440-015",
