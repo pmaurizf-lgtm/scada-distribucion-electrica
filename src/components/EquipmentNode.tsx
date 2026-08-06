@@ -42,6 +42,12 @@ function EquipmentNodeComponent({ data, selected }: NodeProps<EqNode>) {
       <strong className="eq-node__name">{equipment.name}</strong>
       <span className="eq-node__meta">
         {equipment.id}
+        {equipment.dcp10Id ? (
+          <>
+            <br />
+            <em className="denom-dcp">{equipment.dcp10Id}</em>
+          </>
+        ) : null}
         {equipment.local ? ` · ${equipment.local}` : ''}
         {!equipment.local && equipment.voltage ? ` · ${equipment.voltage}` : ''}
       </span>

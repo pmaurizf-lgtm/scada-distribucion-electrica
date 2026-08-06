@@ -1,4 +1,5 @@
 import type { Circuit, Equipment, ProtectionState, Selection } from '../types'
+import { dcp10Of } from '../data/system690'
 
 interface DetailPanelProps {
   selection: Selection
@@ -133,8 +134,16 @@ function EquipmentDetails({
 function EquipmentKv({ equipment }: { equipment: Equipment }) {
   return (
     <dl className="kv">
-      <dt>ID</dt>
+      <dt>PUMA</dt>
       <dd>{equipment.id}</dd>
+      {equipment.dcp10Id && (
+        <>
+          <dt>DCP-10</dt>
+          <dd>
+            <em className="denom-dcp">{equipment.dcp10Id}</em>
+          </dd>
+        </>
+      )}
       <dt>Nombre</dt>
       <dd>{equipment.name}</dd>
       <dt>Tipo</dt>
@@ -187,10 +196,26 @@ function CircuitDetails({
         )}
         <dt>Nombre</dt>
         <dd>{circuit.name}</dd>
-        <dt>Origen</dt>
+        <dt>Origen PUMA</dt>
         <dd>{circuit.originId}</dd>
-        <dt>Destino</dt>
+        {dcp10Of(circuit.originId) && (
+          <>
+            <dt>Origen DCP-10</dt>
+            <dd>
+              <em className="denom-dcp">{dcp10Of(circuit.originId)}</em>
+            </dd>
+          </>
+        )}
+        <dt>Destino PUMA</dt>
         <dd>{circuit.destinationId}</dd>
+        {dcp10Of(circuit.destinationId) && (
+          <>
+            <dt>Destino DCP-10</dt>
+            <dd>
+              <em className="denom-dcp">{dcp10Of(circuit.destinationId)}</em>
+            </dd>
+          </>
+        )}
         <dt>Breaker ID</dt>
         <dd>{circuit.protectionName}</dd>
         {circuit.protectionModel && (

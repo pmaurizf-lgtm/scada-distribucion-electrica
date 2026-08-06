@@ -1,4 +1,5 @@
 import type { Circuit, ProtectionState } from '../types'
+import { dcp10Of } from '../data/system690'
 
 interface CircuitBalloonProps {
   circuit: Circuit
@@ -11,6 +12,24 @@ interface CircuitBalloonProps {
 function fmt(n: number | null | undefined, unit: string, digits = 2) {
   if (n == null || Number.isNaN(n)) return '—'
   return `${n.toFixed(digits)} ${unit}`
+}
+
+function DenomPair({ pumaId }: { pumaId: string }) {
+  const dcp = dcp10Of(pumaId)
+  return (
+    <span className="circuit-balloon__denoms">
+      <span>
+        <span className="circuit-balloon__denom-lbl">PUMA</span>{' '}
+        <span className="circuit-balloon__puma">{pumaId}</span>
+      </span>
+      {dcp && (
+        <span>
+          <span className="circuit-balloon__denom-lbl">DCP-10</span>{' '}
+          <span className="circuit-balloon__dcp">{dcp}</span>
+        </span>
+      )}
+    </span>
+  )
 }
 
 export function CircuitBalloon({
@@ -92,9 +111,13 @@ export function CircuitBalloon({
           </>
         )}
         <dt>Origen</dt>
-        <dd>{circuit.originId}</dd>
+        <dd>
+          <DenomPair pumaId={circuit.originId} />
+        </dd>
         <dt>Destino</dt>
-        <dd>{circuit.destinationId}</dd>
+        <dd>
+          <DenomPair pumaId={circuit.destinationId} />
+        </dd>
         {circuit.spare && (
           <>
             <dt>Nota</dt>

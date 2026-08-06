@@ -7,6 +7,7 @@ import type {
   ServiceClass,
 } from '../types'
 import raw from './system690.json'
+import dcp10Map from './dcp10Map.json'
 import { augmentSpareCircuits } from '../utils/spareCircuits'
 
 interface RawEquipment {
@@ -47,6 +48,7 @@ interface RawSystem {
 }
 
 const system = raw as RawSystem
+const dcp10ByPuma = dcp10Map as Record<string, string>
 
 const base: DistributionData = {
   title: system.title,
@@ -59,6 +61,7 @@ const base: DistributionData = {
       local: eq.local || undefined,
       voltage: '690 V',
       virtual: eq.virtual,
+      dcp10Id: dcp10ByPuma[eq.id] ?? eq.id,
     }),
   ),
   circuits: system.circuits.map(
@@ -88,3 +91,9 @@ const base: DistributionData = {
 
 /** Datos 690 V + circuitos RESPETO (SPARE) de la col. L del Excel */
 export const system690: DistributionData = augmentSpareCircuits(base)
+
+/** Denominación DCP-10 (Excel F/J) a partir del tag PUMA (E/I) */
+export function dcp10Of(pumaId: string): string | undefined {
+  const eq = system690.equipment.find((e) => e.id === pumaId)
+  return eq?.dcp10Id ?? dcp10ByPuma[pumaId]
+}

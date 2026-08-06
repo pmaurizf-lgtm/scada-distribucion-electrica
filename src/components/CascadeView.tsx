@@ -470,6 +470,11 @@ function BusDrop({
           <span className="hbus-drop__id">
             {spare ? localFeed.protectionName : equipment.id}
           </span>
+          {!spare && equipment.dcp10Id && (
+            <span className="hbus-drop__dcp" title="Denominación DCP-10">
+              {equipment.dcp10Id}
+            </span>
+          )}
           <span className="hbus-drop__name">
             {spare ? 'RESPETO' : equipment.name}
           </span>

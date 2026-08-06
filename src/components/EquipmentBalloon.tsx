@@ -59,8 +59,19 @@ export function EquipmentBalloon({
       <header className="equip-balloon__header">
         <span className="equip-balloon__kicker">Equipo</span>
         <strong className="equip-balloon__title">{equipment.id}</strong>
+        {equipment.dcp10Id && (
+          <span className="equip-balloon__dcp">{equipment.dcp10Id}</span>
+        )}
       </header>
       <dl className="equip-balloon__kv">
+        <dt>PUMA</dt>
+        <dd>{equipment.id}</dd>
+        {equipment.dcp10Id && (
+          <>
+            <dt>DCP-10</dt>
+            <dd className="equip-balloon__dcp-dd">{equipment.dcp10Id}</dd>
+          </>
+        )}
         <dt>Nombre</dt>
         <dd>{equipment.name}</dd>
         <dt>Tipo</dt>

@@ -26,6 +26,11 @@ export interface Equipment {
   virtual?: boolean
   /** Hueco de reserva (RESPETO / SPARE, Excel col. L) */
   spare?: boolean
+  /**
+   * Denominación DCP-10 (Excel col. J destino / F origen).
+   * `id` es la denominación PUMA (cols I / E).
+   */
+  dcp10Id?: string
 }
 
 export interface Circuit {

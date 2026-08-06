@@ -9,9 +9,11 @@
     "mapping": {
       "circuitRef": "D",
       "originId": "E",
+      "originDcp10": "F",
       "originLocal": "G",
       "originDesc": "H",
       "destinationId": "I",
+      "destinationDcp10": "J",
       "destinationLocal": "K",
       "destinationDesc": "L",
       "sourceType": "M",

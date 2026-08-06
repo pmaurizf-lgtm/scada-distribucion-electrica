@@ -82,6 +82,9 @@ function EquipCard({
     >
       <span className="stree-eq__sym">{symbolFor(equipment.kind)}</span>
       <strong className="stree-eq__id">{equipment.id}</strong>
+      {equipment.dcp10Id && (
+        <span className="stree-eq__dcp">{equipment.dcp10Id}</span>
+      )}
       <span className="stree-eq__name">{equipment.name}</span>
     </div>
   )

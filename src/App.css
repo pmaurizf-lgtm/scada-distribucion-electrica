@@ -496,6 +496,35 @@ body {
   word-break: break-word;
 }
 
+.circuit-balloon__denoms {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.circuit-balloon__denom-lbl {
+  font-family: var(--sans, system-ui, sans-serif);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.circuit-balloon__puma {
+  font-family: var(--mono);
+}
+
+.circuit-balloon__dcp {
+  font-family: var(--mono);
+  font-style: italic;
+  color: #3d8a7a;
+}
+
+.denom-dcp {
+  font-style: italic;
+  color: #3d8a7a;
+}
+
 /* Globo de equipo al hover — portal fixed por encima de todo el unifilar */
 .equip-balloon {
   width: max(16rem, 12rem);
@@ -544,6 +573,22 @@ body {
   font-weight: 600;
   color: var(--line-normal);
   line-height: 1.2;
+}
+
+.equip-balloon__dcp {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-style: italic;
+  font-weight: 500;
+  color: #3d8a7a;
+  line-height: 1.2;
+}
+
+.equip-balloon__dcp-dd {
+  font-style: italic;
+  color: #3d8a7a;
 }
 
 .equip-balloon__kv {
@@ -2233,6 +2278,18 @@ body {
   font-size: 0.68rem;
 }
 
+.hbus-drop__dcp {
+  display: block;
+  max-width: 100%;
+  margin-top: -0.05rem;
+  font-size: 0.58rem;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.15;
+  color: #3d8a7a;
+  word-break: break-all;
+}
+
 .hbus-drop__sym {
   width: 1.35rem;
   height: 1.35rem;
@@ -2472,6 +2529,16 @@ body {
 .stree-eq__id {
   font-family: var(--mono);
   font-size: 0.72rem;
+}
+
+.stree-eq__dcp {
+  display: block;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-style: italic;
+  color: #3d8a7a;
+  line-height: 1.15;
 }
 
 .stree-eq__name {
