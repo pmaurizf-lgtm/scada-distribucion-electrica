@@ -156,3 +156,45 @@ export function windingNotesForTrf(trfId: string): string | undefined {
   const v230 = windings.filter((c) => String(c.voltage).startsWith('230')).length
   return `Banco trifásico: ${v440} fases 440 V + ${v230} fases 230 V (Excel)`
 }
+
+export type TrfPhase = 'AB' | 'BC' | 'CA'
+
+export interface TrfWindingLeg {
+  phase: TrfPhase
+  circuitRef: string
+  voltage: '440' | '230'
+  cableSection?: string
+  parallelCables?: number
+}
+
+const PHASE_BY_SUFFIX: Record<string, TrfPhase> = {
+  '11': 'AB',
+  '12': 'BC',
+  '13': 'CA',
+  '21': 'AB',
+  '22': 'BC',
+  '23': 'CA',
+}
+
+/** Devanados secundarios del banco (Excel), no energizan el grafo. */
+export function trfWindingLegs(
+  trfId: string,
+  voltage?: '440' | '230',
+): TrfWindingLeg[] {
+  return file.circuits
+    .filter((c) => isTrfWindingLink(c) && c.originId === trfId)
+    .map((c) => {
+      const v = String(c.voltage ?? '').startsWith('230') ? '230' : '440'
+      const suf = (c.circuitRef ?? '').split('-').pop() ?? ''
+      const phase = PHASE_BY_SUFFIX[suf] ?? 'AB'
+      return {
+        phase,
+        circuitRef: c.circuitRef ?? `${trfId}-${suf}`,
+        voltage: v as '440' | '230',
+        cableSection: c.cableSection ?? undefined,
+        parallelCables: c.parallelCables ?? undefined,
+      }
+    })
+    .filter((leg) => !voltage || leg.voltage === voltage)
+    .sort((a, b) => a.phase.localeCompare(b.phase))
+}

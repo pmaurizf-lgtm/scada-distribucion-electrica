@@ -2177,6 +2177,87 @@ body {
   margin-top: 0;
 }
 
+/* Cadena ABT/TRF/LCS: sin barra horizontal «salidas»; cable vertical continuo */
+.hbus--direct {
+  border: none;
+  background: transparent;
+  padding: 0.15rem 0 0;
+  margin-top: 0.15rem;
+  width: auto;
+  max-width: none;
+}
+
+.hbus--direct .hbus__drops {
+  margin-top: 0;
+  justify-content: center;
+  padding: 0;
+}
+
+.hbus--direct .hbus__slot {
+  width: auto;
+  min-width: 7.2rem;
+}
+
+.hbus--direct .hbus-drop__tops .hbus-drop__wire--from-bus {
+  min-height: 1.6rem;
+  flex: 0 0 1.6rem;
+}
+
+.hbus--direct .hbus-drop__wire--to-eq {
+  min-height: 1.1rem;
+}
+
+.trf-bank-panel {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.65rem;
+  margin: 0.45rem 0 0.25rem;
+  padding: 0.4rem 0.45rem;
+  border: 1px dashed color-mix(in srgb, #6a8aaa 45%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, #152028 70%, transparent);
+  width: max-content;
+  max-width: min(92vw, 36rem);
+}
+
+.trf-bank__down440 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  max-width: 22rem;
+  margin: 0.15rem auto 0;
+}
+
+.trf-bank__down-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trf-bank__down-wire {
+  width: 2px;
+  height: 0.85rem;
+  background: var(--line-normal);
+}
+
+.trf-bank__down440--live .trf-bank__down-wire {
+  background: #e6c200;
+}
+
+.trf-bank__down-lbl {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  color: var(--muted);
+}
+
+.trf-bank__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.58rem;
+  color: var(--muted);
+  text-align: center;
+}
+
 .hbus__slot {
   flex: 0 0 auto;
   width: 7.2rem;
@@ -2595,7 +2676,7 @@ body {
   line-height: 1.25;
 }
 
-/* —— LCS dual 440/230: barras VS—QVM—VM—QNV—NV horizontales (como MSB) —— */
+/* —— TRF banco + LCS 440 V (230 aparcado; barras continuas) —— */
 .hbus-drop__bank {
   display: block;
   width: 100%;
@@ -2605,21 +2686,24 @@ body {
   letter-spacing: 0.02em;
 }
 
+.trf-lcs,
 .lcs-dual {
   margin-top: 0.55rem;
   padding: 0.55rem 0.65rem 0.75rem;
   border: 1px solid color-mix(in srgb, var(--line-normal) 45%, transparent);
   border-radius: 6px;
-  background: color-mix(in srgb, #1a2430 88%, transparent);
-  min-width: min(64rem, 96vw);
+  background: color-mix(in srgb, #1a2430 90%, transparent);
+  min-width: min(68rem, 96vw);
   overflow-x: auto;
 }
 
+.trf-lcs--empty,
 .lcs-dual--empty {
   color: var(--muted);
   font-size: 0.75rem;
 }
 
+.trf-lcs__head,
 .lcs-dual__head {
   display: flex;
   flex-wrap: wrap;
@@ -2629,171 +2713,394 @@ body {
   font-size: 0.78rem;
 }
 
+.trf-lcs__head strong,
 .lcs-dual__head strong {
   font-family: var(--mono);
 }
 
+.trf-lcs__meta,
 .lcs-dual__meta {
   color: var(--muted);
   font-size: 0.68rem;
 }
 
-.lcs-dual__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-
-.lcs-vrow {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
-}
-
-.lcs-vrow__kv {
-  flex: 0 0 3.2rem;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding-top: 1.85rem;
-  color: #9ab4c8;
-}
-
-.lcs-vrow--feed .lcs-vrow__kv {
-  color: #e6c200;
-}
-
-.lcs-vrow__rack {
+.trf-lcs__body {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  flex: 1 1 auto;
-  min-width: 0;
-  gap: 0;
+  align-items: stretch;
+  gap: 0.75rem;
 }
 
-/* Entrada TRF → QVS */
-.lcs-in {
+/* 230 V aparcado a la izquierda */
+.trf-lcs__park230 {
+  flex: 0 0 5.5rem;
+  border: 1px dashed color-mix(in srgb, #8a7a5a 55%, transparent);
+  border-radius: 5px;
+  padding: 0.45rem 0.4rem;
+  background: color-mix(in srgb, #2a2418 55%, transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 3.6rem;
-  flex: 0 0 3.6rem;
-  padding-top: 1.35rem;
+  gap: 0.35rem;
+  opacity: 0.85;
 }
 
-.lcs-in__tag {
+.trf-lcs__park230-title {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: #d4c49a;
+}
+
+.trf-lcs__park230-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  align-items: center;
+}
+
+.trf-lcs__park230-leg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-family: var(--mono);
   font-size: 0.58rem;
   color: var(--muted);
-  margin-bottom: 0.15rem;
 }
 
-.lcs-in__wire {
+.trf-lcs__park230-wire {
   width: 2px;
-  height: 0.55rem;
-  background: var(--line-normal);
+  height: 1.4rem;
+  background: #a89060;
 }
 
-.lcs-in__wire--to-bus {
-  height: 0.85rem;
-  margin-bottom: -2px;
+.trf-lcs__park230-note {
+  font-size: 0.55rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.25;
+  margin-top: auto;
 }
 
-.lcs-in--flow .lcs-in__wire {
-  background: #e6c200;
-}
-
-/* Segmento de barra VS / VM / NV */
-.lcs-seg {
-  flex: 1 1 0;
-  min-width: 7.5rem;
+.trf-lcs__main440 {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
 }
 
-.lcs-seg__label-row {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 0.25rem;
-  min-height: 1.15rem;
+/* Banco monofásico */
+.trf-bank {
+  border: 1px dashed color-mix(in srgb, #6a8aaa 50%, transparent);
+  border-radius: 5px;
+  padding: 0.4rem 0.5rem 0;
+  margin-bottom: 0;
 }
 
-.lcs-seg__svc {
+.trf-bank__title {
   font-family: var(--mono);
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  letter-spacing: 0.04em;
+  font-size: 0.62rem;
+  color: #9ab4c8;
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.03em;
 }
 
-.lcs-seg__svc--VS {
+.trf-bank__units {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  max-width: 22rem;
+  margin: 0 auto;
+}
+
+.trf-phase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+}
+
+.trf-phase__pri,
+.trf-phase__ph,
+.trf-phase__sec {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  color: var(--muted);
+}
+
+.trf-phase__sym {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid color-mix(in srgb, #7a9aba 50%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, #152028 80%, transparent);
+  line-height: 0.85;
+}
+
+.trf-phase__coil {
+  font-size: 0.85rem;
+  color: #9ab4c8;
+}
+
+.trf-phase__coil--tert {
+  color: #a89060;
+  opacity: 0.75;
+}
+
+.trf-phase__sec {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.trf-phase__tert-lbl {
+  color: #a89060;
+  opacity: 0.7;
+}
+
+.trf-phase__out440 {
+  width: 2px;
+  height: 0.85rem;
+  background: var(--line-normal);
+  margin-bottom: -1px;
+}
+
+.trf-phase--live .trf-phase__out440 {
+  background: #e6c200;
+}
+
+.trf-phase__ref {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  color: var(--muted);
+  text-align: center;
+  max-width: 6.5rem;
+  line-height: 1.15;
+}
+
+/* Tres fases 440 → colector → QVS (líneas continuas) */
+.trf-feed440 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 22rem;
+  margin: 0 auto;
+}
+
+.trf-feed440__phases {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.trf-feed440__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trf-feed440__wire {
+  width: 2px;
+  height: 0.7rem;
+  background: var(--line-normal);
+  flex: 0 0 auto;
+}
+
+.trf-feed440__wire--long {
+  height: 1.35rem;
+}
+
+.trf-feed440__wire--to-bus {
+  height: 0.9rem;
+  margin-bottom: -2px;
+}
+
+.trf-feed440--flow .trf-feed440__wire,
+.trf-feed440--flow .trf-feed440__collector {
+  background: #e6c200;
+}
+
+.trf-feed440__lbl {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.1;
+  padding: 0.1rem 0;
+  max-width: 6.2rem;
+  word-break: break-all;
+}
+
+.trf-feed440__collector {
+  width: calc(100% - 2.4rem);
+  height: 3px;
+  margin: 0 auto;
+  background: var(--line-normal);
+  border-radius: 1px;
+}
+
+.trf-feed440__qvs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trf-lcs__lcs-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: baseline;
+  margin: 0.55rem 0 0.35rem;
+  font-size: 0.75rem;
+}
+
+.trf-lcs__lcs-label strong {
+  font-family: var(--mono);
+}
+
+/* Barra LCS 440 continua */
+.lcs440-board {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lcs440-qvs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 4rem;
+  margin: 0 auto;
+}
+
+.lcs440-qvs__wire {
+  width: 2px;
+  height: 0.55rem;
+  background: var(--line-normal);
+}
+
+.lcs440-qvs__wire--long {
+  height: 0.85rem;
+  margin-bottom: -2px;
+}
+
+.lcs440-qvs--flow .lcs440-qvs__wire {
+  background: #e6c200;
+}
+
+.lcs440-rail {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(8rem, 1.2fr) 4.6rem minmax(8rem, 1fr) 4.6rem minmax(8rem, 1fr);
+  align-items: start;
+  column-gap: 0;
+  padding-top: 0.15rem;
+}
+
+/* Espina continua detrás de celdas y acopladores */
+.lcs440-rail__spine {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  top: 1.55rem;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 40%, #6a8aaa);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lcs440-board--live .lcs440-rail__spine {
+  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+  box-shadow: 0 0 8px rgba(230, 194, 0, 0.3);
+}
+
+.lcs440-cell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.lcs440-cell__tag {
+  align-self: center;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.08rem 0.35rem;
+  border-radius: 3px;
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.03em;
+}
+
+.lcs440-cell__tag--VS {
   background: color-mix(in srgb, #3d8a7a 35%, transparent);
   color: #b8e8dc;
 }
 
-.lcs-seg__svc--VM {
+.lcs440-cell__tag--VM {
   background: color-mix(in srgb, #8a6a3d 40%, transparent);
   color: #f0d9a8;
 }
 
-.lcs-seg__svc--NV {
+.lcs440-cell__tag--NV {
   background: color-mix(in srgb, #5a6a8a 40%, transparent);
   color: #c8d4e8;
 }
 
-.lcs-seg__rail {
+/* Hueco transparente sobre la espina (la línea no se corta) */
+.lcs440-cell__bus {
   height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.2rem;
+  background: transparent;
 }
 
-.lcs-seg--live .lcs-seg__rail {
-  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
-  box-shadow: 0 0 8px rgba(230, 194, 0, 0.35);
-}
-
-.lcs-seg__drops {
+.lcs440-drops {
   display: flex;
-  flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.35rem 0.45rem;
-  padding-top: 0.15rem;
-  border-top: none;
+  gap: 0.35rem 0.4rem;
+  padding-top: 0.1rem;
 }
 
-/* Acoplador de sección entre barras (como QBT) */
-.lcs-tie {
+/* Acoplador centrado sobre la espina */
+.lcs440-tie {
+  position: relative;
+  z-index: 2;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  flex: 0 0 4.2rem;
-  width: 4.2rem;
-  padding-top: 1.45rem;
-  gap: 0;
+  justify-content: flex-start;
+  padding-top: 0.95rem;
+  gap: 0.15rem;
 }
 
-.lcs-tie__bridge {
-  flex: 1 1 auto;
-  height: 3px;
-  background: #7dcfb0;
-  min-width: 0.35rem;
+.lcs440-tie .casc-brk {
+  background: color-mix(in srgb, #1a2430 92%, transparent);
 }
 
-.lcs-tie--flow .lcs-tie__bridge {
-  background: #e6c200;
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.4);
+.lcs440-tie__hint {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  color: var(--muted);
+}
+
+.lcs440-tie--flow .casc-brk {
+  box-shadow: 0 0 0 1px color-mix(in srgb, #e6c200 50%, transparent);
 }
 
 .lcs-out {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 5.4rem;
+  width: 5.2rem;
   position: relative;
 }
 
@@ -2805,7 +3112,7 @@ body {
 
 .lcs-out__wire {
   width: 2px;
-  height: 0.55rem;
+  height: 0.5rem;
   background: var(--line-normal);
 }
 
@@ -2857,3 +3164,4 @@ body {
   font-size: 0.52rem;
   color: var(--line-alt);
 }
+

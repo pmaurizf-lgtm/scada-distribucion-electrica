@@ -35,6 +35,7 @@ import { CircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
 import { LcsDualView } from './LcsDualView'
+import { TrfBankPanel } from './TrfBankPanel'
 import { SearchTreeView } from './SearchTreeView'
 
 export type LockTool = 'none' | 'lock' | 'unlock'
@@ -224,6 +225,8 @@ function HorizontalBus({
   onHoverInfo,
   onHoverInfoEnd,
   nested,
+  /** Cadena ABT/TRF/LCS: sin barra horizontal; recuadro → interruptor → hijo */
+  direct,
   focusCircuitIds,
 }: {
   label: string
@@ -240,6 +243,7 @@ function HorizontalBus({
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
   nested?: boolean
+  direct?: boolean
   focusCircuitIds?: Set<string> | null
 }) {
   const list = focusCircuitIds
@@ -247,14 +251,20 @@ function HorizontalBus({
     : items
 
   return (
-    <div className={`hbus${nested ? ' hbus--nested' : ''}`}>
-      <div className="hbus__title">
-        <strong>{label}</strong>
-        <span>{voltage}</span>
-      </div>
-      <div className="hbus__rail-wrap" aria-hidden>
-        <div className="hbus__rail" />
-      </div>
+    <div
+      className={`hbus${nested ? ' hbus--nested' : ''}${direct ? ' hbus--direct' : ''}`}
+    >
+      {!direct && (
+        <>
+          <div className="hbus__title">
+            <strong>{label}</strong>
+            <span>{voltage}</span>
+          </div>
+          <div className="hbus__rail-wrap" aria-hidden>
+            <div className="hbus__rail" />
+          </div>
+        </>
+      )}
       <div className="hbus__drops">
         {list.map((item) => (
           <div key={item.key} className="hbus__slot">
@@ -325,7 +335,9 @@ function BusDrop({
     [equipment.id],
   )
   const canExpand =
-    children.length > 0 || isLcsEquipment(equipment.id)
+    children.length > 0 ||
+    isLcsEquipment(equipment.id) ||
+    isTrfWithLoadCenter(system690, equipment.id)
   const trfBankNote = useMemo(
     () =>
       equipment.id.startsWith('TRF-')
@@ -333,6 +345,11 @@ function BusDrop({
         : undefined,
     [equipment.id],
   )
+  /** Cadena ABT → TRF → LCS: enlace vertical directo (sin barra «salidas»). */
+  const directChain =
+    equipment.id.startsWith('ABT-') ||
+    equipment.id.startsWith('TRF-') ||
+    isLcsEquipment(equipment.id)
 
   const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
   const remoteFeeds = feeds.filter((c) => c.id !== localFeed.id)
@@ -504,11 +521,15 @@ function BusDrop({
           )}
           {canExpand && (
             <span className="hbus-drop__more">
-              {isLcsEquipment(equipment.id)
+              {isTrfWithLoadCenter(system690, equipment.id)
                 ? expanded
-                  ? '▴ 440/230'
-                  : '▾ 440/230'
-                : `${children.length} ${expanded ? '▴' : '▾'}`}
+                  ? '▴ banco + LCS'
+                  : '▾ banco + LCS'
+                : isLcsEquipment(equipment.id)
+                  ? expanded
+                    ? '▴ 440 V'
+                    : '▾ 440 V'
+                  : `${children.length} ${expanded ? '▴' : '▾'}`}
             </span>
           )}
         </button>
@@ -520,6 +541,13 @@ function BusDrop({
           />
         )}
       </div>
+
+      {expanded && isTrfWithLoadCenter(system690, equipment.id) && (
+        <TrfBankPanel
+          trfId={equipment.id}
+          energizedEquipmentIds={energizedEquipmentIds}
+        />
+      )}
 
       {expanded && isLcsEquipment(equipment.id) && (
         <LcsDualView
@@ -534,9 +562,10 @@ function BusDrop({
         />
       )}
 
-      {expanded && !isLcsEquipment(equipment.id) && childItems.length > 0 && (
+      {expanded && childItems.length > 0 && (
         <HorizontalBus
           nested
+          direct={directChain}
           label={equipment.id}
           items={childItems}
           protectionStatus={protectionStatus}

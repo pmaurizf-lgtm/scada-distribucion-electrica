@@ -23,4 +23,10 @@ export {
   windingNotesForTrf,
 } from './model'
 
-export { mergeAbtDownstream, abtDownstreamChainsMeta } from './merge'
+export {
+  mergeAbtDownstream,
+  abtDownstreamChainsMeta,
+  trfWindingLegs,
+  type TrfPhase,
+  type TrfWindingLeg,
+} from './merge'
