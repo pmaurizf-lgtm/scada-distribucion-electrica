@@ -135,22 +135,40 @@ function BreakerChip({
   onClick,
   compact,
   circuitId,
+  circuit,
   flowing,
   locked,
   title,
   orientation = 'vertical',
+  onHoverInfo,
+  onHoverInfoEnd,
 }: {
   name: string
   state?: ProtectionState
   onClick?: (e: ReactMouseEvent) => void
   compact?: boolean
   circuitId?: string
+  /** Si se pasa, el globo de info aparece tras ~1,8 s de hover (no al pulsar) */
+  circuit?: Circuit
   flowing?: boolean
   locked?: boolean
   title?: string
   orientation?: 'vertical' | 'horizontal'
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
 }) {
   const open = state !== 'cerrada'
+  const hoverTimer = useRef<number | null>(null)
+
+  const clearHoverTimer = () => {
+    if (hoverTimer.current != null) {
+      window.clearTimeout(hoverTimer.current)
+      hoverTimer.current = null
+    }
+  }
+
+  useEffect(() => () => clearHoverTimer(), [])
+
   return (
     <button
       type="button"
@@ -158,9 +176,21 @@ function BreakerChip({
       onClick={onClick}
       title={
         title ??
-        `Interruptor motorizado ${name} · ${open ? 'abierto' : 'cerrado'}${locked ? ' · BLOQUEADO' : ''}`
+        `Interruptor motorizado ${name} · ${open ? 'abierto' : 'cerrado'}${locked ? ' · BLOQUEADO' : ''} · mantén el puntero para ver detalles`
       }
       data-circuit-id={circuitId}
+      onMouseEnter={(e) => {
+        if (!circuit || !onHoverInfo) return
+        clearHoverTimer()
+        const el = e.currentTarget
+        hoverTimer.current = window.setTimeout(() => {
+          onHoverInfo(circuit, el.getBoundingClientRect())
+        }, 1800)
+      }}
+      onMouseLeave={() => {
+        clearHoverTimer()
+        onHoverInfoEnd?.()
+      }}
     >
       <span className="casc-brk__sym">
         <MotorizedBreakerSymbol state={state} orientation={orientation} />
@@ -183,6 +213,8 @@ function HorizontalBus({
   onToggleEquip,
   onLocalBreaker,
   onJumpToCircuit,
+  onHoverInfo,
+  onHoverInfoEnd,
   nested,
   focusCircuitIds,
 }: {
@@ -197,6 +229,8 @@ function HorizontalBus({
   onToggleEquip: (id: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
   nested?: boolean
   focusCircuitIds?: Set<string> | null
 }) {
@@ -228,6 +262,8 @@ function HorizontalBus({
               onToggleEquip={onToggleEquip}
               onLocalBreaker={onLocalBreaker}
               onJumpToCircuit={onJumpToCircuit}
+              onHoverInfo={onHoverInfo}
+              onHoverInfoEnd={onHoverInfoEnd}
               focusCircuitIds={focusCircuitIds}
             />
           </div>
@@ -249,6 +285,8 @@ function BusDrop({
   onToggleEquip,
   onLocalBreaker,
   onJumpToCircuit,
+  onHoverInfo,
+  onHoverInfoEnd,
   focusCircuitIds,
 }: {
   circuit: Circuit
@@ -262,6 +300,8 @@ function BusDrop({
   onToggleEquip: (id: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
   focusCircuitIds?: Set<string> | null
 }) {
   const children = useMemo(
@@ -344,6 +384,7 @@ function BusDrop({
           state={protectionStatus[feed.id]}
           compact
           circuitId={feed.id}
+          circuit={feed}
           flowing={flowing}
           locked={lockedCircuits.has(feed.id)}
           title={
@@ -351,6 +392,8 @@ function BusDrop({
               ? `Ir a ${feed.protectionName} en ${feed.originId}`
               : undefined
           }
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
           onClick={(e) => {
             e.stopPropagation()
             if (kind === 'remote') onJumpToCircuit(feed)
@@ -446,6 +489,8 @@ function BusDrop({
           onToggleEquip={onToggleEquip}
           onLocalBreaker={onLocalBreaker}
           onJumpToCircuit={onJumpToCircuit}
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
           focusCircuitIds={focusCircuitIds}
         />
       )}
@@ -984,40 +1029,41 @@ export function CascadeView({
     })
   }
 
-  const showBalloon = useCallback((circuit: Circuit, e: ReactMouseEvent) => {
-    const rect = stageRef.current?.getBoundingClientRect()
-    const x = rect ? e.clientX - rect.left + 12 : e.clientX
-    const y = rect ? e.clientY - rect.top + 12 : e.clientY
+  const showBalloonAt = useCallback((circuit: Circuit, rect: DOMRect) => {
+    const stage = stageRef.current?.getBoundingClientRect()
+    if (!stage) {
+      setBalloon({
+        circuit,
+        x: rect.right + 8,
+        y: rect.top,
+      })
+      return
+    }
+    const x = rect.right - stage.left + 10
+    const y = rect.top - stage.top
     setBalloon({
       circuit,
-      x: Math.max(8, Math.min(x, (rect?.width ?? 800) - 290)),
-      y: Math.max(8, Math.min(y, (rect?.height ?? 600) - 320)),
+      x: Math.max(8, Math.min(x, stage.width - 290)),
+      y: Math.max(8, Math.min(y, stage.height - 320)),
     })
   }, [])
+
+  const hideBalloon = useCallback(() => setBalloon(null), [])
 
   const onLocalBreaker = useCallback(
     (circuit: Circuit, e: ReactMouseEvent) => {
       e.stopPropagation()
       if (lockTool === 'lock') {
         onLockCircuit(circuit.id)
-        showBalloon(circuit, e)
         return
       }
       if (lockTool === 'unlock') {
         onUnlockCircuit(circuit.id)
-        showBalloon(circuit, e)
         return
       }
       onToggleProtection(circuit.id)
-      showBalloon(circuit, e)
     },
-    [
-      lockTool,
-      onLockCircuit,
-      onUnlockCircuit,
-      onToggleProtection,
-      showBalloon,
-    ],
+    [lockTool, onLockCircuit, onUnlockCircuit, onToggleProtection],
   )
 
   const onJumpToCircuit = useCallback((circuit: Circuit) => {
@@ -1142,6 +1188,8 @@ export function CascadeView({
             onToggleEquip={toggleEquip}
             onLocalBreaker={onLocalBreaker}
             onJumpToCircuit={onJumpToCircuit}
+            onHoverInfo={showBalloonAt}
+            onHoverInfoEnd={hideBalloon}
             onToggleGenerator={onToggleGenerator}
           />
 
@@ -1165,6 +1213,8 @@ export function CascadeView({
             onToggleEquip={toggleEquip}
             onLocalBreaker={onLocalBreaker}
             onJumpToCircuit={onJumpToCircuit}
+            onHoverInfo={showBalloonAt}
+            onHoverInfoEnd={hideBalloon}
             onToggleGenerator={onToggleGenerator}
           />
 
@@ -1216,6 +1266,8 @@ function BoardColumn({
   onToggleEquip,
   onLocalBreaker,
   onJumpToCircuit,
+  onHoverInfo,
+  onHoverInfoEnd,
   onToggleGenerator,
 }: {
   board: BoardModel
@@ -1235,6 +1287,8 @@ function BoardColumn({
   onToggleEquip: (id: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
   onToggleGenerator: (genId: string) => void
 }) {
   let sb = board.feeders.filter((f) => f.half === 'SB')
@@ -1285,6 +1339,8 @@ function BoardColumn({
           onToggleEquip={onToggleEquip}
           onLocalBreaker={onLocalBreaker}
           onJumpToCircuit={onJumpToCircuit}
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
           focusCircuitIds={focusCircuitIds}
         />
       </div>
@@ -1342,9 +1398,12 @@ function BoardColumn({
           name={genEntry.breaker.protectionName}
           state={protectionStatus[genEntry.breaker.id]}
           circuitId={genEntry.breaker.id}
+          circuit={genEntry.breaker}
           flowing={flowing}
           locked={lockedCircuits.has(genEntry.breaker.id)}
           compact
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
           onClick={(e) => onLocalBreaker(genEntry.breaker, e)}
         />
         <div
@@ -1434,10 +1493,13 @@ function BoardColumn({
                   name={tie.protectionName}
                   state={protectionStatus[tie.id]}
                   circuitId={tie.id}
+                  circuit={tie}
                   flowing={tieFlowing}
                   locked={lockedCircuits.has(tie.id)}
                   compact
                   title={`${tie.protectionName} · interconexión · barra ${tieTag}`}
+                  onHoverInfo={onHoverInfo}
+                  onHoverInfoEnd={onHoverInfoEnd}
                   onClick={(e) => onLocalBreaker(tie, e)}
                 />
                 <div className="plant-msb__bustie-down" aria-hidden />
@@ -1460,11 +1522,14 @@ function BoardColumn({
                   name={board.sectionCoupler.protectionName}
                   state={protectionStatus[board.sectionCoupler.id]}
                   circuitId={board.sectionCoupler.id}
+                  circuit={board.sectionCoupler}
                   flowing={qbtLive}
                   locked={lockedCircuits.has(board.sectionCoupler.id)}
                   compact
                   orientation="horizontal"
                   title={`${board.sectionCoupler.name} · acoplador de sección (horizontal en barra)`}
+                  onHoverInfo={onHoverInfo}
+                  onHoverInfoEnd={onHoverInfoEnd}
                   onClick={(e) => onLocalBreaker(board.sectionCoupler, e)}
                 />
               </div>

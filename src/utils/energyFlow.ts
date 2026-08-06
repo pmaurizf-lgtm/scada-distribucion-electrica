@@ -5,10 +5,18 @@ import {
   halfFromPanel,
 } from './cascadeModel'
 
+const QT_NAMES = new Set(['QT1B', 'QT2A'])
+
+function isBusTie(circuit: Circuit): boolean {
+  return QT_NAMES.has(circuit.protectionName)
+}
+
 /**
  * Nodos y circuitos energizados desde generadores en marcha a través de
  * interruptores «cerrada». Sin generador arrancado no hay flujo.
- * El cruce SA↔SB de un MSB exige QBT1/QBT2 cerrado.
+ * - Cruce SA↔SB de un MSB: QBT1/QBT2 cerrado.
+ * - Interconexión entre cuadros: QT1B y QT2A cerrados (ambos).
+ * - Aguas abajo: paneles energizados → salidas con interruptor cerrado.
  */
 export function computeEnergyFlow(
   data: DistributionData,
@@ -26,14 +34,49 @@ export function computeEnergyFlow(
   const energizedCircuitIds = new Set<string>()
   const msbHalfSources = new Map<string, Set<'SA' | 'SB'>>()
 
+  const qtByName = new Map<string, Circuit>()
+  for (const c of data.circuits) {
+    if (isBusTie(c)) qtByName.set(c.protectionName, c)
+  }
+  const qt1b = qtByName.get('QT1B')
+  const qt2a = qtByName.get('QT2A')
+  const busTieClosed =
+    !!qt1b &&
+    !!qt2a &&
+    protectionStatus[qt1b.id] === 'cerrada' &&
+    protectionStatus[qt2a.id] === 'cerrada'
+
+  const queue: string[] = []
+  const inQueue = new Set<string>()
+
+  const enqueue = (id: string, force = false) => {
+    if (!force && inQueue.has(id)) return
+    inQueue.add(id)
+    queue.push(id)
+  }
+
+  for (const id of energizedEquipmentIds) enqueue(id)
+
   const markPanelHalf = (panelId: string) => {
     const half = halfFromPanel(panelId)
     const board = boardFromOrigin(panelId)
     if (!half || !board) return
     const set = msbHalfSources.get(board) ?? new Set()
+    const halfNew = !set.has(half)
     set.add(half)
     msbHalfSources.set(board, set)
+    const boardNew = !energizedEquipmentIds.has(board)
     energizedEquipmentIds.add(board)
+    if (boardNew || halfNew) enqueue(board, true)
+  }
+
+  const markBothHalves = (msbId: string) => {
+    const prev = msbHalfSources.get(msbId)
+    const alreadyBoth = !!(prev?.has('SA') && prev?.has('SB'))
+    msbHalfSources.set(msbId, new Set(['SA', 'SB']))
+    const boardNew = !energizedEquipmentIds.has(msbId)
+    energizedEquipmentIds.add(msbId)
+    if (boardNew || !alreadyBoth) enqueue(msbId, true)
   }
 
   const byOrigin = new Map<string, Circuit[]>()
@@ -48,6 +91,10 @@ export function computeEnergyFlow(
     add(c)
     add({ ...c, originId: c.destinationId, destinationId: c.originId })
   }
+  for (const c of [qt1b, qt2a]) {
+    if (!c) continue
+    add({ ...c, originId: c.destinationId, destinationId: c.originId })
+  }
 
   const qbtIdForMsb = (msbId: string) =>
     msbId.endsWith('1') ? 'synth-QBT1' : 'synth-QBT2'
@@ -59,9 +106,17 @@ export function computeEnergyFlow(
     return protectionStatus[qbtIdForMsb(msbId)] === 'cerrada'
   }
 
-  const queue = [...energizedEquipmentIds]
+  /** Solo encola equipos recién energizados (evita bucles MSB↔panel virtual). */
+  const reachDestination = (destId: string) => {
+    if (energizedEquipmentIds.has(destId)) return
+    energizedEquipmentIds.add(destId)
+    enqueue(destId)
+  }
+
   while (queue.length > 0) {
     const node = queue.shift()!
+    inQueue.delete(node)
+
     for (const circuit of byOrigin.get(node) ?? []) {
       const isQbt =
         circuit.protectionName === 'QBT1' || circuit.protectionName === 'QBT2'
@@ -73,53 +128,65 @@ export function computeEnergyFlow(
 
       if (isQbt) {
         if (protectionStatus[statusId] !== 'cerrada') continue
-        const sources = msbHalfSources.get(
-          statusId === 'synth-QBT1' ? 'MSB-6PWS0001' : 'MSB-6PWS0002',
-        )
-        // Solo conduce si ya hay tensión en alguna media barra
-        if (!sources || sources.size === 0) continue
-        energizedCircuitIds.add(statusId)
         const msb =
           statusId === 'synth-QBT1' ? 'MSB-6PWS0001' : 'MSB-6PWS0002'
-        msbHalfSources.set(msb, new Set(['SA', 'SB']))
-        energizedEquipmentIds.add(msb)
-      } else if (circuit.virtual) {
+        const sources = msbHalfSources.get(msb)
+        if (!sources || sources.size === 0) continue
+        energizedCircuitIds.add(statusId)
+        markBothHalves(msb)
+        reachDestination(circuit.destinationId)
+        continue
+      }
+
+      if (isBusTie(circuit)) {
+        if (!busTieClosed || !qt1b || !qt2a) continue
+        energizedCircuitIds.add(qt1b.id)
+        energizedCircuitIds.add(qt2a.id)
+        markPanelHalf(circuit.destinationId)
+        reachDestination(circuit.destinationId)
+        continue
+      }
+
+      if (circuit.virtual) {
         if (
           circuit.originId.startsWith('MSB-6PWS') &&
           /^PNL-MSB/.test(circuit.destinationId)
         ) {
           const destHalf = halfFromPanel(circuit.destinationId)
-          // Sin media barra conocida o sin tensión en ese lado → no alimenta el panel
           if (
             !destHalf ||
             !canReachPanelFromMsb(circuit.originId, destHalf)
           ) {
             continue
           }
+          // Barra → panel: el panel queda vivo y podrá alimentar salidas
+          reachDestination(circuit.destinationId)
+          continue
         }
         if (
           /^PNL-MSB/.test(circuit.originId) &&
           circuit.destinationId.startsWith('MSB-6PWS')
         ) {
           markPanelHalf(circuit.originId)
+          reachDestination(circuit.destinationId)
+          continue
         }
-      } else if (protectionStatus[circuit.id] !== 'cerrada') {
+        // Otros virtuales: propagar destino
+        reachDestination(circuit.destinationId)
         continue
-      } else {
-        energizedCircuitIds.add(circuit.id)
-        if (/^PNL-MSB/.test(circuit.destinationId)) {
-          markPanelHalf(circuit.destinationId)
-        }
-        if (/^PNL-MSB/.test(circuit.originId)) {
-          markPanelHalf(circuit.originId)
-        }
       }
 
-      // Solo propagar si el destino queda realmente energizable
-      if (!energizedEquipmentIds.has(circuit.destinationId)) {
-        energizedEquipmentIds.add(circuit.destinationId)
-        queue.push(circuit.destinationId)
+      // Circuito real (QG, salidas, etc.): solo si el interruptor está cerrado
+      if (protectionStatus[circuit.id] !== 'cerrada') continue
+
+      energizedCircuitIds.add(circuit.id)
+      if (/^PNL-MSB/.test(circuit.destinationId)) {
+        markPanelHalf(circuit.destinationId)
       }
+      if (/^PNL-MSB/.test(circuit.originId)) {
+        markPanelHalf(circuit.originId)
+      }
+      reachDestination(circuit.destinationId)
     }
   }
 
