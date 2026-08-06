@@ -19,9 +19,30 @@ function eqById(id: string): Equipment | undefined {
   return system690.equipment.find((e) => e.id === id)
 }
 
-/** Aristas aguas arriba: preferir circuitos reales; si no hay, virtuales de barra */
+/** Nodos del cuadro principal (tope del árbol de búsqueda) */
+function isMainBoardNode(id: string): boolean {
+  if (/^PNL-MSB/i.test(id) || /^MSB-6PWS/i.test(id)) return true
+  const eq = eqById(id)
+  return eq?.kind === 'cuadro_principal' || eq?.kind === 'generador'
+}
+
+/** Origen por encima del cuadro (generadores / QG*) */
+function isGeneratorSide(circuit: Circuit): boolean {
+  if (/^QG/i.test(circuit.protectionName)) return true
+  if (circuit.originId.startsWith('SDG-')) return true
+  return eqById(circuit.originId)?.kind === 'generador'
+}
+
+/**
+ * Aristas aguas arriba hasta el cuadro principal (paneles MSB).
+ * No incluye generadores ni interruptores QG*.
+ */
 function upstreamEdges(equipmentId: string): Circuit[] {
-  const all = system690.circuits.filter((c) => c.destinationId === equipmentId)
+  if (isMainBoardNode(equipmentId)) return []
+
+  const all = system690.circuits.filter(
+    (c) => c.destinationId === equipmentId && !isGeneratorSide(c),
+  )
   const real = all
     .filter((c) => !c.virtual)
     .sort((a, b) => {
@@ -236,18 +257,21 @@ export function SearchTreeView({
   onBreaker,
 }: SearchTreeViewProps) {
   const direct = upstreamEdges(equipmentId).filter((c) => !c.virtual)
+  const realInTrace = trace.circuits.filter(
+    (c) => !c.virtual && !isGeneratorSide(c),
+  ).length
 
   return (
     <div className="stree">
       <header className="stree__head">
         <h3>Árbol de alimentaciones · {equipmentId}</h3>
         <p>
-          El equipo aparece una sola vez. Arriba, rutas aguas arriba
+          Del cuadro principal hacia abajo (sin generadores ni QG*). El equipo
+          aparece una sola vez
           {direct.length > 1
-            ? ` (${direct.length} alimentaciones NORM/ALT convergentes)`
+            ? ` · ${direct.length} alimentaciones NORM/ALT convergentes`
             : ''}
-          . {trace.circuits.filter((c) => !c.virtual).length} circuitos reales
-          en la traza.
+          . {realInTrace} circuitos reales en la traza.
         </p>
       </header>
 
