@@ -2207,60 +2207,73 @@ body {
   min-height: 1.1rem;
 }
 
-.trf-bank-panel {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 0.65rem;
-  margin: 0.45rem 0 0.25rem;
-  padding: 0.4rem 0.45rem;
-  border: 1px dashed color-mix(in srgb, #6a8aaa 45%, transparent);
-  border-radius: 5px;
-  background: color-mix(in srgb, #152028 70%, transparent);
-  width: max-content;
-  max-width: min(92vw, 36rem);
-}
-
-.trf-bank__down440 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  max-width: 22rem;
-  margin: 0.15rem auto 0;
-}
-
-.trf-bank__down-col {
+/*
+ * LCS desplegado: sin caja amarilla.
+ * QVS (en .hbus-drop__tops) alineado sobre la columna VS;
+ * VM/NV quedan a la derecha en la misma espina.
+ */
+.hbus-drop--lcs-open {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  width: max-content;
+  max-width: min(96vw, 72rem);
 }
 
-.trf-bank__down-wire {
-  width: 2px;
-  height: 0.85rem;
-  background: var(--line-normal);
+.hbus-drop--lcs-open > .hbus-drop__tops {
+  align-self: flex-start;
+  width: var(--lcs-vs-col, 9.5rem);
+  justify-content: center;
+  margin-bottom: 0;
 }
 
-.trf-bank__down440--live .trf-bank__down-wire {
-  background: #e6c200;
+.hbus-drop--lcs-open > .hbus-drop__tops .hbus-drop__leg {
+  width: 100%;
 }
 
-.trf-bank__down-lbl {
-  font-family: var(--mono);
-  font-size: 0.5rem;
-  color: var(--muted);
+.hbus-drop--lcs-open > .hbus-drop__tops .hbus-drop__wire--to-eq {
+  min-height: 0.85rem;
+  flex: 0 0 0.85rem;
+  margin-bottom: -2px;
 }
 
-.trf-bank__hint {
-  margin: 0.35rem 0 0;
-  font-size: 0.58rem;
-  color: var(--muted);
-  text-align: center;
+.hbus-drop--lcs-open .lcs-dual--inline {
+  margin-top: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  min-width: 0;
+  overflow: visible;
+}
+
+.hbus-drop--lcs-open .lcs440-rail {
+  --lcs-vs-col: 9.5rem;
+  grid-template-columns:
+    var(--lcs-vs-col)
+    4.6rem
+    minmax(8rem, 1fr)
+    4.6rem
+    minmax(8rem, 1fr);
+}
+
+.hbus-drop--lcs-open .lcs440-rail__spine {
+  top: 1.55rem;
+}
+
+.hbus-drop--lcs-open .lcs440-cell--vs .lcs440-cell__bus {
+  /* Empalme visual con el cable que baja del QVS */
+  box-shadow: inset 0 0 0 1px transparent;
 }
 
 .hbus__slot {
   flex: 0 0 auto;
   width: 7.2rem;
+}
+
+/* Slot del LCS abierto: deja crecer el unifilar a la derecha */
+.hbus--direct .hbus__slot:has(.hbus-drop--lcs-open) {
+  width: max-content;
+  min-width: 7.2rem;
 }
 
 .hbus__slot:has(.hbus-drop--dual) {
@@ -2968,6 +2981,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+.lcs-dual--inline .lcs440-cell__tag--VS::after {
+  content: ' ← QVS';
+  font-weight: 500;
+  opacity: 0.75;
+  font-size: 0.55rem;
 }
 
 .lcs440-qvs {

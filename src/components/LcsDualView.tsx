@@ -329,11 +329,12 @@ export function Lcs440Board({
   )
 }
 
-/** Expandir LCS: solo su cuadro 440 V (equipo independiente del TRF). */
+/** Expandir LCS: barras 440 V. `inline` = sin caja; QVS del padre baja a VS. */
 export function LcsDualView({
   lcsId,
+  inline = false,
   ...props
-}: SharedProps & { lcsId: string }) {
+}: SharedProps & { lcsId: string; inline?: boolean }) {
   const board = useMemo(() => {
     const full = buildLcsBoardModel(system690, lcsId)
     if (!full) return null
@@ -351,14 +352,19 @@ export function LcsDualView({
   }
 
   return (
-    <div className="lcs-dual">
-      <header className="lcs-dual__head">
-        <strong>{board.lcs.id}</strong>
-        <span>{board.lcs.name}</span>
-        <span className="lcs-dual__meta">
-          440 V · VS—QVM—VM—QNV—NV (230 V aparcado)
-        </span>
-      </header>
+    <div
+      className={`lcs-dual${inline ? ' lcs-dual--inline' : ''}`}
+      title={`${board.lcs.id} · ${board.lcs.name} · doble clic en QVS/zona para plegar`}
+    >
+      {!inline && (
+        <header className="lcs-dual__head">
+          <strong>{board.lcs.id}</strong>
+          <span>{board.lcs.name}</span>
+          <span className="lcs-dual__meta">
+            440 V · VS—QVM—VM—QNV—NV (230 V aparcado)
+          </span>
+        </header>
+      )}
       <Lcs440Board bus={board.buses[0]} {...props} />
     </div>
   )

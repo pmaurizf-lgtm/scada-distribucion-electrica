@@ -35,7 +35,6 @@ import { CircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
 import { LcsDualView } from './LcsDualView'
-import { TrfBankPanel } from './TrfBankPanel'
 import { SearchTreeView } from './SearchTreeView'
 
 export type LockTool = 'none' | 'lock' | 'unlock'
@@ -460,9 +459,11 @@ function BusDrop({
     onToggleEquip(equipment.id)
   }
 
+  const lcsOpen = isLcsEquipment(equipment.id) && expanded
+
   return (
     <div
-      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}`}
+      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${lcsOpen ? ' hbus-drop--lcs-open' : ''}`}
       data-equip={equipment.id}
       data-circuit-id={localFeed.id}
       title={
@@ -479,79 +480,76 @@ function BusDrop({
         {renderLeg(localFeed, 'local')}
       </div>
 
-      <div
-        ref={eqWrapRef}
-        className="hbus-drop__eq-wrap"
-        onMouseEnter={() => setEqHover(true)}
-        onMouseLeave={() => setEqHover(false)}
-      >
-        <button
-          type="button"
-          className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
-          data-equip={equipment.id}
-          title={
-            spare
-              ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
-              : canExpand
-                ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
-                : undefined
-          }
-          onClick={(e) => e.stopPropagation()}
-          onDoubleClick={toggleExpand}
-          disabled={!canExpand}
+      {/* LCS desplegado: sin caja amarilla; QVS baja directo a barra VS */}
+      {!lcsOpen && (
+        <div
+          ref={eqWrapRef}
+          className="hbus-drop__eq-wrap"
+          onMouseEnter={() => setEqHover(true)}
+          onMouseLeave={() => setEqHover(false)}
         >
-          <span className="hbus-drop__sym">
-            {spare ? 'R' : symbolFor(equipment.kind)}
-          </span>
-          <span className="hbus-drop__id">
-            {spare ? localFeed.protectionName : equipment.id}
-          </span>
-          {!spare && equipment.dcp10Id && (
-            <span className="hbus-drop__dcp" title="Denominación DCP-10">
-              {equipment.dcp10Id}
+          <button
+            type="button"
+            className={`hbus-drop__eq${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
+            data-equip={equipment.id}
+            title={
+              spare
+                ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
+                : canExpand
+                  ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
+                  : undefined
+            }
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={toggleExpand}
+            disabled={!canExpand}
+          >
+            <span className="hbus-drop__sym">
+              {spare ? 'R' : symbolFor(equipment.kind)}
             </span>
-          )}
-          <span className="hbus-drop__name">
-            {spare ? 'RESPETO' : equipment.name}
-          </span>
-          {trfBankNote && (
-            <span className="hbus-drop__bank" title={trfBankNote}>
-              690/440-230
+            <span className="hbus-drop__id">
+              {spare ? localFeed.protectionName : equipment.id}
             </span>
-          )}
-          {canExpand && (
-            <span className="hbus-drop__more">
-              {isTrfWithLoadCenter(system690, equipment.id)
-                ? expanded
-                  ? '▴ banco + LCS'
-                  : '▾ banco + LCS'
-                : isLcsEquipment(equipment.id)
+            {!spare && equipment.dcp10Id && (
+              <span className="hbus-drop__dcp" title="Denominación DCP-10">
+                {equipment.dcp10Id}
+              </span>
+            )}
+            <span className="hbus-drop__name">
+              {spare ? 'RESPETO' : equipment.name}
+            </span>
+            {trfBankNote && (
+              <span className="hbus-drop__bank" title={trfBankNote}>
+                690/440-230
+              </span>
+            )}
+            {canExpand && (
+              <span className="hbus-drop__more">
+                {isTrfWithLoadCenter(system690, equipment.id)
                   ? expanded
-                    ? '▴ 440 V'
-                    : '▾ 440 V'
-                  : `${children.length} ${expanded ? '▴' : '▾'}`}
-            </span>
+                    ? '▴ LCS'
+                    : '▾ LCS'
+                  : isLcsEquipment(equipment.id)
+                    ? expanded
+                      ? '▴ 440 V'
+                      : '▾ 440 V'
+                    : `${children.length} ${expanded ? '▴' : '▾'}`}
+              </span>
+            )}
+          </button>
+          {showEqBalloon && (
+            <EquipmentBalloon
+              equipment={equipment}
+              feeds={feedSummaries}
+              anchorRef={eqWrapRef}
+            />
           )}
-        </button>
-        {showEqBalloon && (
-          <EquipmentBalloon
-            equipment={equipment}
-            feeds={feedSummaries}
-            anchorRef={eqWrapRef}
-          />
-        )}
-      </div>
-
-      {expanded && isTrfWithLoadCenter(system690, equipment.id) && (
-        <TrfBankPanel
-          trfId={equipment.id}
-          energizedEquipmentIds={energizedEquipmentIds}
-        />
+        </div>
       )}
 
-      {expanded && isLcsEquipment(equipment.id) && (
+      {lcsOpen && (
         <LcsDualView
           lcsId={equipment.id}
+          inline
           protectionStatus={protectionStatus}
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
