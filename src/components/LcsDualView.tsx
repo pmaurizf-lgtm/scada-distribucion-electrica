@@ -215,9 +215,10 @@ function BusDrops({
   )
 }
 
-/** Barra 440 V continua: VS —QVM— VM —QNV— NV con acopladores centrados. */
+/** Barra 440 V: VS —QVM— VM —QNV— NV; cargas en fila horizontal. */
 export function Lcs440Board({
   bus,
+  incoming,
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
@@ -227,11 +228,14 @@ export function Lcs440Board({
   onHoverInfoEnd,
 }: {
   bus: LcsVoltageBus
+  /** QVS: se dibuja sobre la barra VS (enlace TRF → VS). */
+  incoming?: Circuit
 } & SharedProps) {
   const vs = sectionOf(bus, 'VS')
   const vm = sectionOf(bus, 'VM')
   const nv = sectionOf(bus, 'NV')
-  const inFlow = energizedCircuitIds.has(bus.incoming.id)
+  const feed = incoming ?? bus.incoming
+  const inFlow = energizedCircuitIds.has(feed.id)
   const qvm = vm?.sectionBreaker
   const qnv = nv?.sectionBreaker
   const qvmFlow = !!(qvm && energizedCircuitIds.has(qvm.id))
@@ -239,26 +243,42 @@ export function Lcs440Board({
   const vsLive = inFlow
   const vmLive = inFlow && qvmFlow
   const nvLive = inFlow && qnvFlow
+  const shared = {
+    protectionStatus,
+    energizedCircuitIds,
+    energizedEquipmentIds,
+    lockedCircuits,
+    onLocalBreaker,
+    onHoverInfo,
+    onHoverInfoEnd,
+  }
 
   return (
-    <div className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}`}>
-      {/* QVS vive en la pierna TRF→LCS (recuadro independiente); aquí solo barras */}
-      <div className="lcs440-rail">
-        <div className="lcs440-rail__spine" aria-hidden />
-
-        <div className={`lcs440-cell lcs440-cell--vs${vsLive ? ' lcs440-cell--live' : ''}`}>
-          <span className="lcs440-cell__tag lcs440-cell__tag--VS">VS 440 V</span>
-          <div className="lcs440-cell__bus" />
-          <BusDrops
-            outlets={vs?.outlets ?? []}
-            protectionStatus={protectionStatus}
-            energizedCircuitIds={energizedCircuitIds}
-            energizedEquipmentIds={energizedEquipmentIds}
-            lockedCircuits={lockedCircuits}
-            onLocalBreaker={onLocalBreaker}
+    <div
+      className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}${incoming ? ' lcs440-board--fed' : ''}`}
+    >
+      {incoming && (
+        <div className={`lcs440-vs-feed${inFlow ? ' lcs440-vs-feed--flow' : ''}`}>
+          <span className="lcs440-vs-feed__from" title="desde TRF" aria-hidden />
+          <MiniBreaker
+            name={feed.protectionName}
+            state={protectionStatus[feed.id]}
+            circuit={feed}
+            flowing={inFlow}
+            locked={lockedCircuits.has(feed.id)}
+            onClick={(e) => onLocalBreaker(feed, e)}
             onHoverInfo={onHoverInfo}
             onHoverInfoEnd={onHoverInfoEnd}
           />
+          <span className="lcs440-vs-feed__to" aria-hidden />
+        </div>
+      )}
+
+      <div className="lcs440-rail">
+        <div className={`lcs440-cell lcs440-cell--vs${vsLive ? ' lcs440-cell--live' : ''}`}>
+          <span className="lcs440-cell__tag lcs440-cell__tag--VS">VS 440 V</span>
+          <div className="lcs440-cell__bus" />
+          <BusDrops outlets={vs?.outlets ?? []} {...shared} />
         </div>
 
         {qvm && (
@@ -274,23 +294,13 @@ export function Lcs440Board({
               onHoverInfo={onHoverInfo}
               onHoverInfoEnd={onHoverInfoEnd}
             />
-            <span className="lcs440-tie__hint">→ VM</span>
           </div>
         )}
 
         <div className={`lcs440-cell lcs440-cell--vm${vmLive ? ' lcs440-cell--live' : ''}`}>
           <span className="lcs440-cell__tag lcs440-cell__tag--VM">VM 440 V</span>
           <div className="lcs440-cell__bus" />
-          <BusDrops
-            outlets={vm?.outlets ?? []}
-            protectionStatus={protectionStatus}
-            energizedCircuitIds={energizedCircuitIds}
-            energizedEquipmentIds={energizedEquipmentIds}
-            lockedCircuits={lockedCircuits}
-            onLocalBreaker={onLocalBreaker}
-            onHoverInfo={onHoverInfo}
-            onHoverInfoEnd={onHoverInfoEnd}
-          />
+          <BusDrops outlets={vm?.outlets ?? []} {...shared} />
         </div>
 
         {qnv && (
@@ -306,35 +316,30 @@ export function Lcs440Board({
               onHoverInfo={onHoverInfo}
               onHoverInfoEnd={onHoverInfoEnd}
             />
-            <span className="lcs440-tie__hint">→ NV</span>
           </div>
         )}
 
         <div className={`lcs440-cell lcs440-cell--nv${nvLive ? ' lcs440-cell--live' : ''}`}>
           <span className="lcs440-cell__tag lcs440-cell__tag--NV">NV 440 V</span>
           <div className="lcs440-cell__bus" />
-          <BusDrops
-            outlets={nv?.outlets ?? []}
-            protectionStatus={protectionStatus}
-            energizedCircuitIds={energizedCircuitIds}
-            energizedEquipmentIds={energizedEquipmentIds}
-            lockedCircuits={lockedCircuits}
-            onLocalBreaker={onLocalBreaker}
-            onHoverInfo={onHoverInfo}
-            onHoverInfoEnd={onHoverInfoEnd}
-          />
+          <BusDrops outlets={nv?.outlets ?? []} {...shared} />
         </div>
       </div>
     </div>
   )
 }
 
-/** Expandir LCS: barras 440 V. `inline` = sin caja; QVS del padre baja a VS. */
+/** Expandir LCS: barras 440 V. `inline` + `incoming` = QVS sobre VS, sin caja. */
 export function LcsDualView({
   lcsId,
   inline = false,
+  incoming,
   ...props
-}: SharedProps & { lcsId: string; inline?: boolean }) {
+}: SharedProps & {
+  lcsId: string
+  inline?: boolean
+  incoming?: Circuit
+}) {
   const board = useMemo(() => {
     const full = buildLcsBoardModel(system690, lcsId)
     if (!full) return null
@@ -354,7 +359,7 @@ export function LcsDualView({
   return (
     <div
       className={`lcs-dual${inline ? ' lcs-dual--inline' : ''}`}
-      title={`${board.lcs.id} · ${board.lcs.name} · doble clic en QVS/zona para plegar`}
+      title={`${board.lcs.id} · ${board.lcs.name}`}
     >
       {!inline && (
         <header className="lcs-dual__head">
@@ -365,7 +370,11 @@ export function LcsDualView({
           </span>
         </header>
       )}
-      <Lcs440Board bus={board.buses[0]} {...props} />
+      <Lcs440Board
+        bus={board.buses[0]}
+        incoming={inline ? incoming ?? board.buses[0].incoming : undefined}
+        {...props}
+      />
     </div>
   )
 }

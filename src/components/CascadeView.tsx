@@ -475,12 +475,14 @@ function BusDrop({
       }
       onDoubleClick={toggleExpand}
     >
-      <div className="hbus-drop__tops">
-        {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
-        {renderLeg(localFeed, 'local')}
-      </div>
+      {/* Cerrado: pierna + caja. Abierto: QVS vive sobre barra VS en LcsDualView */}
+      {!lcsOpen && (
+        <div className="hbus-drop__tops">
+          {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
+          {renderLeg(localFeed, 'local')}
+        </div>
+      )}
 
-      {/* LCS desplegado: sin caja amarilla; QVS baja directo a barra VS */}
       {!lcsOpen && (
         <div
           ref={eqWrapRef}
@@ -550,6 +552,7 @@ function BusDrop({
         <LcsDualView
           lcsId={equipment.id}
           inline
+          incoming={localFeed}
           protectionStatus={protectionStatus}
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}

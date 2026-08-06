@@ -2208,33 +2208,12 @@ body {
 }
 
 /*
- * LCS desplegado: sin caja amarilla.
- * QVS (en .hbus-drop__tops) alineado sobre la columna VS;
- * VM/NV quedan a la derecha en la misma espina.
+ * LCS desplegado: QVS sobre VS; cargas en fila horizontal (ancho libre).
  */
 .hbus-drop--lcs-open {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  display: block;
   width: max-content;
-  max-width: min(96vw, 72rem);
-}
-
-.hbus-drop--lcs-open > .hbus-drop__tops {
-  align-self: flex-start;
-  width: var(--lcs-vs-col, 9.5rem);
-  justify-content: center;
-  margin-bottom: 0;
-}
-
-.hbus-drop--lcs-open > .hbus-drop__tops .hbus-drop__leg {
-  width: 100%;
-}
-
-.hbus-drop--lcs-open > .hbus-drop__tops .hbus-drop__wire--to-eq {
-  min-height: 0.85rem;
-  flex: 0 0 0.85rem;
-  margin-bottom: -2px;
+  max-width: none;
 }
 
 .hbus-drop--lcs-open .lcs-dual--inline {
@@ -2246,34 +2225,14 @@ body {
   overflow: visible;
 }
 
-.hbus-drop--lcs-open .lcs440-rail {
-  --lcs-vs-col: 9.5rem;
-  grid-template-columns:
-    var(--lcs-vs-col)
-    4.6rem
-    minmax(8rem, 1fr)
-    4.6rem
-    minmax(8rem, 1fr);
-}
-
-.hbus-drop--lcs-open .lcs440-rail__spine {
-  top: 1.55rem;
-}
-
-.hbus-drop--lcs-open .lcs440-cell--vs .lcs440-cell__bus {
-  /* Empalme visual con el cable que baja del QVS */
-  box-shadow: inset 0 0 0 1px transparent;
+.hbus--direct .hbus__slot:has(.hbus-drop--lcs-open) {
+  width: max-content;
+  min-width: 0;
 }
 
 .hbus__slot {
   flex: 0 0 auto;
   width: 7.2rem;
-}
-
-/* Slot del LCS abierto: deja crecer el unifilar a la derecha */
-.hbus--direct .hbus__slot:has(.hbus-drop--lcs-open) {
-  width: max-content;
-  min-width: 7.2rem;
 }
 
 .hbus__slot:has(.hbus-drop--dual) {
@@ -2976,66 +2935,67 @@ body {
   font-family: var(--mono);
 }
 
-/* Barra LCS 440 continua */
+/* Barra LCS 440 continua — filas horizontales de cargas */
 .lcs440-board {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: flex-start;
+  width: max-content;
 }
 
-.lcs-dual--inline .lcs440-cell__tag--VS::after {
-  content: ' ← QVS';
-  font-weight: 500;
-  opacity: 0.75;
-  font-size: 0.55rem;
-}
-
-.lcs440-qvs {
+.lcs440-vs-feed {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 4rem;
-  margin: 0 auto;
+  align-self: flex-start;
+  width: 4.2rem;
+  margin: 0 0 -2px 0.85rem;
+  z-index: 3;
+  position: relative;
 }
 
-.lcs440-qvs__wire {
+.lcs440-vs-feed__from {
   width: 2px;
-  height: 0.55rem;
+  height: 1.75rem;
   background: var(--line-normal);
 }
 
-.lcs440-qvs__wire--long {
+.lcs440-vs-feed__to {
+  width: 2px;
   height: 0.85rem;
-  margin-bottom: -2px;
+  background: var(--line-normal);
 }
 
-.lcs440-qvs--flow .lcs440-qvs__wire {
+.lcs440-vs-feed--flow .lcs440-vs-feed__from,
+.lcs440-vs-feed--flow .lcs440-vs-feed__to {
   background: #e6c200;
+}
+
+.lcs440-board--fed .lcs440-cell--vs,
+.lcs440-board--fed .lcs440-cell--vm,
+.lcs440-board--fed .lcs440-cell--nv {
+  padding-top: 0;
+}
+
+.lcs440-board--fed .lcs440-tie {
+  padding-top: 1.35rem;
 }
 
 .lcs440-rail {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(8rem, 1.2fr) 4.6rem minmax(8rem, 1fr) 4.6rem minmax(8rem, 1fr);
-  align-items: start;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: max-content;
   column-gap: 0;
-  padding-top: 0.15rem;
 }
 
-/* Espina continua detrás de celdas y acopladores */
 .lcs440-rail__spine {
-  position: absolute;
-  left: 0.25rem;
-  right: 0.25rem;
-  top: 1.55rem;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 40%, #6a8aaa);
-  z-index: 0;
-  pointer-events: none;
+  display: none;
 }
 
-.lcs440-board--live .lcs440-rail__spine {
+.lcs440-board--live .lcs440-cell__bus {
   background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
   box-shadow: 0 0 8px rgba(230, 194, 0, 0.3);
 }
@@ -3046,17 +3006,20 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  min-width: 0;
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 5.5rem;
 }
 
 .lcs440-cell__tag {
-  align-self: center;
+  align-self: flex-start;
+  margin-left: 0.25rem;
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 700;
   padding: 0.08rem 0.35rem;
   border-radius: 3px;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
   letter-spacing: 0.03em;
 }
 
@@ -3075,22 +3038,30 @@ body {
   color: #c8d4e8;
 }
 
-/* Hueco transparente sobre la espina (la línea no se corta) */
+/* Tramo de barra de cada servicio (se empalman visualmente con los ties) */
 .lcs440-cell__bus {
   height: 4px;
-  margin-bottom: 0.2rem;
-  background: transparent;
+  margin-bottom: 0.15rem;
+  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+  border-radius: 1px;
+  width: 100%;
+}
+
+.lcs440-cell--live .lcs440-cell__bus {
+  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
 }
 
 .lcs440-drops {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.35rem 0.4rem;
-  padding-top: 0.1rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 0.4rem 0.55rem;
+  padding: 0.15rem 0.2rem 0;
+  width: max-content;
 }
 
-/* Acoplador centrado sobre la espina */
 .lcs440-tie {
   position: relative;
   z-index: 2;
@@ -3098,18 +3069,40 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 0.95rem;
-  gap: 0.15rem;
+  flex: 0 0 4.4rem;
+  width: 4.4rem;
+  padding-top: 1.35rem;
+  gap: 0;
+}
+
+.lcs440-tie::before,
+.lcs440-tie::after {
+  content: '';
+  position: absolute;
+  top: calc(1.35rem + 1.05rem);
+  height: 4px;
+  width: 0.55rem;
+  background: #7dcfb0;
+  z-index: 0;
+}
+
+.lcs440-tie::before {
+  left: 0;
+}
+
+.lcs440-tie::after {
+  right: 0;
+}
+
+.lcs440-tie--flow::before,
+.lcs440-tie--flow::after {
+  background: #e6c200;
 }
 
 .lcs440-tie .casc-brk {
+  position: relative;
+  z-index: 1;
   background: color-mix(in srgb, #1a2430 92%, transparent);
-}
-
-.lcs440-tie__hint {
-  font-family: var(--mono);
-  font-size: 0.5rem;
-  color: var(--muted);
 }
 
 .lcs440-tie--flow .casc-brk {
@@ -3120,7 +3113,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 5.2rem;
+  flex: 0 0 5.6rem;
+  width: 5.6rem;
   position: relative;
 }
 
@@ -3173,7 +3167,7 @@ body {
   font-size: 0.55rem;
   color: var(--muted);
   line-height: 1.2;
-  max-height: 2.2em;
+  max-height: 2.4em;
   overflow: hidden;
 }
 
