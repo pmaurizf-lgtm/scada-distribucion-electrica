@@ -122,7 +122,7 @@ export function buildBoardModels(data: DistributionData): BoardModel[] {
       }))
       .sort((a, b2) => a.breaker.localeCompare(b2.breaker, undefined, { numeric: true }))
 
-    /** Enlace bus-tie del lado de este cuadro (QT2A en N-2 / QT1B en N-1) */
+    /** Interconexión 2SA↔1SB: QT2A en N-2 (SA), QT1B en N-1 (SB) */
     const busTie =
       b.id === 'MSB-6PWS0002'
         ? qt2a

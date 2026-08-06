@@ -1486,7 +1486,7 @@ body {
 }
 
 /*
- * Hueco entre MSB; la interconexión QT2A↔QT1B la dibuja .plant__tie-svg
+ * Hueco entre MSB; la interconexión 2SA↔1SB (QT2A↔QT1B) la dibuja .plant__tie-svg
  * midiendo la posición real de cada interruptor.
  */
 .plant__bridge-gap {

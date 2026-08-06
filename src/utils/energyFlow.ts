@@ -15,7 +15,7 @@ function isBusTie(circuit: Circuit): boolean {
  * Nodos y circuitos energizados desde generadores en marcha a través de
  * interruptores «cerrada». Sin generador arrancado no hay flujo.
  * - Cruce SA↔SB de un MSB: QBT1/QBT2 cerrado.
- * - Interconexión entre cuadros: QT1B y QT2A cerrados (ambos).
+ * - Interconexión entre cuadros (1SB↔2SA): QT1B y QT2A cerrados (ambos).
  * - Aguas abajo: paneles energizados → salidas con interruptor cerrado.
  */
 export function computeEnergyFlow(

@@ -503,7 +503,7 @@ function genShortLabel(half: BusHalf, boardId: string): string {
   return `G${n}${half === 'SA' ? 'A' : 'B'}`
 }
 
-/** U invertida QT2A ↔ QT1B anclada a la geometría real de los interruptores */
+/** U invertida QT2A (2SA) ↔ QT1B (1SB) anclada a la geometría real de los interruptores */
 function BusTieInterconnect({
   leftId,
   rightId,
@@ -1193,7 +1193,7 @@ export function CascadeView({
             onToggleGenerator={onToggleGenerator}
           />
 
-          {/* Separador entre cuadros; la U QT2A↔QT1B la dibuja el SVG medido */}
+          {/* Separador entre cuadros; la U 2SA↔1SB (QT2A↔QT1B) la dibuja el SVG medido */}
           <div className="plant__bridge-gap" aria-hidden />
 
           <BoardColumn
@@ -1281,7 +1281,7 @@ function BoardColumn({
   lockedCircuits: Set<string>
   focusCircuitIds: Set<string> | null
   focusEquipmentIds: Set<string> | null
-  /** Lado que mira al puente: POPA=right (2SA), PROA=left (1SA espejado) */
+  /** Lado del puente: POPA=right (2SA), PROA=left (1SB). Ambos cuadros: SB | SA */
   tieSide: 'left' | 'right'
   onToggle: () => void
   onToggleEquip: (id: string) => void
@@ -1306,10 +1306,9 @@ function BoardColumn({
   const tagA = halfTag(board.id, 'SA')
   const genSb = board.gens.find((g) => g.half === 'SB')
   const genSa = board.gens.find((g) => g.half === 'SA')
-  /** PROA espejado: SA queda hacia el puente (izquierda) */
-  const mirror = tieSide === 'left'
+  /** Orden fijo SB | SA. QT en el lado del puente: 2SA (derecha) ↔ 1SB (izquierda). */
   const tie = board.busTie[0]
-  const tieTag = tagA
+  const tieTag = tieSide === 'left' ? tagB : tagA
 
   const showBoard =
     !focusCircuitIds ||
@@ -1415,14 +1414,14 @@ function BoardColumn({
 
   const tieFlowing = tie ? energizedCircuitIds.has(tie.id) : false
 
-  const leftGen = mirror ? genSa : genSb
-  const rightGen = mirror ? genSb : genSa
-  const leftTag = mirror ? tagA : tagB
-  const rightTag = mirror ? tagB : tagA
-  const leftHalf: BusHalf = mirror ? 'SA' : 'SB'
-  const rightHalf: BusHalf = mirror ? 'SB' : 'SA'
-  const leftDrops = mirror ? sa : sb
-  const rightDrops = mirror ? sb : sa
+  const leftGen = genSb
+  const rightGen = genSa
+  const leftTag = tagB
+  const rightTag = tagA
+  const leftHalf: BusHalf = 'SB'
+  const rightHalf: BusHalf = 'SA'
+  const leftDrops = sb
+  const rightDrops = sa
   const liveHalves = energizedBusHalves.get(board.id) ?? new Set<'SA' | 'SB'>()
   const leftHalfLive = liveHalves.has(leftHalf)
   const rightHalfLive = liveHalves.has(rightHalf)
@@ -1436,7 +1435,7 @@ function BoardColumn({
 
   return (
     <div
-      className={`plant-msb-col plant-msb-col--tie-${tieSide}${mirror ? ' plant-msb-col--mirror' : ''}`}
+      className={`plant-msb-col plant-msb-col--tie-${tieSide}`}
       data-board={board.id as BoardId}
       title={`Doble clic para ${expanded ? 'plegar' : 'desplegar'} el cuadro`}
       onDoubleClick={(e) => {
