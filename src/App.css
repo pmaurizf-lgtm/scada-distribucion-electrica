@@ -2595,7 +2595,7 @@ body {
   line-height: 1.25;
 }
 
-/* —— LCS dual 440/230 (abtDownstream) —— */
+/* —— LCS dual 440/230: barras VS—QVM—VM—QNV—NV horizontales (como MSB) —— */
 .hbus-drop__bank {
   display: block;
   width: 100%;
@@ -2607,11 +2607,12 @@ body {
 
 .lcs-dual {
   margin-top: 0.55rem;
-  padding: 0.55rem 0.65rem 0.7rem;
+  padding: 0.55rem 0.65rem 0.75rem;
   border: 1px solid color-mix(in srgb, var(--line-normal) 45%, transparent);
   border-radius: 6px;
   background: color-mix(in srgb, #1a2430 88%, transparent);
-  min-width: min(52rem, 92vw);
+  min-width: min(64rem, 96vw);
+  overflow-x: auto;
 }
 
 .lcs-dual--empty {
@@ -2624,7 +2625,7 @@ body {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.45rem 0.85rem;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.65rem;
   font-size: 0.78rem;
 }
 
@@ -2637,114 +2638,169 @@ body {
   font-size: 0.68rem;
 }
 
-.lcs-dual__buses {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-@media (max-width: 900px) {
-  .lcs-dual__buses {
-    grid-template-columns: 1fr;
-  }
-}
-
-.lcs-bus {
-  border: 1px solid color-mix(in srgb, #5a7a9a 35%, transparent);
-  border-radius: 5px;
-  padding: 0.45rem 0.5rem 0.55rem;
-  background: color-mix(in srgb, #121820 70%, transparent);
-}
-
-.lcs-bus--live {
-  border-color: color-mix(in srgb, #e6c200 55%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, #e6c200 25%, transparent);
-}
-
-.lcs-bus__title {
+.lcs-dual__rows {
   display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  margin-bottom: 0.35rem;
+  flex-direction: column;
+  gap: 1.1rem;
 }
 
-.lcs-bus__kv {
+.lcs-vrow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.lcs-vrow__kv {
+  flex: 0 0 3.2rem;
   font-family: var(--mono);
   font-weight: 700;
   font-size: 0.85rem;
-  min-width: 3.2rem;
+  padding-top: 1.85rem;
+  color: #9ab4c8;
 }
 
-.lcs-bus__in-label {
-  font-size: 0.62rem;
-  color: var(--muted);
+.lcs-vrow--feed .lcs-vrow__kv {
+  color: #e6c200;
 }
 
-.lcs-bus__rail {
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 40%, #6a8aaa);
-  margin: 0.25rem 0 0.5rem;
+.lcs-vrow__rack {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0;
 }
 
-.lcs-bus--live .lcs-bus__rail {
-  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
-}
-
-.lcs-bus__sections {
+/* Entrada TRF → QVS */
+.lcs-in {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-}
-
-.lcs-sec {
-  border-top: 1px dashed color-mix(in srgb, #6a8aaa 40%, transparent);
-  padding-top: 0.35rem;
-}
-
-.lcs-sec__head {
-  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.3rem;
+  width: 3.6rem;
+  flex: 0 0 3.6rem;
+  padding-top: 1.35rem;
 }
 
-.lcs-sec__svc {
+.lcs-in__tag {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--muted);
+  margin-bottom: 0.15rem;
+}
+
+.lcs-in__wire {
+  width: 2px;
+  height: 0.55rem;
+  background: var(--line-normal);
+}
+
+.lcs-in__wire--to-bus {
+  height: 0.85rem;
+  margin-bottom: -2px;
+}
+
+.lcs-in--flow .lcs-in__wire {
+  background: #e6c200;
+}
+
+/* Segmento de barra VS / VM / NV */
+.lcs-seg {
+  flex: 1 1 0;
+  min-width: 7.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lcs-seg__label-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+  min-height: 1.15rem;
+}
+
+.lcs-seg__svc {
   font-family: var(--mono);
   font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.1rem 0.35rem;
+  padding: 0.1rem 0.4rem;
   border-radius: 3px;
   letter-spacing: 0.04em;
 }
 
-.lcs-sec__svc--VS {
+.lcs-seg__svc--VS {
   background: color-mix(in srgb, #3d8a7a 35%, transparent);
   color: #b8e8dc;
 }
 
-.lcs-sec__svc--VM {
+.lcs-seg__svc--VM {
   background: color-mix(in srgb, #8a6a3d 40%, transparent);
   color: #f0d9a8;
 }
 
-.lcs-sec__svc--NV {
+.lcs-seg__svc--NV {
   background: color-mix(in srgb, #5a6a8a 40%, transparent);
   color: #c8d4e8;
 }
 
-.lcs-sec__outs {
+.lcs-seg__rail {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+  margin-bottom: 0.15rem;
+}
+
+.lcs-seg--live .lcs-seg__rail {
+  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+  box-shadow: 0 0 8px rgba(230, 194, 0, 0.35);
+}
+
+.lcs-seg__drops {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
-  gap: 0.45rem 0.55rem;
+  justify-content: center;
+  gap: 0.35rem 0.45rem;
+  padding-top: 0.15rem;
+  border-top: none;
+}
+
+/* Acoplador de sección entre barras (como QBT) */
+.lcs-tie {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 4.2rem;
+  width: 4.2rem;
+  padding-top: 1.45rem;
+  gap: 0;
+}
+
+.lcs-tie__bridge {
+  flex: 1 1 auto;
+  height: 3px;
+  background: #7dcfb0;
+  min-width: 0.35rem;
+}
+
+.lcs-tie--flow .lcs-tie__bridge {
+  background: #e6c200;
+  box-shadow: 0 0 6px rgba(230, 194, 0, 0.4);
 }
 
 .lcs-out {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 5.6rem;
+  width: 5.4rem;
   position: relative;
+}
+
+.lcs-out__stub {
+  width: 2px;
+  height: 0.45rem;
+  background: var(--line-normal);
 }
 
 .lcs-out__wire {
@@ -2753,6 +2809,7 @@ body {
   background: var(--line-normal);
 }
 
+.lcs-out--flow .lcs-out__stub,
 .lcs-out--flow .lcs-out__wire {
   background: #e6c200;
 }

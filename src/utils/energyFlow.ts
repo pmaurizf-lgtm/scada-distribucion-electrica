@@ -179,6 +179,21 @@ export function computeEnergyFlow(
       // Circuito real (QG, salidas, etc.): solo si el interruptor está cerrado
       if (protectionStatus[circuit.id] !== 'cerrada') continue
 
+      // LCS: salidas VM/NV requieren QVM/QNV cerrado (como QBT entre mitades MSB)
+      if (
+        circuit.originId.startsWith('LCS-') &&
+        (circuit.service === 'VM' || circuit.service === 'NV') &&
+        !/^QVM-|^QNV-/.test(circuit.protectionName)
+      ) {
+        const v = (circuit.voltage ?? '').replace(/\s*V$/i, '')
+        const needName =
+          circuit.service === 'VM' ? `QVM-${v}` : `QNV-${v}`
+        const coupler = (byOrigin.get(circuit.originId) ?? []).find(
+          (c) => c.protectionName === needName,
+        )
+        if (coupler && protectionStatus[coupler.id] !== 'cerrada') continue
+      }
+
       energizedCircuitIds.add(circuit.id)
       if (/^PNL-MSB/.test(circuit.destinationId)) {
         markPanelHalf(circuit.destinationId)
