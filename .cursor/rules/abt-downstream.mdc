@@ -19,8 +19,9 @@ ABT-…  →  TRF-… (690/440-230)  →  LCS dual
 - Toda la lógica y UI de esta cadena vive en `src/abtDownstream/`.
 - Los LCS y circuitos 440/230 **no** se inventan en `system690.json` hasta tener fuente (Excel 440/230 o plano). Usar `src/data/abtDownstream.json` (o similar) cuando existan datos.
 - Hoy el 690 V ya tiene **ABT → TRF**; LCS 440/230 de **ABT-6PWS0001** está en `abtDownstream.json` + `LcsDualView`.
-- UI: **ABT**, **TRF** y **LCS** independientes. TRF→QVS sin recuadro intermedio.
-  LCS desplegado: sin caja amarilla; QVS enlaza directo a barra **VS 440**; VM/NV a la derecha.
+- UI: **ABT**, **TRF** y **LCS** independientes. TRF→cable→QVS (centrado sobre VS).
+  LCS desplegado: sin caja amarilla; QVS sobre barra **VS 440**; etiquetas arriba-izq; VM/NV a la derecha.
+  Salidas LCS: mismo aspecto MSB (NORM/ALT, tipografía, globos con local/P/Q/S).
 - Energía: salidas VM/NV solo con QVM/QNV cerrado.
 - No modificar layout MSB, bus-tie, RESPETO ni `energyFlow` desde aquí; si hace falta energía en LCS, extender con funciones en este módulo o ganchos explícitos, no reescribir el núcleo.
 - UX: mismo criterio que el resto (clic = conmutar; globo ~1,8 s hover; doble clic expandir).

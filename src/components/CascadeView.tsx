@@ -426,10 +426,15 @@ function BusDrop({
       }
       onDoubleClick={toggleExpand}
     >
-      {/* LCS abierto: QVS en la pierna (mismo criterio MSB), unido al TRF arriba y a VS abajo */}
+      {/* LCS abierto: cable desde TRF; QVS va centrado sobre VS dentro del chasis */}
       {lcsOpen ? (
-        <div className="hbus-drop__tops hbus-drop__tops--lcs-qvs">
-          {renderLeg(localFeed, 'local')}
+        <div
+          className={`hbus-drop__tops hbus-drop__tops--lcs-feed${localFlowing ? ' hbus-drop__tops--lcs-feed-flow' : ''}`}
+          aria-hidden
+        >
+          <span
+            className={`hbus-drop__wire hbus-drop__wire--from-bus${localFlowing ? ' hbus-drop__wire--flow' : ''}${isAltLocal ? ' hbus-drop__wire--alt' : ''}`}
+          />
         </div>
       ) : (
         <div className="hbus-drop__tops">
@@ -497,6 +502,7 @@ function BusDrop({
             <EquipmentBalloon
               equipment={equipment}
               feeds={feedSummaries}
+              circuits={feeds}
               anchorRef={eqWrapRef}
             />
           )}
@@ -535,6 +541,7 @@ function BusDrop({
             <EquipmentBalloon
               equipment={equipment}
               feeds={feedSummaries}
+              circuits={feeds}
               anchorRef={eqWrapRef}
             />
           )}

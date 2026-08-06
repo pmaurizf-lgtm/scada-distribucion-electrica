@@ -35,6 +35,10 @@ interface RawCircuit {
   protectionName: string
   protectionModel?: string | null
   protectionCurrentA?: number | null
+  pKWe?: number | null
+  qKVAr?: number | null
+  sKVA?: number | null
+  ibA?: number | null
   pnKW?: number | null
   voltage?: string | null
   parallelCables?: number | null
@@ -95,6 +99,10 @@ function cleanCircuit(c: RawCircuit): Circuit {
   if (c.service) out.service = c.service
   if (c.protectionModel) out.protectionModel = c.protectionModel
   if (c.protectionCurrentA != null) out.protectionCurrentA = c.protectionCurrentA
+  if (c.pKWe != null) out.pKWe = c.pKWe
+  if (c.qKVAr != null) out.qKVAr = c.qKVAr
+  if (c.sKVA != null) out.sKVA = c.sKVA
+  if (c.ibA != null) out.ibA = c.ibA
   if (c.pnKW != null) out.pnKW = c.pnKW
   if (c.voltage) {
     out.voltage = c.voltage.includes('V') ? c.voltage : `${c.voltage} V`

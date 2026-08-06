@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import type { Equipment } from '../types'
+import type { Circuit, Equipment } from '../types'
 import { originLabel } from '../utils/cascadeModel'
 
 const KIND_LABEL: Record<Equipment['kind'], string> = {
@@ -11,9 +11,16 @@ const KIND_LABEL: Record<Equipment['kind'], string> = {
   consumidor: 'Consumidor',
 }
 
+function fmt(n: number | null | undefined, unit: string, digits = 2) {
+  if (n == null || Number.isNaN(n)) return null
+  return `${n.toFixed(digits)} ${unit}`
+}
+
 interface EquipmentBalloonProps {
   equipment: Equipment
   feeds?: { name: string; lineType: string; originId: string }[]
+  /** Circuito(s) de alimentación: P/Q/S/In/servicio como en el MSB */
+  circuits?: Circuit[]
   /** Ancla del hover (botón/caja del equipo) */
   anchorRef: RefObject<HTMLElement | null>
 }
@@ -21,9 +28,11 @@ interface EquipmentBalloonProps {
 export function EquipmentBalloon({
   equipment,
   feeds,
+  circuits,
   anchorRef,
 }: EquipmentBalloonProps) {
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+  const primary = circuits?.[0]
 
   useLayoutEffect(() => {
     const update = () => {
@@ -49,6 +58,16 @@ export function EquipmentBalloon({
   }, [anchorRef, equipment.id])
 
   if (!pos || typeof document === 'undefined') return null
+
+  const p = fmt(primary?.pKWe, 'kWe')
+  const q = fmt(primary?.qKVAr, 'kVAr')
+  const s = fmt(primary?.sKVA, 'kVA')
+  const ib = fmt(primary?.ibA, 'A')
+  const pn = fmt(primary?.pnKW, 'kW')
+  const inA =
+    primary?.protectionCurrentA != null
+      ? `${primary.protectionCurrentA} A`
+      : null
 
   return createPortal(
     <div
@@ -87,6 +106,64 @@ export function EquipmentBalloon({
           <>
             <dt>Tensión</dt>
             <dd>{equipment.voltage}</dd>
+          </>
+        )}
+        {primary?.protectionName && (
+          <>
+            <dt>Protección</dt>
+            <dd>{primary.protectionName}</dd>
+          </>
+        )}
+        {primary?.protectionModel && (
+          <>
+            <dt>Modelo</dt>
+            <dd>{primary.protectionModel}</dd>
+          </>
+        )}
+        {inA && (
+          <>
+            <dt>In</dt>
+            <dd>{inA}</dd>
+          </>
+        )}
+        {ib && (
+          <>
+            <dt>Ib</dt>
+            <dd>{ib}</dd>
+          </>
+        )}
+        {p && (
+          <>
+            <dt>P</dt>
+            <dd>{p}</dd>
+          </>
+        )}
+        {q && (
+          <>
+            <dt>Q</dt>
+            <dd>{q}</dd>
+          </>
+        )}
+        {s && (
+          <>
+            <dt>S</dt>
+            <dd>{s}</dd>
+          </>
+        )}
+        {pn && (
+          <>
+            <dt>Pn</dt>
+            <dd>{pn}</dd>
+          </>
+        )}
+        {primary?.service && (
+          <>
+            <dt>Servicio</dt>
+            <dd>
+              <span className={`badge badge--svc-${primary.service}`}>
+                {primary.service}
+              </span>
+            </dd>
           </>
         )}
         {equipment.description && (

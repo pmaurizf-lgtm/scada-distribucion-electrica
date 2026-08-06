@@ -25,7 +25,7 @@ import { EquipmentBalloon } from './EquipmentBalloon'
 
 /**
  * LCS 440 V: mismo criterio visual que el cuadro principal (MSB).
- * QVS en pierna exterior; barras VS—QVM—VM—QNV—NV; salidas = hbus-drop.
+ * QVS centrado sobre VS; barras VS—QVM—VM—QNV—NV; salidas = hbus-drop.
  */
 
 function symbolFor(kind: Equipment['kind']): ReactNode {
@@ -41,15 +41,6 @@ function symbolFor(kind: Equipment['kind']): ReactNode {
     default:
       return 'M'
   }
-}
-
-function equipFamOf(equipment: Equipment): string {
-  if (equipment.id.startsWith('ABT-')) return 'abt'
-  if (equipment.id.startsWith('TRF-')) return 'trf'
-  if (equipment.id.startsWith('LCS-')) return 'lcs'
-  if (equipment.kind === 'cuadro_secundario') return 'sec'
-  if (equipment.kind === 'conversion') return 'trf'
-  return 'eq'
 }
 
 type SharedProps = {
@@ -90,7 +81,6 @@ function HbusStyleDrop({
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
-  const fam = spare ? 'eq' : equipFamOf(equipment)
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
   const eqWrapRef = useRef<HTMLDivElement>(null)
@@ -184,7 +174,7 @@ function HbusStyleDrop({
 
   return (
     <div
-      className={`hbus-drop hbus-drop--fam-${fam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual ? ' hbus-drop--dual' : ''}${spare ? ' hbus-drop--spare' : ''}`}
+      className={`hbus-drop${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual ? ' hbus-drop--dual' : ''}${spare ? ' hbus-drop--spare' : ''}`}
       data-equip={equipment.id}
       data-circuit-id={localFeed.id}
       title={
@@ -205,7 +195,7 @@ function HbusStyleDrop({
       >
         <button
           type="button"
-          className={`hbus-drop__eq hbus-drop__eq--fam-${fam}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
+          className={`hbus-drop__eq${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
           data-equip={equipment.id}
           title={
             spare
@@ -234,6 +224,7 @@ function HbusStyleDrop({
           <EquipmentBalloon
             equipment={equipment}
             feeds={feedSummaries}
+            circuits={feeds}
             anchorRef={eqWrapRef}
           />
         )}
@@ -269,7 +260,7 @@ function BusDrops({
   )
 }
 
-/** Barra 440 V: VS — QVM — VM — QNV — NV (QVS en pierna exterior). */
+/** Barra 440 V: QVS → VS — QVM — VM — QNV — NV. */
 export function Lcs440Board({
   bus,
   incoming,
@@ -314,6 +305,32 @@ export function Lcs440Board({
       className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}${feed ? ' lcs440-board--fed' : ''}`}
     >
       <div className="lcs440-rail">
+        {/* QVS centrado sobre la barra VS (no pegado al TRF) */}
+        {feed && (
+          <div
+            className={`lcs440-rail__qvs${inFlow ? ' lcs440-rail__qvs--flow' : ''}`}
+          >
+            <span className="lcs440-rail__qvs-wire lcs440-rail__qvs-wire--from" aria-hidden />
+            <BreakerChip
+              name={feed.protectionName}
+              state={protectionStatus[feed.id]}
+              compact
+              circuitId={feed.id}
+              circuit={feed}
+              flowing={inFlow}
+              locked={lockedCircuits.has(feed.id)}
+              title={`${feed.protectionName} · entrada TRF → VS 440 V`}
+              onClick={(e) => onLocalBreaker(feed, e)}
+              onHoverInfo={onHoverInfo}
+              onHoverInfoEnd={onHoverInfoEnd}
+            />
+            <span
+              className={`lcs440-rail__qvs-wire lcs440-rail__qvs-wire--to-bus${inFlow ? ' lcs440-rail__qvs-wire--flow' : ''}`}
+              aria-hidden
+            />
+          </div>
+        )}
+
         <span className="lcs440-cell__tag lcs440-cell__tag--VS lcs440-rail__vs-tag">
           VS 440 V
         </span>
