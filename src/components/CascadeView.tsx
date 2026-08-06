@@ -731,26 +731,34 @@ export function CascadeView({
     const isInteractive = (t: EventTarget | null) =>
       t instanceof Element &&
       !!t.closest(
-        'button, a, input, select, textarea, label, .casc-brk, .circuit-balloon',
+        'button, a, input, select, textarea, label, .casc-brk, .casc-gen, .circuit-balloon, .equip-balloon, .hbus-drop__eq',
       )
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || isInteractive(e.target)) return
+      // Armar pan sin capturar aún: si no, el 2º clic del doble-clic no llega al MSB
       dragging = true
       moved = false
       startX = e.clientX
       startY = e.clientY
       originLeft = el.scrollLeft
       originTop = el.scrollTop
-      el.classList.add('is-panning')
-      el.setPointerCapture(e.pointerId)
     }
 
     const onMove = (e: PointerEvent) => {
       if (!dragging) return
       const dx = e.clientX - startX
       const dy = e.clientY - startY
-      if (Math.abs(dx) + Math.abs(dy) > 3) moved = true
+      if (!moved) {
+        if (Math.abs(dx) + Math.abs(dy) <= 3) return
+        moved = true
+        el.classList.add('is-panning')
+        try {
+          el.setPointerCapture(e.pointerId)
+        } catch {
+          /* ignore */
+        }
+      }
       el.scrollLeft = originLeft - dx
       el.scrollTop = originTop - dy
     }
@@ -759,15 +767,16 @@ export function CascadeView({
       if (!dragging) return
       dragging = false
       el.classList.remove('is-panning')
-      try {
-        el.releasePointerCapture(e.pointerId)
-      } catch {
-        /* ignore */
-      }
       if (moved) {
+        try {
+          el.releasePointerCapture(e.pointerId)
+        } catch {
+          /* ignore */
+        }
         e.preventDefault()
         e.stopPropagation()
       }
+      moved = false
     }
 
     const onWheel = (e: WheelEvent) => {
