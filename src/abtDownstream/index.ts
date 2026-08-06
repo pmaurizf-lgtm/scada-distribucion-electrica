@@ -7,10 +7,20 @@ export type {
   AbtChain,
   LoadCenter,
   LoadCenterVoltage,
+  LcsBoardModel,
+  LcsOutlet,
+  LcsSection,
+  LcsVoltageBus,
 } from './types'
 
 export {
   buildAbtChains,
+  buildLcsBoardModel,
   findAbtChain,
-  abtDownstreamEquipmentIds,
+  isLcsEquipment,
+  isTrfWithLoadCenter,
+  trfLoadCenterFeed,
+  windingNotesForTrf,
 } from './model'
+
+export { mergeAbtDownstream, abtDownstreamChainsMeta } from './merge'

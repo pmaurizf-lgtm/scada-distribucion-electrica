@@ -9,6 +9,7 @@ import type {
 import raw from './system690.json'
 import dcp10Map from './dcp10Map.json'
 import { augmentSpareCircuits } from '../utils/spareCircuits'
+import { mergeAbtDownstream } from '../abtDownstream/merge'
 
 interface RawEquipment {
   id: string
@@ -89,8 +90,10 @@ const base: DistributionData = {
   ),
 }
 
-/** Datos 690 V + circuitos RESPETO (SPARE) de la col. L del Excel */
-export const system690: DistributionData = augmentSpareCircuits(base)
+/** Datos 690 V + RESPETO + cadena ABT→TRF→LCS (440/230, módulo abtDownstream) */
+export const system690: DistributionData = mergeAbtDownstream(
+  augmentSpareCircuits(base),
+)
 
 /** Denominación DCP-10 (Excel F/J) a partir del tag PUMA (E/I) */
 export function dcp10Of(pumaId: string): string | undefined {

@@ -2594,3 +2594,209 @@ body {
   color: var(--muted);
   line-height: 1.25;
 }
+
+/* —— LCS dual 440/230 (abtDownstream) —— */
+.hbus-drop__bank {
+  display: block;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: #3d6a8a;
+  letter-spacing: 0.02em;
+}
+
+.lcs-dual {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--line-normal) 45%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, #1a2430 88%, transparent);
+  min-width: min(52rem, 92vw);
+}
+
+.lcs-dual--empty {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.lcs-dual__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.85rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.78rem;
+}
+
+.lcs-dual__head strong {
+  font-family: var(--mono);
+}
+
+.lcs-dual__meta {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.lcs-dual__buses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .lcs-dual__buses {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lcs-bus {
+  border: 1px solid color-mix(in srgb, #5a7a9a 35%, transparent);
+  border-radius: 5px;
+  padding: 0.45rem 0.5rem 0.55rem;
+  background: color-mix(in srgb, #121820 70%, transparent);
+}
+
+.lcs-bus--live {
+  border-color: color-mix(in srgb, #e6c200 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #e6c200 25%, transparent);
+}
+
+.lcs-bus__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.35rem;
+}
+
+.lcs-bus__kv {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  min-width: 3.2rem;
+}
+
+.lcs-bus__in-label {
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+
+.lcs-bus__rail {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 40%, #6a8aaa);
+  margin: 0.25rem 0 0.5rem;
+}
+
+.lcs-bus--live .lcs-bus__rail {
+  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+}
+
+.lcs-bus__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.lcs-sec {
+  border-top: 1px dashed color-mix(in srgb, #6a8aaa 40%, transparent);
+  padding-top: 0.35rem;
+}
+
+.lcs-sec__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.lcs-sec__svc {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.lcs-sec__svc--VS {
+  background: color-mix(in srgb, #3d8a7a 35%, transparent);
+  color: #b8e8dc;
+}
+
+.lcs-sec__svc--VM {
+  background: color-mix(in srgb, #8a6a3d 40%, transparent);
+  color: #f0d9a8;
+}
+
+.lcs-sec__svc--NV {
+  background: color-mix(in srgb, #5a6a8a 40%, transparent);
+  color: #c8d4e8;
+}
+
+.lcs-sec__outs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.55rem;
+}
+
+.lcs-out {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 5.6rem;
+  position: relative;
+}
+
+.lcs-out__wire {
+  width: 2px;
+  height: 0.55rem;
+  background: var(--line-normal);
+}
+
+.lcs-out--flow .lcs-out__wire {
+  background: #e6c200;
+}
+
+.lcs-out__eq {
+  width: 100%;
+  padding: 0.25rem 0.3rem;
+  border: 1px solid color-mix(in srgb, #7a9aba 45%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, #1c2834 90%, transparent);
+  text-align: center;
+}
+
+.lcs-out__eq--spare,
+.lcs-out--spare .lcs-out__eq {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.lcs-out--live .lcs-out__eq {
+  border-color: color-mix(in srgb, #e6c200 60%, transparent);
+}
+
+.lcs-out__id {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  line-height: 1.2;
+  word-break: break-all;
+}
+
+.lcs-out__name {
+  display: block;
+  font-size: 0.55rem;
+  color: var(--muted);
+  line-height: 1.2;
+  max-height: 2.2em;
+  overflow: hidden;
+}
+
+.lcs-out__badge {
+  display: inline-block;
+  margin-top: 0.15rem;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  color: var(--line-alt);
+}

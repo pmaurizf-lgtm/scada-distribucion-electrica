@@ -25,9 +25,16 @@ import {
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
 import { isSpareEquipment } from '../utils/spareCircuits'
+import {
+  isLcsEquipment,
+  isTrfWithLoadCenter,
+  trfLoadCenterFeed,
+  windingNotesForTrf,
+} from '../abtDownstream'
 import { CircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
+import { LcsDualView } from './LcsDualView'
 import { SearchTreeView } from './SearchTreeView'
 
 export type LockTool = 'none' | 'lock' | 'unlock'
@@ -305,15 +312,27 @@ function BusDrop({
   onHoverInfoEnd?: () => void
   focusCircuitIds?: Set<string> | null
 }) {
-  const children = useMemo(
-    () => childFeeders(system690, equipment.id),
-    [equipment.id],
-  )
+  const children = useMemo(() => {
+    if (isLcsEquipment(equipment.id)) return []
+    if (isTrfWithLoadCenter(system690, equipment.id)) {
+      const feed = trfLoadCenterFeed(system690, equipment.id)
+      return feed ? [feed] : []
+    }
+    return childFeeders(system690, equipment.id)
+  }, [equipment.id])
   const feeds = useMemo(
     () => incomingFeeds(system690, equipment.id),
     [equipment.id],
   )
-  const canExpand = children.length > 0
+  const canExpand =
+    children.length > 0 || isLcsEquipment(equipment.id)
+  const trfBankNote = useMemo(
+    () =>
+      equipment.id.startsWith('TRF-')
+        ? windingNotesForTrf(equipment.id)
+        : undefined,
+    [equipment.id],
+  )
 
   const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
   const remoteFeeds = feeds.filter((c) => c.id !== localFeed.id)
@@ -478,9 +497,18 @@ function BusDrop({
           <span className="hbus-drop__name">
             {spare ? 'RESPETO' : equipment.name}
           </span>
+          {trfBankNote && (
+            <span className="hbus-drop__bank" title={trfBankNote}>
+              690/440-230
+            </span>
+          )}
           {canExpand && (
             <span className="hbus-drop__more">
-              {children.length} {expanded ? '▴' : '▾'}
+              {isLcsEquipment(equipment.id)
+                ? expanded
+                  ? '▴ 440/230'
+                  : '▾ 440/230'
+                : `${children.length} ${expanded ? '▴' : '▾'}`}
             </span>
           )}
         </button>
@@ -493,7 +521,20 @@ function BusDrop({
         )}
       </div>
 
-      {expanded && childItems.length > 0 && (
+      {expanded && isLcsEquipment(equipment.id) && (
+        <LcsDualView
+          lcsId={equipment.id}
+          protectionStatus={protectionStatus}
+          energizedCircuitIds={energizedCircuitIds}
+          energizedEquipmentIds={energizedEquipmentIds}
+          lockedCircuits={lockedCircuits}
+          onLocalBreaker={onLocalBreaker}
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
+        />
+      )}
+
+      {expanded && !isLcsEquipment(equipment.id) && childItems.length > 0 && (
         <HorizontalBus
           nested
           label={equipment.id}
