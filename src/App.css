@@ -414,6 +414,12 @@ body {
   animation: balloon-in 0.18s ease-out;
 }
 
+.circuit-balloon--fixed {
+  position: fixed;
+  z-index: 80;
+  width: min(280px, calc(100vw - 24px));
+}
+
 @keyframes balloon-in {
   from {
     opacity: 0;
@@ -2540,6 +2546,8 @@ body {
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   text-align: center;
+  position: relative;
+  cursor: default;
 }
 
 .stree-eq--target {

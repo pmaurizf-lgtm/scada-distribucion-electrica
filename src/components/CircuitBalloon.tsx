@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import type { Circuit, ProtectionState } from '../types'
 import { dcp10Of } from '../data/system690'
 
@@ -7,6 +8,8 @@ interface CircuitBalloonProps {
   x: number
   y: number
   onClose: () => void
+  /** Si true, se ancla en viewport (portal) — vista de búsqueda */
+  fixed?: boolean
 }
 
 function fmt(n: number | null | undefined, unit: string, digits = 2) {
@@ -38,10 +41,11 @@ export function CircuitBalloon({
   x,
   y,
   onClose,
+  fixed = false,
 }: CircuitBalloonProps) {
-  return (
+  const node = (
     <div
-      className="circuit-balloon"
+      className={`circuit-balloon${fixed ? ' circuit-balloon--fixed' : ''}`}
       style={{ left: x, top: y }}
       role="dialog"
       aria-label={`Protección ${circuit.protectionName}`}
@@ -127,4 +131,9 @@ export function CircuitBalloon({
       </dl>
     </div>
   )
+
+  if (fixed && typeof document !== 'undefined') {
+    return createPortal(node, document.body)
+  }
+  return node
 }

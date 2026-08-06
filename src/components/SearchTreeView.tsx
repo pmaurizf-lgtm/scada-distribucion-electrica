@@ -1,9 +1,18 @@
-import { useMemo, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from 'react'
 import { system690 } from '../data/system690'
 import type { Circuit, Equipment, ProtectionState } from '../types'
-import { lineBadge } from '../utils/cascadeModel'
+import { incomingFeeds, lineBadge } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
+import { CircuitBalloon } from './CircuitBalloon'
+import { EquipmentBalloon } from './EquipmentBalloon'
 
 interface SearchTreeViewProps {
   equipmentId: string
@@ -14,6 +23,8 @@ interface SearchTreeViewProps {
   energizedEquipmentIds: Set<string>
   onBreaker: (c: Circuit, e: ReactMouseEvent) => void
 }
+
+const HOVER_DELAY_MS = 1800
 
 function eqById(id: string): Equipment | undefined {
   return system690.equipment.find((e) => e.id === id)
@@ -63,20 +74,47 @@ function BreakerMini({
   locked,
   flowing,
   onClick,
+  onHoverInfo,
+  onHoverInfoEnd,
 }: {
   circuit: Circuit
   state?: ProtectionState
   locked?: boolean
   flowing?: boolean
   onClick: (e: ReactMouseEvent) => void
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
 }) {
+  const hoverTimer = useRef<number | null>(null)
+
+  const clearHoverTimer = () => {
+    if (hoverTimer.current != null) {
+      window.clearTimeout(hoverTimer.current)
+      hoverTimer.current = null
+    }
+  }
+
+  useEffect(() => () => clearHoverTimer(), [])
+
   return (
     <button
       type="button"
       className={`casc-brk casc-brk--compact${state ? ` casc-brk--${state}` : ''}${flowing ? ' casc-brk--flow' : ''}${locked ? ' casc-brk--locked' : ''}`}
       data-circuit-id={circuit.id}
       onClick={onClick}
-      title={`${circuit.protectionName} · ${circuit.lineType}`}
+      title={`${circuit.protectionName} · ${circuit.lineType} · mantén el puntero para ver detalles`}
+      onMouseEnter={(e) => {
+        if (!onHoverInfo) return
+        clearHoverTimer()
+        const el = e.currentTarget
+        hoverTimer.current = window.setTimeout(() => {
+          onHoverInfo(circuit, el.getBoundingClientRect())
+        }, HOVER_DELAY_MS)
+      }}
+      onMouseLeave={() => {
+        clearHoverTimer()
+        onHoverInfoEnd?.()
+      }}
     >
       <span className="casc-brk__sym">
         <MotorizedBreakerSymbol state={state} />
@@ -96,10 +134,34 @@ function EquipCard({
   live?: boolean
   highlight?: boolean
 }) {
+  const [eqHover, setEqHover] = useState(false)
+  const [showEqBalloon, setShowEqBalloon] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  const feedSummaries = useMemo(() => {
+    return incomingFeeds(system690, equipment.id).map((f) => ({
+      name: f.protectionName,
+      lineType: f.lineType,
+      originId: f.originId,
+    }))
+  }, [equipment.id])
+
+  useEffect(() => {
+    if (!eqHover) {
+      setShowEqBalloon(false)
+      return
+    }
+    const t = window.setTimeout(() => setShowEqBalloon(true), HOVER_DELAY_MS)
+    return () => window.clearTimeout(t)
+  }, [eqHover])
+
   return (
     <div
+      ref={wrapRef}
       className={`stree-eq${live ? ' stree-eq--live' : ''}${highlight ? ' stree-eq--target' : ''}`}
       data-equip={equipment.id}
+      onMouseEnter={() => setEqHover(true)}
+      onMouseLeave={() => setEqHover(false)}
     >
       <span className="stree-eq__sym">{symbolFor(equipment.kind)}</span>
       <strong className="stree-eq__id">{equipment.id}</strong>
@@ -107,6 +169,13 @@ function EquipCard({
         <span className="stree-eq__dcp">{equipment.dcp10Id}</span>
       )}
       <span className="stree-eq__name">{equipment.name}</span>
+      {showEqBalloon && (
+        <EquipmentBalloon
+          equipment={equipment}
+          feeds={feedSummaries}
+          anchorRef={wrapRef}
+        />
+      )}
     </div>
   )
 }
@@ -139,6 +208,8 @@ function TreeNode({
   energizedCircuitIds,
   energizedEquipmentIds,
   onBreaker,
+  onHoverInfo,
+  onHoverInfoEnd,
 }: {
   equipmentId: string
   isTarget?: boolean
@@ -148,6 +219,8 @@ function TreeNode({
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
   onBreaker: (c: Circuit, e: ReactMouseEvent) => void
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
 }) {
   const equipment = eqById(equipmentId)
   const feeds = useMemo(() => upstreamEdges(equipmentId), [equipmentId])
@@ -192,6 +265,8 @@ function TreeNode({
                     energizedCircuitIds={energizedCircuitIds}
                     energizedEquipmentIds={energizedEquipmentIds}
                     onBreaker={onBreaker}
+                    onHoverInfo={onHoverInfo}
+                    onHoverInfoEnd={onHoverInfoEnd}
                   />
                   <div className="stree-branch__leg">
                     <div className="stree-branch__wire" aria-hidden />
@@ -203,6 +278,8 @@ function TreeNode({
                           locked={lockedCircuits.has(feed.id)}
                           flowing={energizedCircuitIds.has(feed.id)}
                           onClick={(e) => onBreaker(feed, e)}
+                          onHoverInfo={onHoverInfo}
+                          onHoverInfoEnd={onHoverInfoEnd}
                         />
                         <span
                           className={`stree-branch__tag${isAlt ? ' stree-branch__tag--alt' : ''}`}
@@ -261,6 +338,20 @@ export function SearchTreeView({
     (c) => !c.virtual && !isGeneratorSide(c),
   ).length
 
+  const [brkBalloon, setBrkBalloon] = useState<{
+    circuit: Circuit
+    left: number
+    top: number
+  } | null>(null)
+
+  const showBreakerInfo = (circuit: Circuit, rect: DOMRect) => {
+    setBrkBalloon({
+      circuit,
+      left: rect.right + 8,
+      top: Math.max(8, rect.top),
+    })
+  }
+
   return (
     <div className="stree">
       <header className="stree__head">
@@ -285,8 +376,21 @@ export function SearchTreeView({
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
           onBreaker={onBreaker}
+          onHoverInfo={showBreakerInfo}
+          onHoverInfoEnd={() => setBrkBalloon(null)}
         />
       </div>
+
+      {brkBalloon && (
+        <CircuitBalloon
+          circuit={brkBalloon.circuit}
+          state={protectionStatus[brkBalloon.circuit.id]}
+          x={brkBalloon.left}
+          y={brkBalloon.top}
+          fixed
+          onClose={() => setBrkBalloon(null)}
+        />
+      )}
     </div>
   )
 }
