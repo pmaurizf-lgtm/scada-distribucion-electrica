@@ -495,15 +495,10 @@ function BusDrop({
       }
       onDoubleClick={toggleExpand}
     >
-      {/* Acometida: con LCS abierto solo puente TRF→chasis; QVS vive sobre VS */}
+      {/* LCS abierto: QVS en la pierna (mismo criterio MSB), unido al TRF arriba y a VS abajo */}
       {lcsOpen ? (
-        <div
-          className={`hbus-drop__tops hbus-drop__tops--lcs-bridge${localFlowing ? ' hbus-drop__tops--flow' : ''}`}
-        >
-          <span
-            className={`hbus-drop__wire hbus-drop__wire--from-bus${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
-            aria-hidden
-          />
+        <div className="hbus-drop__tops hbus-drop__tops--lcs-qvs">
+          {renderLeg(localFeed, 'local')}
         </div>
       ) : (
         <div className="hbus-drop__tops">

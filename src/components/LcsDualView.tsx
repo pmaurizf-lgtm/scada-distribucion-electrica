@@ -24,8 +24,8 @@ import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
 import { EquipmentBalloon } from './EquipmentBalloon'
 
 /**
- * LCS 440 V: mismo criterio visual que salidas MSB (hbus-drop).
- * QVS sobre VS unido a la barra; cargas colgando con piernas NORM/ALT.
+ * LCS 440 V: QVS en pierna exterior (criterio MSB TRF→LCS);
+ * barras VS—QVM—VM—QNV—NV; salidas como hbus-drop del cuadro principal.
  */
 
 function symbolFor(kind: Equipment['kind']): ReactNode {
@@ -358,38 +358,13 @@ export function Lcs440Board({
       className={`lcs440-board${inFlow ? ' lcs440-board--live' : ''}${feed ? ' lcs440-board--fed' : ''}`}
     >
       <div className="lcs440-rail">
-        {/* —— Columna VS: QVS unido a la barra —— */}
-        {feed ? (
-          <div className={`lcs440-vs-feed${inFlow ? ' lcs440-vs-feed--flow' : ''}`}>
-            <span
-              className={`hbus-drop__wire hbus-drop__wire--from-bus${inFlow ? ' hbus-drop__wire--flow' : ''}`}
-              aria-hidden
-            />
-            <MiniBreaker
-              name={feed.protectionName}
-              state={protectionStatus[feed.id]}
-              circuit={feed}
-              flowing={inFlow}
-              locked={lockedCircuits.has(feed.id)}
-              onClick={(e) => onLocalBreaker(feed, e)}
-              onHoverInfo={onHoverInfo}
-              onHoverInfoEnd={onHoverInfoEnd}
-            />
-            <span
-              className={`hbus-drop__wire hbus-drop__wire--to-eq${inFlow ? ' hbus-drop__wire--flow' : ''}`}
-              aria-hidden
-            />
-          </div>
-        ) : (
-          <div className="lcs440-vs-feed lcs440-vs-feed--empty" aria-hidden />
-        )}
-
-        <span className="lcs440-cell__tag lcs440-cell__tag--VS lcs440-rail__vs-tag">
-          VS 440 V
-        </span>
+        {/* QVS está en la pierna exterior (TRF→LCS); aquí solo barras y salidas */}
         <div
           className={`lcs440-cell__bus lcs440-rail__vs-bus${vsLive ? ' lcs440-cell__bus--live' : ''}`}
         />
+        <span className="lcs440-cell__tag lcs440-cell__tag--VS lcs440-rail__vs-tag">
+          VS 440 V
+        </span>
         <div className="lcs440-rail__vs-drops">
           <BusDrops outlets={vs?.outlets ?? []} {...shared} />
         </div>
@@ -416,12 +391,12 @@ export function Lcs440Board({
         )}
 
         {/* —— Columna VM —— */}
-        <span className="lcs440-cell__tag lcs440-cell__tag--VM lcs440-rail__vm-tag">
-          VM 440 V
-        </span>
         <div
           className={`lcs440-cell__bus lcs440-rail__vm-bus${vmLive ? ' lcs440-cell__bus--live' : ''}`}
         />
+        <span className="lcs440-cell__tag lcs440-cell__tag--VM lcs440-rail__vm-tag">
+          VM 440 V
+        </span>
         <div className="lcs440-rail__vm-drops">
           <BusDrops outlets={vm?.outlets ?? []} {...shared} />
         </div>
@@ -448,12 +423,12 @@ export function Lcs440Board({
         )}
 
         {/* —— Columna NV —— */}
-        <span className="lcs440-cell__tag lcs440-cell__tag--NV lcs440-rail__nv-tag">
-          NV 440 V
-        </span>
         <div
           className={`lcs440-cell__bus lcs440-rail__nv-bus${nvLive ? ' lcs440-cell__bus--live' : ''}`}
         />
+        <span className="lcs440-cell__tag lcs440-cell__tag--NV lcs440-rail__nv-tag">
+          NV 440 V
+        </span>
         <div className="lcs440-rail__nv-drops">
           <BusDrops outlets={nv?.outlets ?? []} {...shared} />
         </div>
