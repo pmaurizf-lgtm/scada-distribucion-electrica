@@ -588,9 +588,14 @@ export function CascadeView({
   zoomRef.current = zoom
   /** Tras zoom con rueda: reposicionar scroll para fijar el punto bajo el puntero */
   const pendingZoomScroll = useRef<{ left: number; top: number } | null>(null)
-  /** Tras plegar/desplegar MSB: ajustar zoom al viewport y centrar */
+  /** Solo montaje / resize de ventana: encajar planta en viewport */
   const fitZoomPending = useRef(true)
   const centerPending = useRef(false)
+  /** Tras plegar/desplegar: centrar scroll en esa sección (sin cambiar zoom) */
+  const pendingFocusTarget = useRef<{
+    kind: 'board' | 'equip'
+    id: string
+  } | null>(null)
   const [plantSize, setPlantSize] = useState({ w: 0, h: 0 })
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(
     () => new Set(['MSB-6PWS0002', 'MSB-6PWS0001']),
@@ -833,7 +838,7 @@ export function CascadeView({
     centerPending.current = false
   }, [zoom])
 
-  /** Tras plegar/desplegar o montaje: encajar en viewport (no al mutar tamaño por CSS) */
+  /** Tras plegar/desplegar o montaje: encajar en viewport (solo si fitZoomPending) */
   useEffect(() => {
     if (!fitZoomPending.current) return
     const t = window.setTimeout(() => {
@@ -866,9 +871,91 @@ export function CascadeView({
     }
   }, [fitAndCenterView])
 
+  /** Centra el scroll del stage en un elemento, sin cambiar el zoom */
+  const scrollStageToElement = useCallback((el: HTMLElement) => {
+    const stage = panRef.current
+    if (!stage) return
+    const stageRect = stage.getBoundingClientRect()
+    const elRect = el.getBoundingClientRect()
+
+    const elCenterX = elRect.left + elRect.width / 2
+    const stageCenterX = stageRect.left + stage.clientWidth / 2
+    stage.scrollLeft += elCenterX - stageCenterX
+
+    if (elRect.height > stage.clientHeight * 0.85) {
+      // Sección muy alta: anclar el inicio cerca de la parte superior
+      stage.scrollTop += elRect.top - stageRect.top - 28
+    } else {
+      const elCenterY = elRect.top + elRect.height / 2
+      const stageCenterY = stageRect.top + stage.clientHeight / 2
+      stage.scrollTop += elCenterY - stageCenterY
+    }
+  }, [])
+
+  const focusPendingTarget = useCallback(() => {
+    const pending = pendingFocusTarget.current
+    const plant = plantRef.current
+    const stage = panRef.current
+    if (!pending || !plant || !stage) return false
+
+    // Quitar el padding de "fit a pantalla completa" para no perder la vista
+    // cuando la planta crece al desplegar.
+    const space = plant.parentElement
+    if (space?.classList.contains('plant-zoom-space')) {
+      const pad = '48px'
+      if (space.style.paddingTop !== pad) {
+        space.style.padding = pad
+        return false // reintentar tras reflow
+      }
+    }
+
+    let el: HTMLElement | null = null
+    if (pending.kind === 'board') {
+      const col = plant.querySelector(
+        `[data-board="${pending.id}"]`,
+      ) as HTMLElement | null
+      el =
+        (col?.querySelector('.plant-rack__drops') as HTMLElement | null) ??
+        (col?.querySelector('.plant-msb') as HTMLElement | null) ??
+        col
+    } else {
+      const drop = plant.querySelector(
+        `.hbus-drop[data-equip="${pending.id}"]`,
+      ) as HTMLElement | null
+      el =
+        (drop?.querySelector('.hbus--nested') as HTMLElement | null) ?? drop
+    }
+
+    if (!el) return false
+    pendingFocusTarget.current = null
+    scrollStageToElement(el)
+    return true
+  }, [scrollStageToElement])
+
+  /** Tras plegar/desplegar: esperar layout y centrar en la sección tocada */
+  useLayoutEffect(() => {
+    if (!pendingFocusTarget.current) return
+    let cancelled = false
+    const run = () => {
+      if (cancelled) return
+      if (!focusPendingTarget()) {
+        window.setTimeout(() => {
+          if (!cancelled) focusPendingTarget()
+        }, 80)
+      }
+    }
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(run)
+    })
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(id)
+    }
+  }, [expandedBoards, expandedEquip, focusPendingTarget])
+
   const toggleBoard = (id: string) => {
-    fitZoomPending.current = true
-    centerPending.current = true
+    // No recalcular zoom ni recentrar toda la planta: solo enfocar esta columna
+    pendingFocusTarget.current = { kind: 'board', id }
     setExpandedBoards((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -878,8 +965,7 @@ export function CascadeView({
   }
 
   const toggleEquip = (id: string) => {
-    fitZoomPending.current = true
-    centerPending.current = true
+    pendingFocusTarget.current = { kind: 'equip', id }
     setExpandedEquip((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
