@@ -483,7 +483,7 @@ function BusDrop({
 
   return (
     <div
-      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${lcsOpen ? ' hbus-drop--lcs-open' : ''}`}
+      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${remoteFeeds.length > 0 ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${lcsOpen ? ' hbus-drop--lcs-open' : ''}${expanded && childItems.length > 0 ? ' hbus-drop--chain-open' : ''}`}
       data-equip={equipment.id}
       data-circuit-id={localFeed.id}
       title={
@@ -495,11 +495,22 @@ function BusDrop({
       }
       onDoubleClick={toggleExpand}
     >
-      {/* Pierna de acometida (QVS): también con LCS abierto, para unir TRF → LCS */}
-      <div className="hbus-drop__tops">
-        {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
-        {renderLeg(localFeed, 'local')}
-      </div>
+      {/* Acometida: con LCS abierto solo puente TRF→chasis; QVS vive sobre VS */}
+      {lcsOpen ? (
+        <div
+          className={`hbus-drop__tops hbus-drop__tops--lcs-bridge${localFlowing ? ' hbus-drop__tops--flow' : ''}`}
+        >
+          <span
+            className={`hbus-drop__wire hbus-drop__wire--from-bus${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
+            aria-hidden
+          />
+        </div>
+      ) : (
+        <div className="hbus-drop__tops">
+          {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
+          {renderLeg(localFeed, 'local')}
+        </div>
+      )}
 
       {!lcsOpen && (
         <div
@@ -577,13 +588,13 @@ function BusDrop({
         >
           <div className="equip-chassis__label">
             <span className="equip-chassis__id">{equipment.id}</span>
-            <span className="equip-chassis__hint">440 V · doble clic para plegar</span>
+            <span className="equip-chassis__hint">doble clic · plegar</span>
           </div>
           <div className="equip-chassis__body">
             <LcsDualView
               lcsId={equipment.id}
               inline
-              feedExternal
+              incoming={localFeed}
               protectionStatus={protectionStatus}
               energizedCircuitIds={energizedCircuitIds}
               energizedEquipmentIds={energizedEquipmentIds}

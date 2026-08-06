@@ -1418,9 +1418,9 @@ body {
 }
 
 .plant-rack__rail-seg--live {
-  /* Color original de barra; halo horizontal de flujo */
+  /* Color original de barra; halo horizontal (misma forma que el vertical) */
   background: #e0a0f0;
-  box-shadow: 0 0 8px rgba(224, 160, 240, 0.55);
+  box-shadow: none;
   overflow: visible;
 }
 
@@ -1430,17 +1430,17 @@ body {
   top: 50%;
   left: 0;
   width: 18%;
-  height: 8px;
+  height: 10px;
   transform: translateY(-50%);
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    transparent,
-    rgba(255, 255, 255, 0.9),
-    transparent
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
   );
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-  animation: flow-halo-h 1.4s linear infinite;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-h 1.05s linear infinite;
   pointer-events: none;
 }
 
@@ -1988,17 +1988,17 @@ body {
   position: absolute;
   top: 50%;
   width: 18%;
-  height: 8px;
+  height: 10px;
   transform: translateY(-50%);
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    transparent,
-    rgba(255, 255, 255, 0.95),
-    transparent
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
   );
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.65);
-  animation: flow-halo-h 1.3s linear infinite;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-h 1.05s linear infinite;
   pointer-events: none;
 }
 
@@ -2208,7 +2208,7 @@ body {
 }
 
 /*
- * LCS desplegado: QVS en la pierna exterior → chasis que engloba todas las salidas.
+ * LCS desplegado: puente TRF → chasis; QVS dentro sobre VS; salidas = hbus MSB.
  */
 .hbus-drop--lcs-open {
   display: flex;
@@ -2218,25 +2218,21 @@ body {
   max-width: none;
 }
 
-/* QVS alineado sobre la columna VS del chasis */
-.hbus-drop--lcs-open > .hbus-drop__tops {
+/* Puente vertical TRF → borde del chasis (QVS está dentro, sobre VS) */
+.hbus-drop--lcs-open > .hbus-drop__tops--lcs-bridge {
   align-self: flex-start;
   justify-content: center;
-  /* Alinea con padding del chasis + columna VS */
   margin-left: 0.55rem;
-  width: var(--lcs-vs-col, 9.5rem);
-  margin-bottom: 0;
+  width: var(--lcs-vs-col, 7.2rem);
+  margin-bottom: -1px;
   z-index: 2;
 }
 
-.hbus-drop--lcs-open > .hbus-drop__tops .hbus-drop__leg {
-  width: 100%;
-}
-
-.hbus-drop--lcs-open > .hbus-drop__tops .hbus-drop__wire--to-eq {
-  min-height: 0.75rem;
-  flex: 0 0 0.75rem;
-  margin-bottom: -1px;
+.hbus-drop--lcs-open > .hbus-drop__tops--lcs-bridge .hbus-drop__wire--from-bus {
+  min-height: 1.35rem;
+  flex: 0 0 1.35rem;
+  width: 2px;
+  margin: 0 auto;
 }
 
 .hbus-drop--lcs-open .lcs-dual--inline {
@@ -2249,7 +2245,7 @@ body {
   overflow: visible;
 }
 
-/* Chasis LCS: crece con todas las salidas (sin recortar) */
+/* Chasis LCS: crece con todas las salidas */
 .equip-chassis {
   display: flex;
   flex-direction: column;
@@ -2273,6 +2269,8 @@ body {
   );
   box-shadow: inset 0 0 0 1px rgba(90, 150, 210, 0.12);
   margin-top: -1px;
+  /* Espacio superior mínimo: el QVS empalma con el puente TRF */
+  padding-top: 0.15rem;
 }
 
 .equip-chassis--live {
@@ -2282,27 +2280,33 @@ body {
     0 0 12px rgba(230, 194, 0, 0.12);
 }
 
+/* Etiqueta fuera del eje vertical TRF→QVS→VS */
 .equip-chassis__label {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.55rem;
+  z-index: 5;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.75rem;
-  margin: 0.15rem 0 0.35rem;
-  padding: 0 0.15rem;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0.1rem 0.25rem;
   cursor: pointer;
   user-select: none;
+  pointer-events: none;
 }
 
 .equip-chassis__id {
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: #8ec4e8;
 }
 
 .equip-chassis__hint {
   font-family: var(--mono);
-  font-size: 0.62rem;
+  font-size: 0.55rem;
   color: var(--muted);
 }
 
@@ -2315,6 +2319,36 @@ body {
 .hbus--direct .hbus__slot:has(.hbus-drop--lcs-open) {
   width: max-content;
   min-width: 0;
+}
+
+/* Salidas LCS = mismo formato que MSB */
+.hbus--lcs-section {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  width: max-content;
+  max-width: none;
+}
+
+.hbus--lcs-section .hbus__drops {
+  margin-top: -2px;
+  padding: 0 0.1rem 0.15rem;
+  gap: 0.35rem;
+}
+
+.hbus--lcs-section .hbus__slot {
+  width: 7.2rem;
+}
+
+.hbus--lcs-section .hbus__slot:has(.hbus-drop--dual) {
+  width: 7.6rem;
+}
+
+.hbus--lcs-section .hbus-drop__tops .hbus-drop__wire--from-bus {
+  margin-top: 0;
+  min-height: 1.25rem;
+  flex: 0 0 1.25rem;
 }
 
 /* Tonos por familia de equipo (caja cerrada) */
@@ -2439,15 +2473,83 @@ body {
   font: inherit;
   cursor: pointer;
   position: relative;
+  isolation: isolate;
+  overflow: visible;
 }
 
-/* Continuidad: cada --to-eq entra en el borde; sin stub central único */
+/*
+ * Continuidad del unifilar a través del recuadro:
+ * línea vertical tenue detrás del texto.
+ */
 .hbus-drop__eq::before {
-  display: none;
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--line-normal);
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hbus-drop--alt .hbus-drop__eq::before {
+  background: var(--line-alt);
 }
 
 .hbus-drop--dual .hbus-drop__eq::before {
-  display: none;
+  /* Empalme visual en el eje del recuadro (NORM+ALT) */
+  opacity: 0.2;
+}
+
+.hbus-drop__eq > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Flujo dentro del recuadro: mismo halo vertical, más tenue y detrás del texto */
+.hbus-drop--flow .hbus-drop__eq::before,
+.hbus-drop--live .hbus-drop__eq::before {
+  background: #e6c200;
+  opacity: 0.22;
+}
+
+.hbus-drop--flow .hbus-drop__eq::after,
+.hbus-drop--live .hbus-drop__eq::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 32%;
+  min-height: 10px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-v 1.05s linear infinite;
+  opacity: 0.38;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Cadena abierta: la línea atraviesa el recuadro hacia el hijo */
+.hbus-drop--chain-open > .hbus-drop__eq-wrap {
+  overflow: visible;
+}
+
+.hbus-drop--chain-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  bottom: -1.15rem;
+}
+
+.hbus--direct .hbus-drop--chain-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  bottom: -1.55rem;
 }
 
 .hbus-drop__eq:disabled {
@@ -3105,25 +3207,8 @@ body {
   align-items: stretch;
 }
 
-/* QVS centrado en la columna VS */
+/* QVS centrado en VS: atraviesa etiqueta y llega a la barra */
 .lcs440-vs-feed {
-  grid-column: 1;
-  grid-row: feed;
-  justify-self: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: max-content;
-  min-width: 3.6rem;
-  z-index: 3;
-}
-
-.lcs440-vs-feed--empty {
-  min-height: 0;
-  min-width: 0;
-}
-
-.lcs440-vs-feed--entry {
   grid-column: 1;
   grid-row: feed / bus;
   justify-self: center;
@@ -3131,21 +3216,36 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 2px;
-  min-width: 2px;
-  min-height: 0;
+  width: max-content;
+  min-width: 3.6rem;
   z-index: 2;
-  pointer-events: none;
 }
 
-.lcs440-vs-feed--entry .lcs440-vs-feed__to {
+.lcs440-vs-feed--empty {
+  min-height: 0;
+  min-width: 0;
+  grid-row: feed;
+}
+
+.lcs440-vs-feed .hbus-drop__wire--from-bus {
+  min-height: 0.55rem;
+  flex: 0 0 0.55rem;
+  margin-top: 0;
+}
+
+.lcs440-vs-feed .hbus-drop__wire--to-eq {
   flex: 1 1 auto;
-  width: 2px;
-  height: auto;
   min-height: 0.85rem;
-  margin: 0;
+  width: 2px;
   margin-bottom: -2px;
-  align-self: center;
+}
+
+.lcs440-vs-feed .casc-brk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  z-index: 3;
 }
 
 .lcs440-rail__vs-tag,
@@ -3153,36 +3253,6 @@ body {
 .lcs440-rail__nv-tag {
   position: relative;
   z-index: 3;
-}
-
-.lcs440-vs-feed__from,
-.lcs440-vs-feed__to {
-  display: block;
-  width: 2px;
-  margin-left: auto;
-  margin-right: auto;
-  flex: 0 0 auto;
-  background: var(--line-normal);
-}
-
-.lcs440-vs-feed__from {
-  height: 1.75rem;
-}
-
-.lcs440-vs-feed__to {
-  height: 0.7rem;
-  margin-bottom: -2px;
-}
-
-.lcs440-vs-feed--flow .lcs440-vs-feed__from,
-.lcs440-vs-feed--flow .lcs440-vs-feed__to {
-  background: #e6c200;
-}
-
-.lcs440-vs-feed .casc-brk {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .lcs440-rail__vs-tag {
@@ -3313,16 +3383,72 @@ body {
 }
 
 .lcs440-cell__bus {
+  position: relative;
   height: 4px;
   background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
   border-radius: 1px;
   width: 100%;
   min-width: 5.5rem;
+  overflow: visible;
+  z-index: 1;
 }
 
 .lcs440-cell__bus--live {
   background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
-  box-shadow: 0 0 8px rgba(230, 194, 0, 0.3);
+  box-shadow: none;
+}
+
+/* Mismo halo que el flujo vertical, orientado en horizontal */
+.lcs440-cell__bus--live::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 18%;
+  height: 10px;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-h 1.05s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Dentro del chasis LCS: flujo más tenue para no tapar etiquetas */
+.equip-chassis .lcs440-cell__bus--live::after {
+  opacity: 0.38;
+}
+
+.equip-chassis .lcs440-tie--flow .lcs440-tie__bridge {
+  position: relative;
+  overflow: visible;
+}
+
+.equip-chassis .lcs440-tie--flow .lcs440-tie__bridge::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 40%;
+  height: 10px;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-h 1.05s linear infinite;
+  opacity: 0.38;
+  pointer-events: none;
 }
 
 .lcs440-drops {
@@ -3379,11 +3505,13 @@ body {
 .lcs-out__stub,
 .lcs-out__wire {
   display: block;
+  position: relative;
   width: 2px;
   margin-left: auto;
   margin-right: auto;
   flex: 0 0 auto;
   background: var(--line-normal);
+  overflow: visible;
 }
 
 .lcs-out__stub {
@@ -3398,6 +3526,28 @@ body {
 .lcs-out--flow .lcs-out__stub,
 .lcs-out--flow .lcs-out__wire {
   background: #e6c200;
+}
+
+.lcs-out--flow .lcs-out__stub::after,
+.lcs-out--flow .lcs-out__wire::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 55%;
+  min-height: 6px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-v 1.05s linear infinite;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .lcs-out .casc-brk {
@@ -3421,6 +3571,58 @@ body {
   border-radius: 4px;
   background: color-mix(in srgb, #1c2834 90%, transparent);
   text-align: center;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
+
+/* Continuidad tenue a través del recuadro de carga LCS */
+.lcs-out__eq::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--line-normal);
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lcs-out__eq > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lcs-out--flow .lcs-out__eq::before,
+.lcs-out--live .lcs-out__eq::before {
+  background: #e6c200;
+  opacity: 0.22;
+}
+
+.lcs-out--flow .lcs-out__eq::after,
+.lcs-out--live .lcs-out__eq::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 32%;
+  min-height: 8px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: flow-halo-v 1.05s linear infinite;
+  opacity: 0.38;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .lcs-out__eq--fam-abt {
