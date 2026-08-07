@@ -189,6 +189,48 @@ export function isPendingFeed(circuit: Circuit): boolean {
   return isPendingOrigin(circuit.originId)
 }
 
+/** Enlace ABT → TRF: sin interruptor en el unifilar (solo cable). */
+export function isAbtToTransformerFeed(circuit: Circuit): boolean {
+  return (
+    circuit.originId.startsWith('ABT-') &&
+    circuit.destinationId.startsWith('TRF-')
+  )
+}
+
+/**
+ * QVS TRF→LCS: el chip vive en la barra VS bajo el LCS, no entre TRF y LCS.
+ * En el árbol se pinta como enlace continuo (como ABT→TRF).
+ */
+export function isTrfToLcsQvsFeed(circuit: Circuit): boolean {
+  return (
+    !circuit.virtual &&
+    circuit.originId.startsWith('TRF-') &&
+    circuit.destinationId.startsWith('LCS-') &&
+    /^QVS-/i.test(circuit.protectionName)
+  )
+}
+
+/** Entrada paralela QS* (CSB→LCS) a la misma barra VS que QVS. */
+export function isParallelLcsTopFeed(circuit: Circuit): boolean {
+  return (
+    !circuit.virtual &&
+    circuit.destinationId.startsWith('LCS-') &&
+    /^QS\d/i.test(circuit.protectionName) &&
+    !circuit.originId.startsWith('TRF-')
+  )
+}
+
+/** Salida de LCS a carga (no QVM/QNV ni bus placeholder). */
+export function isLcsOutletFeed(circuit: Circuit): boolean {
+  return (
+    !circuit.virtual &&
+    circuit.originId.startsWith('LCS-') &&
+    !circuit.destinationId.startsWith('BUS-') &&
+    !/^QVM-|^QNV-/i.test(circuit.protectionName) &&
+    !/^QS\d/i.test(circuit.protectionName)
+  )
+}
+
 /** Etiqueta de origen para UI / globos. */
 export function originLabel(originId: string): string {
   return isPendingOrigin(originId) ? 'PENDIENTE' : originId

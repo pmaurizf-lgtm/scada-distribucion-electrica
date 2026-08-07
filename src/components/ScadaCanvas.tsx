@@ -30,6 +30,14 @@ const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
 const ZOOM_STEP = 0.15
 
+const searchableEquipment = system690.equipment.filter(
+  (e) =>
+    !e.virtual &&
+    !e.id.startsWith('BUS-') &&
+    !e.id.startsWith('SPARE-') &&
+    e.id !== 'ORIGEN-PENDIENTE',
+)
+
 export function ScadaCanvas() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [protectionStatus, setProtectionStatus] =
@@ -45,9 +53,13 @@ export function ScadaCanvas() {
   const [lockTool, setLockTool] = useState<LockTool>('none')
   const [zoom, setZoom] = useState(1)
   const [statusSource, setStatusSource] = useState('todos abiertos · gens parados')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [locateQuery, setLocateQuery] = useState('')
+  const [feedsQuery, setFeedsQuery] = useState('')
   const [searchHint, setSearchHint] = useState<string | null>(null)
   const [focus, setFocus] = useState<CascadeFocus | null>(null)
+  const [locateEquipmentId, setLocateEquipmentId] = useState<string | null>(
+    null,
+  )
 
   const { energizedCircuitIds, energizedEquipmentIds, energizedBusHalves } =
     useMemo(
@@ -163,18 +175,32 @@ export function ScadaCanvas() {
     [applyStatusEntries],
   )
 
-  const handleSearch = (e: FormEvent) => {
+  const handleLocate = (e: FormEvent) => {
     e.preventDefault()
-    const found = findEquipmentByQuery(system690.equipment, searchQuery)
+    const found = findEquipmentByQuery(searchableEquipment, locateQuery)
     if (!found) {
-      setSearchHint(`No se encontró «${searchQuery}».`)
+      setSearchHint(`No se encontró «${locateQuery}» en el unifilar.`)
+      setLocateEquipmentId(null)
+      return
+    }
+    setFocus(null)
+    setLocateEquipmentId(found.id)
+    setSearchHint(`${found.id} · ${found.name} — localizado en el unifilar.`)
+  }
+
+  const handleFeedsSearch = (e: FormEvent) => {
+    e.preventDefault()
+    const found = findEquipmentByQuery(searchableEquipment, feedsQuery)
+    if (!found) {
+      setSearchHint(`No se encontró «${feedsQuery}» para el árbol.`)
       setFocus(null)
       return
     }
     const trace = getUpstreamTrace(found.id, system690.circuits)
+    setLocateEquipmentId(null)
     setFocus({ equipmentId: found.id, trace })
     setSearchHint(
-      `${found.id} · ${found.name} — ${trace.circuits.length} alimentaciones (NORM/ALT) aguas arriba.`,
+      `${found.id} · ${found.name} — árbol con ${trace.circuits.length} alimentaciones aguas arriba.`,
     )
   }
 
@@ -197,56 +223,48 @@ export function ScadaCanvas() {
             </div>
           </div>
 
-          <div className="topbar__controls">
-            <div className="topbar__actions">
-              <button type="button" className="btn" onClick={handleSimulateToggle}>
-                Simular estado
-              </button>
-              <button
-                type="button"
-                className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
-                onClick={() =>
-                  setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
-                }
-              >
-                Poner candado
-              </button>
-              <button
-                type="button"
-                className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
-                onClick={() =>
-                  setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
-                }
-              >
-                Quitar candado
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() =>
-                  applyStatusEntries(sampleProtectionStatus, 'todos abiertos')
-                }
-              >
-                Todos abiertos
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Cargar archivo
-              </button>
-              <button type="button" className="btn" onClick={handleClearStatus}>
-                Quitar estados
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="sr-only"
-                onChange={handleFileChange}
-              />
-
+          <div className="topbar__main">
+            <div className="topbar__row topbar__row--tools">
+              <div className="topbar__actions">
+                <button type="button" className="btn" onClick={handleSimulateToggle}>
+                  Simular estado
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
+                  onClick={() =>
+                    setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
+                  }
+                >
+                  Poner candado
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
+                  onClick={() =>
+                    setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
+                  }
+                >
+                  Quitar candado
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Cargar JSON
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  hidden
+                  onChange={handleFileChange}
+                />
+                <button type="button" className="btn" onClick={handleClearStatus}>
+                  Limpiar estados
+                </button>
+              </div>
               <div className="zoom-controls" role="group" aria-label="Zoom">
                 <button
                   type="button"
@@ -273,55 +291,109 @@ export function ScadaCanvas() {
                   +
                 </button>
               </div>
+              <div className="topbar__legend" aria-label="Leyenda de líneas">
+                <span className="toggle">
+                  <span className="legend-line legend-line--normal" />
+                  Normal
+                </span>
+                <span className="toggle">
+                  <span className="legend-line legend-line--alt" />
+                  Alternativa
+                </span>
+              </div>
             </div>
 
-            <form className="search" onSubmit={handleSearch}>
-              <label>
-                <span className="sr-only">Buscar equipo</span>
-                <input
-                  type="search"
-                  placeholder="Buscar equipo (ej. CCM-6PWS0003)…"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    setSearchHint(null)
-                  }}
-                  list="equipment-suggestions"
-                />
-              </label>
-              <datalist id="equipment-suggestions">
-                {system690.equipment.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.name}
-                  </option>
-                ))}
-              </datalist>
-              <button type="submit" className="btn btn--primary">
-                Buscar
-              </button>
-              {focus && (
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    setFocus(null)
-                    setSearchHint(null)
-                    setSearchQuery('')
-                  }}
+            <div className="topbar__row topbar__row--search">
+              <form className="search search--locate" onSubmit={handleLocate}>
+                <span
+                  className="search__label"
+                  title="Busca y centra el equipo en el unifilar"
                 >
-                  Limpiar
+                  Localizar
+                </span>
+                <label className="search__field">
+                  <span className="sr-only">Localizar equipo en unifilar</span>
+                  <input
+                    type="search"
+                    placeholder="Equipo en unifilar (ej. LCS-4PWS0003)…"
+                    value={locateQuery}
+                    onChange={(e) => {
+                      setLocateQuery(e.target.value)
+                      setSearchHint(null)
+                    }}
+                    list="equipment-suggestions-locate"
+                  />
+                </label>
+                <datalist id="equipment-suggestions-locate">
+                  {searchableEquipment.map((eq) => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.name}
+                    </option>
+                  ))}
+                </datalist>
+                <button type="submit" className="btn btn--primary">
+                  Ir
                 </button>
-              )}
-            </form>
+                {locateEquipmentId && (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setLocateEquipmentId(null)
+                      setLocateQuery('')
+                      setSearchHint(null)
+                    }}
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </form>
 
-            <label className="toggle">
-              <span className="legend-line legend-line--normal" />
-              Normal
-            </label>
-            <label className="toggle">
-              <span className="legend-line legend-line--alt" />
-              Alternativa
-            </label>
+              <form className="search search--feeds" onSubmit={handleFeedsSearch}>
+                <span
+                  className="search__label"
+                  title="Muestra el árbol de alimentaciones NORM/ALT aguas arriba"
+                >
+                  Árbol
+                </span>
+                <label className="search__field">
+                  <span className="sr-only">Árbol de alimentaciones</span>
+                  <input
+                    type="search"
+                    placeholder="Árbol de alimentaciones…"
+                    value={feedsQuery}
+                    onChange={(e) => {
+                      setFeedsQuery(e.target.value)
+                      setSearchHint(null)
+                    }}
+                    list="equipment-suggestions-feeds"
+                  />
+                </label>
+                <datalist id="equipment-suggestions-feeds">
+                  {searchableEquipment.map((eq) => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.name}
+                    </option>
+                  ))}
+                </datalist>
+                <button type="submit" className="btn btn--feeds">
+                  Ver árbol
+                </button>
+                {focus && (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setFocus(null)
+                      setFeedsQuery('')
+                      setSearchHint(null)
+                    }}
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </form>
+            </div>
           </div>
         </header>
 
@@ -354,12 +426,17 @@ export function ScadaCanvas() {
           zoom={zoom}
           onZoomChange={setZoom}
           focus={focus}
+          locateEquipmentId={locateEquipmentId}
           onToggleProtection={handleToggleProtection}
           onLockCircuit={handleLockCircuit}
           onUnlockCircuit={handleUnlockCircuit}
           onToggleGenerator={toggleGenerator}
           onClearFocus={() => {
             setFocus(null)
+            setSearchHint(null)
+          }}
+          onClearLocate={() => {
+            setLocateEquipmentId(null)
             setSearchHint(null)
           }}
         />

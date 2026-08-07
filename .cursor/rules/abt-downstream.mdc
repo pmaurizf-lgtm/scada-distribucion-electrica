@@ -1,27 +1,23 @@
 ---
 description: Extensión aguas abajo de ABT (TRF → LCS 440/230) — módulo aislado del MSB
-globs: src/abtDownstream/**/*
+globs: src/abtDownstream/**/*,src/components/LcsDualView.tsx,src/data/abtDownstream.json
 alwaysApply: false
 ---
 
 # Aguas abajo de ABT
 
-Filosofía del plano ABT/TRF/LCS:
-
 ```
 ABT-…  →  TRF-… (690/440-230)  →  LCS dual
-                              ├─ barra / salidas 440 V
-                              └─ barra / salidas 230 V
+                              ├─ 230 V (izq., espejo)
+                              └─ 440 V (der.)
 ```
 
 ## Reglas
 
-- Toda la lógica y UI de esta cadena vive en `src/abtDownstream/`.
-- Los LCS y circuitos 440/230 **no** se inventan en `system690.json` hasta tener fuente (Excel 440/230 o plano). Usar `src/data/abtDownstream.json` (o similar) cuando existan datos.
-- Hoy el 690 V ya tiene **ABT → TRF**; LCS 440/230 de **ABT-6PWS0001** está en `abtDownstream.json` + `LcsDualView`.
-- UI: **ABT**, **TRF** y **LCS** independientes. TRF→cable→QVS (centrado sobre VS).
-  LCS desplegado: sin caja amarilla; QVS sobre barra **VS 440**; etiquetas arriba-izq; VM/NV a la derecha.
-  Salidas LCS: mismo aspecto MSB (NORM/ALT, tipografía, globos con local/P/Q/S).
+- Lógica/UI de la cadena en `src/abtDownstream/` + `LcsDualView.tsx`.
+- Datos 440/230 en `src/data/abtDownstream.json` (fuente Excel), no inventar en `system690.json`.
+- **Estilo LCS**: plantilla `LCS-4PWS0001` v2026-08-07 en `lcsBoardStyle.ts` + regla `lcs-dual-style.mdc` — clonar en todo LCS nuevo.
+- UI: TRF con 2 bajantes (QVS-230 / QVS-440) si hay ambas tensiones; sync con corrección de zoom.
 - Energía: salidas VM/NV solo con QVM/QNV cerrado.
-- No modificar layout MSB, bus-tie, RESPETO ni `energyFlow` desde aquí; si hace falta energía en LCS, extender con funciones en este módulo o ganchos explícitos, no reescribir el núcleo.
-- UX: mismo criterio que el resto (clic = conmutar; globo ~1,8 s hover; doble clic expandir).
+- No tocar layout MSB / bus-tie / RESPETO / núcleo `energyFlow` (ver `msb-690-frozen.mdc`).
+- UX: clic = conmutar; globo ~1,8 s; doble clic expandir.

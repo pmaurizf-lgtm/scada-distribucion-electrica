@@ -16,6 +16,7 @@ import {
   busTieCircuits,
   childFeeders,
   incomingFeeds,
+  isAbtToTransformerFeed,
   isPendingFeed,
   type BoardId,
   type BoardModel,
@@ -23,7 +24,9 @@ import {
   type FeederOutlet,
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
+import { getPlantRevealPath } from '../utils/upstream'
 import {
+  abtDownstreamChainsMeta,
   isLcsEquipment,
   isTrfWithLoadCenter,
   trfLoadCenterFeed,
@@ -56,12 +59,16 @@ interface CascadeViewProps {
   lockTool: LockTool
   zoom: number
   onZoomChange: (zoom: number) => void
+  /** Vista árbol de alimentaciones (buscador secundario). */
   focus: CascadeFocus | null
+  /** Localizar equipo en el unifilar (buscador principal). */
+  locateEquipmentId: string | null
   onToggleProtection: (circuitId: string) => boolean | void
   onLockCircuit: (circuitId: string) => void
   onUnlockCircuit: (circuitId: string) => void
   onToggleGenerator: (genId: string) => void
   onClearFocus?: () => void
+  onClearLocate?: () => void
 }
 
 function halfTag(boardId: string, half: BusHalf): string {
@@ -74,16 +81,22 @@ function GenSymbol({
   title,
   running,
   onToggle,
+  equipmentId,
+  located = false,
 }: {
   short: string
   title: string
   running: boolean
   onToggle: () => void
+  equipmentId?: string
+  located?: boolean
 }) {
   return (
     <button
       type="button"
-      className={`casc-gen${running ? ' casc-gen--running' : ''}`}
+      className={`casc-gen${running ? ' casc-gen--running' : ''}${located ? ' casc-gen--locate' : ''}`}
+      data-equip={equipmentId}
+      data-locate={located ? '1' : undefined}
       title={`${title} · ${running ? 'EN MARCHA (clic para parar)' : 'PARADO (clic para arrancar)'}`}
       onClick={(e) => {
         e.stopPropagation()
@@ -158,6 +171,7 @@ function HorizontalBus({
   /** Cadena ABT/TRF/LCS: sin barra horizontal; recuadro → interruptor → hijo */
   direct,
   focusCircuitIds,
+  locateEquipmentId,
 }: {
   label: string
   voltage?: string
@@ -175,6 +189,7 @@ function HorizontalBus({
   nested?: boolean
   direct?: boolean
   focusCircuitIds?: Set<string> | null
+  locateEquipmentId?: string | null
 }) {
   const list = focusCircuitIds
     ? items.filter((it) => focusCircuitIds.has(it.circuit.id))
@@ -213,6 +228,7 @@ function HorizontalBus({
               onHoverInfo={onHoverInfo}
               onHoverInfoEnd={onHoverInfoEnd}
               focusCircuitIds={focusCircuitIds}
+              locateEquipmentId={locateEquipmentId}
             />
           </div>
         ))}
@@ -236,6 +252,7 @@ function BusDrop({
   onHoverInfo,
   onHoverInfoEnd,
   focusCircuitIds,
+  locateEquipmentId,
 }: {
   circuit: Circuit
   equipment: Equipment
@@ -251,6 +268,7 @@ function BusDrop({
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
   focusCircuitIds?: Set<string> | null
+  locateEquipmentId?: string | null
 }) {
   const children = useMemo(() => {
     if (isLcsEquipment(equipment.id)) return []
@@ -333,30 +351,42 @@ function BusDrop({
       : '▾ LCS'
     : isLcsEquipment(equipment.id)
       ? expanded
-        ? '▴ 440 V'
-        : '▾ 440 V'
+        ? '▴ 440/230'
+        : '▾ 440/230'
       : `${children.length} ${expanded ? '▴' : '▾'}`
 
   if (lcsOpen) {
+    const located = locateEquipmentId === equipment.id
     return (
       <div
-        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--lcs-open`}
+        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--lcs-open${located ? ' hbus-drop--locate' : ''}`}
         data-equip={equipment.id}
+        data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
         title={`${equipment.id} · doble clic para plegar`}
         onDoubleClick={toggleExpand}
       >
         <div
-          ref={eqWrapRef}
-          className={`equip-chassis equip-chassis--lcs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}`}
-          onMouseEnter={() => setEqHover(true)}
-          onMouseLeave={() => setEqHover(false)}
+          className={`equip-chassis equip-chassis--lcs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
           onDoubleClick={toggleExpand}
           title={`${equipment.id} · doble clic para plegar`}
         >
-          <div className="equip-chassis__label">
+          <div
+            ref={eqWrapRef}
+            className="equip-chassis__label"
+            onMouseEnter={() => setEqHover(true)}
+            onMouseLeave={() => setEqHover(false)}
+          >
             <span className="equip-chassis__id">{equipment.id}</span>
             <span className="equip-chassis__hint">doble clic · plegar</span>
+            {showEqBalloon && (
+              <EquipmentBalloon
+                equipment={equipment}
+                feeds={feedSummaries}
+                circuits={feeds}
+                anchorRef={eqWrapRef}
+              />
+            )}
           </div>
           <div className="equip-chassis__body">
             <LcsDualView
@@ -371,16 +401,9 @@ function BusDrop({
               onJumpToCircuit={onJumpToCircuit}
               onHoverInfo={onHoverInfo}
               onHoverInfoEnd={onHoverInfoEnd}
+              locateEquipmentId={locateEquipmentId}
             />
           </div>
-          {showEqBalloon && (
-            <EquipmentBalloon
-              equipment={equipment}
-              feeds={feedSummaries}
-              circuits={feeds}
-              anchorRef={eqWrapRef}
-            />
-          )}
         </div>
       </div>
     )
@@ -412,6 +435,8 @@ function BusDrop({
       onToggleExpand={() => onToggleEquip(equipment.id)}
       equipFam={equipFam}
       bankNote={trfBankNote}
+      located={locateEquipmentId === equipment.id}
+      linkOnlyFromParent={isAbtToTransformerFeed(localFeed)}
       rootClassName={[
         expanded && childItems.length > 0 ? 'hbus-drop--chain-open' : '',
         feedsOpenLcs ? 'hbus-drop--feeds-lcs-open' : '',
@@ -436,6 +461,7 @@ function BusDrop({
           onHoverInfo={onHoverInfo}
           onHoverInfoEnd={onHoverInfoEnd}
           focusCircuitIds={focusCircuitIds}
+          locateEquipmentId={locateEquipmentId}
         />
       )}
     </EquipmentBusDrop>
@@ -572,11 +598,13 @@ export function CascadeView({
   zoom,
   onZoomChange,
   focus,
+  locateEquipmentId,
   onToggleProtection,
   onLockCircuit,
   onUnlockCircuit,
   onToggleGenerator,
   onClearFocus,
+  onClearLocate,
 }: CascadeViewProps) {
   const boards = useMemo(() => buildBoardModels(system690), [])
   const ties = useMemo(() => busTieCircuits(system690), [])
@@ -587,6 +615,8 @@ export function CascadeView({
   zoomRef.current = zoom
   const focusRef = useRef(focus)
   focusRef.current = focus
+  const locateRef = useRef(locateEquipmentId)
+  locateRef.current = locateEquipmentId
   /** Tras zoom con rueda: reposicionar scroll para fijar el punto bajo el puntero */
   const pendingZoomScroll = useRef<{ left: number; top: number } | null>(null)
   /** Solo montaje / resize de ventana: encajar planta en viewport */
@@ -598,6 +628,10 @@ export function CascadeView({
     kind: 'board' | 'equip'
     id: string
   } | null>(null)
+  /** Tras localizar: centrar en el equipo (reintentos tras expandir). */
+  const pendingLocateScroll = useRef<string | null>(null)
+  /** Encaje del árbol de alimentaciones ya estabilizado (evita bucles/parpadeo). */
+  const focusFitDone = useRef(false)
   const [plantSize, setPlantSize] = useState({ w: 0, h: 0 })
   const [expandedBoards, setExpandedBoards] = useState<Set<string>>(
     () => new Set(['MSB-6PWS0002', 'MSB-6PWS0001']),
@@ -622,10 +656,14 @@ export function CascadeView({
   useEffect(() => {
     if (!focus) {
       lastCenteredZoom.current = null
+      focusFitDone.current = false
       return
     }
-    fitZoomPending.current = true
+    fitZoomPending.current = false
     lastCenteredZoom.current = null
+    focusFitDone.current = false
+    // Evitar que el tamaño de la planta completa deje el árbol minúsculo un frame.
+    setPlantSize({ w: 0, h: 0 })
     const boardsToOpen = new Set<string>()
     for (const c of focus.trace.circuits) {
       const b = boardFromOrigin(c.originId)
@@ -642,6 +680,30 @@ export function CascadeView({
       return next
     })
   }, [focus])
+
+  /** Localizar en planta: desplegar cadena (el scroll se hace tras layout). */
+  useEffect(() => {
+    if (!locateEquipmentId) {
+      pendingLocateScroll.current = null
+      return
+    }
+    const path = getPlantRevealPath(locateEquipmentId, system690)
+    pendingLocateScroll.current = locateEquipmentId
+    fitZoomPending.current = false
+    setExpandedBoards((prev) => {
+      const next = new Set(prev)
+      for (const b of path.boardIds) next.add(b)
+      return next
+    })
+    setExpandedEquip((prev) => {
+      const next = new Set(prev)
+      for (const id of path.expandEquipIds) next.add(id)
+      return next
+    })
+    if (zoomRef.current < 0.9) {
+      onZoomChange(1)
+    }
+  }, [locateEquipmentId, onZoomChange])
 
   /** Desplazamiento arrastrando con el ratón (en vez de barra de scroll) */
   useEffect(() => {
@@ -718,10 +780,10 @@ export function CascadeView({
       )
       if (next === current) return
 
-      // En búsqueda: el zoom permanece centrado en el árbol unifilar
+      // En árbol: zoom libre centrado por flex (sin recentrar con padding)
       if (focusRef.current) {
         pendingZoomScroll.current = null
-        centerPending.current = true
+        centerPending.current = false
         onZoomChange(next)
         return
       }
@@ -756,7 +818,11 @@ export function CascadeView({
   useEffect(() => {
     const el = plantRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
+    // En vista árbol el tamaño lo fija fitFocusTreeView; no reinyectar plantSize
+    // (provoca parpadeo al cambiar zoom/padding).
+    if (focusRef.current) return
     const ro = new ResizeObserver(() => {
+      if (focusRef.current || locateRef.current) return
       const w = el.offsetWidth
       const h = el.offsetHeight
       setPlantSize((prev) =>
@@ -768,8 +834,47 @@ export function CascadeView({
     return () => ro.disconnect()
   }, [expandedBoards, focus, expandedEquip])
 
-  /** Mide el planta real (no el plantSize en estado, que puede ir retrasado) */
+  /** Encaja el árbol de alimentaciones a pantalla completa y lo centra. */
+  const fitFocusTreeView = useCallback(() => {
+    const stage = panRef.current
+    const plant = plantRef.current
+    if (!stage || !plant || !focusRef.current) return false
+    const space = plant.parentElement as HTMLElement | null
+    if (!space?.classList.contains('plant-zoom-space--focus')) return false
+
+    // Sin padding dinámico: el contenedor flex centra el árbol.
+    space.style.padding = '0px'
+    stage.scrollLeft = 0
+    stage.scrollTop = 0
+
+    const w = plant.offsetWidth
+    const h = plant.offsetHeight
+    if (w < 8 || h < 8) return false
+
+    const pad = 56
+    const availW = Math.max(stage.clientWidth - pad, 80)
+    const availH = Math.max(stage.clientHeight - pad, 80)
+    // Ocupar toda la pantalla (sin tope artificial 1.35).
+    const fit = Math.min(availW / w, availH / h)
+    const next = Math.min(2.5, Math.max(0.4, Math.round(fit * 100) / 100))
+
+    setPlantSize({ w, h })
+    focusFitDone.current = true
+    lastCenteredZoom.current = next
+    centerPending.current = false
+
+    if (Math.abs(next - zoomRef.current) >= 0.01) {
+      onZoomChange(next)
+    }
+    return true
+  }, [onZoomChange])
+
+  /** Mide la planta real (no el plantSize en estado, que puede ir retrasado) */
   const fitAndCenterView = useCallback(() => {
+    if (focusRef.current) {
+      fitFocusTreeView()
+      return
+    }
     const stage = panRef.current
     const plant = plantRef.current
     if (!stage || !plant) return
@@ -825,7 +930,28 @@ export function CascadeView({
         lastCenteredZoom.current = z
       })
     }
-  }, [onZoomChange])
+  }, [onZoomChange, fitFocusTreeView])
+
+  /** Al abrir el árbol: esperar layout y encajar a pantalla una sola vez. */
+  useLayoutEffect(() => {
+    if (!focus || focusFitDone.current) return
+    let cancelled = false
+    const delays = [0, 50, 120, 250, 450]
+    const tryFit = (i: number) => {
+      if (cancelled || focusFitDone.current) return
+      if (fitFocusTreeView()) return
+      if (i + 1 < delays.length) {
+        window.setTimeout(() => tryFit(i + 1), delays[i + 1]! - delays[i]!)
+      }
+    }
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => tryFit(0))
+    })
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(id)
+    }
+  }, [focus, fitFocusTreeView])
 
   useLayoutEffect(() => {
     const stage = panRef.current
@@ -836,9 +962,20 @@ export function CascadeView({
       return
     }
 
+    // Vista árbol: centrado por flex; no pelear con padding/scroll.
+    if (focusRef.current) {
+      pendingZoomScroll.current = null
+      centerPending.current = false
+      space.style.padding = '0px'
+      stage.scrollLeft = 0
+      stage.scrollTop = 0
+      lastCenteredZoom.current = zoom
+      return
+    }
+
     // Zoom a puntero (planta completa)
     const pending = pendingZoomScroll.current
-    if (pending && !focusRef.current) {
+    if (pending) {
       pendingZoomScroll.current = null
       stage.scrollLeft = pending.left
       stage.scrollTop = pending.top
@@ -847,15 +984,6 @@ export function CascadeView({
       return
     }
     pendingZoomScroll.current = null
-
-    // En búsqueda, recentrar solo si el zoom cambió (rueda / botones)
-    if (
-      focusRef.current &&
-      lastCenteredZoom.current !== zoom &&
-      !centerPending.current
-    ) {
-      centerPending.current = true
-    }
 
     // Solo cuando se pidió explícitamente (evita el parpadeo continuo)
     if (!centerPending.current) return
@@ -878,8 +1006,9 @@ export function CascadeView({
   /** Tras plegar/desplegar o montaje: encajar en viewport (solo si fitZoomPending) */
   useEffect(() => {
     if (!fitZoomPending.current) return
+    if (locateRef.current || focusRef.current) return
     const t = window.setTimeout(() => {
-      if (!fitZoomPending.current) return
+      if (!fitZoomPending.current || locateRef.current || focusRef.current) return
       fitAndCenterView()
     }, 100)
     return () => window.clearTimeout(t)
@@ -928,6 +1057,53 @@ export function CascadeView({
       stage.scrollTop += elCenterY - stageCenterY
     }
   }, [])
+
+  const scrollToLocatedEquipment = useCallback(() => {
+    const id = pendingLocateScroll.current
+    const plant = plantRef.current
+    if (!id || !plant || focusRef.current) return false
+
+    const el =
+      (plant.querySelector(
+        `[data-equip="${id}"][data-locate="1"]`,
+      ) as HTMLElement | null) ??
+      (plant.querySelector(`[data-equip="${id}"]`) as HTMLElement | null)
+    if (!el) return false
+
+    pendingLocateScroll.current = null
+    scrollStageToElement(el)
+    el.classList.add('locate-flash')
+    window.setTimeout(() => el.classList.remove('locate-flash'), 1800)
+    return true
+  }, [scrollStageToElement])
+
+  useLayoutEffect(() => {
+    if (!locateEquipmentId || !pendingLocateScroll.current) return
+    let cancelled = false
+    const delays = [0, 60, 160, 320, 560, 900]
+    const tryScroll = (i: number) => {
+      if (cancelled) return
+      if (scrollToLocatedEquipment()) return
+      if (i + 1 < delays.length) {
+        window.setTimeout(
+          () => tryScroll(i + 1),
+          delays[i + 1]! - delays[i]!,
+        )
+      }
+    }
+    const raf = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => tryScroll(0))
+    })
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(raf)
+    }
+  }, [
+    locateEquipmentId,
+    expandedBoards,
+    expandedEquip,
+    scrollToLocatedEquipment,
+  ])
 
   const focusPendingTarget = useCallback(() => {
     const pending = pendingFocusTarget.current
@@ -1051,9 +1227,65 @@ export function CascadeView({
   const onJumpToCircuit = useCallback((circuit: Circuit) => {
     if (isPendingFeed(circuit)) return
 
+    const boardsToOpen = new Set<BoardId>()
+    const equipToOpen = new Set<string>()
+
     const boardId = boardFromOrigin(circuit.originId)
-    if (boardId) {
-      setExpandedBoards((prev) => new Set(prev).add(boardId))
+    if (boardId) boardsToOpen.add(boardId)
+
+    /** Salto a salida de otro LCS: abrir MSB → ABT → TRF → LCS. */
+    if (isLcsEquipment(circuit.originId)) {
+      const chain = abtDownstreamChainsMeta.find(
+        (c) => c.loadCenterId === circuit.originId,
+      )
+      if (chain) {
+        equipToOpen.add(chain.abtId)
+        equipToOpen.add(chain.transformerId)
+        equipToOpen.add(chain.loadCenterId)
+        for (const feed of system690.circuits) {
+          if (feed.destinationId !== chain.abtId || feed.virtual) continue
+          const b = boardFromOrigin(feed.originId)
+          if (b) boardsToOpen.add(b)
+        }
+      } else {
+        equipToOpen.add(circuit.originId)
+      }
+    } else if (circuit.originId.startsWith('ABT-')) {
+      equipToOpen.add(circuit.originId)
+      for (const feed of system690.circuits) {
+        if (feed.destinationId !== circuit.originId || feed.virtual) continue
+        const b = boardFromOrigin(feed.originId)
+        if (b) boardsToOpen.add(b)
+      }
+    } else if (circuit.originId.startsWith('TRF-')) {
+      const chain = abtDownstreamChainsMeta.find(
+        (c) => c.transformerId === circuit.originId,
+      )
+      if (chain) {
+        equipToOpen.add(chain.abtId)
+        equipToOpen.add(chain.transformerId)
+        for (const feed of system690.circuits) {
+          if (feed.destinationId !== chain.abtId || feed.virtual) continue
+          const b = boardFromOrigin(feed.originId)
+          if (b) boardsToOpen.add(b)
+        }
+      }
+      equipToOpen.add(circuit.originId)
+    }
+
+    if (boardsToOpen.size) {
+      setExpandedBoards((prev) => {
+        const next = new Set(prev)
+        for (const id of boardsToOpen) next.add(id)
+        return next
+      })
+    }
+    if (equipToOpen.size) {
+      setExpandedEquip((prev) => {
+        const next = new Set(prev)
+        for (const id of equipToOpen) next.add(id)
+        return next
+      })
     }
 
     const focusOrigin = () => {
@@ -1084,26 +1316,41 @@ export function CascadeView({
       return true
     }
 
-    requestAnimationFrame(() => {
-      if (!focusOrigin()) {
-        window.setTimeout(focusOrigin, 120)
+    // LCS anidados: dar tiempo a montar DualView tras expandir la cadena
+    const delays = equipToOpen.size ? [0, 80, 200, 400, 700] : [0, 120]
+    const tryFocus = (i: number) => {
+      if (focusOrigin()) return
+      if (i + 1 < delays.length) {
+        window.setTimeout(() => tryFocus(i + 1), delays[i + 1]! - delays[i]!)
       }
-    })
+    }
+    requestAnimationFrame(() => tryFocus(0))
   }, [])
 
   const [boardPopa, boardProa] = boards
 
   return (
     <div className="casc" ref={stageRef} onClick={() => setBalloon(null)}>
-      {focus && (
-        <div className="casc__focus-bar casc__focus-bar--overlay">
+      {locateEquipmentId && !focus && (
+        <div className="casc__focus-bar casc__focus-bar--overlay casc__focus-bar--locate">
           <span>
-            Búsqueda: <strong>{focus.equipmentId}</strong> · árbol de
-            alimentaciones
+            Localizado en unifilar: <strong>{locateEquipmentId}</strong>
+          </span>
+          {onClearLocate && (
+            <button type="button" className="btn" onClick={onClearLocate}>
+              Quitar localización
+            </button>
+          )}
+        </div>
+      )}
+      {focus && (
+        <div className="casc__focus-bar casc__focus-bar--overlay casc__focus-bar--feeds">
+          <span>
+            Árbol de alimentaciones: <strong>{focus.equipmentId}</strong>
           </span>
           {onClearFocus && (
             <button type="button" className="btn" onClick={onClearFocus}>
-              Ver planta completa
+              Volver al unifilar
             </button>
           )}
         </div>
@@ -1114,18 +1361,13 @@ export function CascadeView({
         ref={panRef}
       >
         {focus ? (
-          <div
-            className="plant-zoom-space plant-zoom-space--focus"
-            style={{
-              width: plantSize.w ? plantSize.w * zoom : undefined,
-              height: plantSize.h ? plantSize.h * zoom : undefined,
-            }}
-          >
+          <div className="plant-zoom-space plant-zoom-space--focus">
             <div
               ref={plantRef}
+              className="plant-zoom-space__focus-inner"
               style={{
                 transform: `scale(${zoom})`,
-                transformOrigin: 'top left',
+                transformOrigin: 'center center',
               }}
             >
               <SearchTreeView
@@ -1167,6 +1409,7 @@ export function CascadeView({
             lockedCircuits={lockedCircuits}
             focusCircuitIds={focusCircuitIds}
             focusEquipmentIds={focusEquipmentIds}
+            locateEquipmentId={locateEquipmentId}
             tieSide="right"
             onToggle={() => toggleBoard(boardPopa.id)}
             onToggleEquip={toggleEquip}
@@ -1192,6 +1435,7 @@ export function CascadeView({
             lockedCircuits={lockedCircuits}
             focusCircuitIds={focusCircuitIds}
             focusEquipmentIds={focusEquipmentIds}
+            locateEquipmentId={locateEquipmentId}
             tieSide="left"
             onToggle={() => toggleBoard(boardProa.id)}
             onToggleEquip={toggleEquip}
@@ -1245,6 +1489,7 @@ function BoardColumn({
   lockedCircuits,
   focusCircuitIds,
   focusEquipmentIds,
+  locateEquipmentId,
   tieSide,
   onToggle,
   onToggleEquip,
@@ -1265,6 +1510,7 @@ function BoardColumn({
   lockedCircuits: Set<string>
   focusCircuitIds: Set<string> | null
   focusEquipmentIds: Set<string> | null
+  locateEquipmentId?: string | null
   /** Lado del puente: POPA=right (2SA), PROA=left (1SB). Ambos cuadros: SB | SA */
   tieSide: 'left' | 'right'
   onToggle: () => void
@@ -1325,6 +1571,7 @@ function BoardColumn({
           onHoverInfo={onHoverInfo}
           onHoverInfoEnd={onHoverInfoEnd}
           focusCircuitIds={focusCircuitIds}
+          locateEquipmentId={locateEquipmentId}
         />
       </div>
     ))
@@ -1355,6 +1602,8 @@ function BoardColumn({
             short={genShortLabel(half, board.id)}
             title={`${genEntry.gen.id} · ${genEntry.gen.name}`}
             running={running}
+            equipmentId={genEntry.gen.id}
+            located={locateEquipmentId === genEntry.gen.id}
             onToggle={() => onToggleGenerator(genEntry.gen.id)}
           />
           <div

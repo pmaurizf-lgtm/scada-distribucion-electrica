@@ -63,6 +63,13 @@ export interface EquipmentBusDropProps {
   bankNote?: string
   /** Clases extra en el contenedor `.hbus-drop`. */
   rootClassName?: string
+  /**
+   * Sin interruptor de acometida: solo cable vertical desde el padre
+   * (p. ej. ABT → TRF en cadena directa).
+   */
+  linkOnlyFromParent?: boolean
+  /** Equipo localizado por el buscador del unifilar (halo). */
+  located?: boolean
   children?: ReactNode
 }
 
@@ -88,6 +95,8 @@ export function EquipmentBusDrop({
   equipFam = 'eq',
   bankNote,
   rootClassName,
+  linkOnlyFromParent = false,
+  located = false,
   children,
 }: EquipmentBusDropProps) {
   const spare = isSpareEquipment(equipment) || !!circuit.spare
@@ -96,7 +105,24 @@ export function EquipmentBusDrop({
     [spare, circuit, equipment.id],
   )
   const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
-  const remoteFeeds = feeds.filter((c) => c.id !== localFeed.id)
+  /**
+   * Doble alimentación: hay ALT o pendiente en el destino.
+   * - Vista desde NORM → muestra patas remotas ALT / pendiente.
+   * - Vista desde ALT (o pendiente) → también la NORM remota.
+   * Varios NORM sin ALT (p. ej. TBX bajo dos LCS) no son doble acometida.
+   */
+  const isDualDestination = feeds.some(
+    (c) => c.lineType === 'alternativa' || isPendingFeed(c),
+  )
+  const localIsAltSide =
+    localFeed.lineType === 'alternativa' || isPendingFeed(localFeed)
+  const remoteFeeds = isDualDestination
+    ? feeds.filter((c) => {
+        if (c.id === localFeed.id) return false
+        if (c.lineType === 'alternativa' || isPendingFeed(c)) return true
+        return localIsAltSide && c.lineType === 'normal'
+      })
+    : []
   const dual = remoteFeeds.length > 0
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
@@ -114,14 +140,19 @@ export function EquipmentBusDrop({
     return () => window.clearTimeout(t)
   }, [eqHover])
 
+  const displayFeeds = useMemo(
+    () => [localFeed, ...remoteFeeds],
+    [localFeed, remoteFeeds],
+  )
+
   const feedSummaries = useMemo(
     () =>
-      feeds.map((f) => ({
+      displayFeeds.map((f) => ({
         name: f.protectionName,
         lineType: f.lineType,
         originId: f.originId,
       })),
-    [feeds],
+    [displayFeeds],
   )
 
   const toggleExpand = (e: ReactMouseEvent) => {
@@ -201,8 +232,9 @@ export function EquipmentBusDrop({
 
   return (
     <div
-      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${rootClassName ? ` ${rootClassName}` : ''}`}
+      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${linkOnlyFromParent ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}${rootClassName ? ` ${rootClassName}` : ''}`}
       data-equip={equipment.id}
+      data-locate={located ? '1' : undefined}
       data-circuit-id={localFeed.id}
       title={
         spare
@@ -213,10 +245,12 @@ export function EquipmentBusDrop({
       }
       onDoubleClick={toggleExpand}
     >
-      <div className="hbus-drop__tops">
-        {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
-        {renderLeg(localFeed, 'local')}
-      </div>
+      {linkOnlyFromParent ? null : (
+        <div className="hbus-drop__tops">
+          {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
+          {renderLeg(localFeed, 'local')}
+        </div>
+      )}
 
       <div
         ref={eqWrapRef}
@@ -268,7 +302,7 @@ export function EquipmentBusDrop({
           <EquipmentBalloon
             equipment={equipment}
             feeds={feedSummaries}
-            circuits={feeds}
+            circuits={displayFeeds}
             anchorRef={eqWrapRef}
           />
         )}

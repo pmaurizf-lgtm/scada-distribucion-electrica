@@ -39,6 +39,11 @@ function isSectionBreaker(c: Circuit): boolean {
   return /^QVM-|^QNV-/.test(c.protectionName)
 }
 
+/** Entrada paralela a QVS (QS1, QS2…) desde cuadro auxiliar (CSB…). */
+function isParallelTopFeed(c: Circuit): boolean {
+  return /^QS\d/i.test(c.protectionName)
+}
+
 function abtToTrfCircuit(
   data: DistributionData,
   abtId: string,
@@ -92,6 +97,13 @@ export function buildLcsBoardModel(
   const fromLcs = data.circuits.filter(
     (c) => !c.virtual && c.originId === lcsId,
   )
+  const parallelAll = data.circuits.filter(
+    (c) =>
+      !c.virtual &&
+      c.destinationId === lcsId &&
+      isParallelTopFeed(c) &&
+      !c.originId.startsWith('TRF-'),
+  )
 
   const buses: LcsVoltageBus[] = []
   for (const voltage of ['440', '230'] as LoadCenterVoltage[]) {
@@ -99,6 +111,15 @@ export function buildLcsBoardModel(
       incomingAll.find((c) => voltageOf(c) === voltage) ??
       incomingAll.find((c) => c.protectionName === `QVS-${voltage}`)
     if (!incoming) continue
+
+    const parallelCircuit = parallelAll.find((c) => voltageOf(c) === voltage)
+    const parallelEquipment = parallelCircuit
+      ? data.equipment.find((e) => e.id === parallelCircuit.originId)
+      : undefined
+    const parallelIncoming =
+      parallelCircuit && parallelEquipment
+        ? { circuit: parallelCircuit, equipment: parallelEquipment }
+        : undefined
 
     const inVoltage = fromLcs.filter((c) => voltageOf(c) === voltage)
     const sections: LcsSection[] = []
@@ -115,7 +136,8 @@ export function buildLcsBoardModel(
           (c) =>
             c.service === service &&
             !isSectionBreaker(c) &&
-            !isBusPlaceholder(c.destinationId),
+            !isBusPlaceholder(c.destinationId) &&
+            !isParallelTopFeed(c),
         )
         .map((circuit) => {
           const equipment = data.equipment.find(
@@ -141,7 +163,7 @@ export function buildLcsBoardModel(
       sections.push({ service, sectionBreaker, outlets })
     }
 
-    buses.push({ voltage, incoming, sections })
+    buses.push({ voltage, incoming, parallelIncoming, sections })
   }
 
   if (buses.length === 0) return null

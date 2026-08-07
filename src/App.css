@@ -145,10 +145,10 @@ body {
 .topbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 1.25rem;
+  gap: 0.85rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   border-bottom: 1px solid var(--border);
   background: rgba(14, 22, 20, 0.92);
   backdrop-filter: blur(8px);
@@ -158,6 +158,9 @@ body {
   display: flex;
   align-items: center;
   gap: 0.85rem;
+  flex: 0 1 auto;
+  min-width: 12rem;
+  padding-top: 0.15rem;
 }
 
 .topbar__mark {
@@ -180,14 +183,26 @@ body {
   color: var(--muted);
 }
 
-.topbar__controls {
+.topbar__main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  flex: 1 1 28rem;
+  min-width: 0;
+}
+
+.topbar__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-  justify-content: flex-end;
+  gap: 0.5rem 0.65rem;
   min-width: 0;
+}
+
+.topbar__row--tools,
+.topbar__row--search {
+  justify-content: flex-end;
 }
 
 .topbar__actions {
@@ -197,11 +212,21 @@ body {
   gap: 0.35rem;
 }
 
+.topbar__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-left: 0.15rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid var(--border);
+  white-space: nowrap;
+}
+
 .zoom-controls {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
-  margin-left: 0.25rem;
+  margin-left: 0.15rem;
   padding-left: 0.45rem;
   border-left: 1px solid var(--border);
 }
@@ -228,33 +253,110 @@ body {
   padding: 1.5rem;
 }
 
-/* Vista de búsqueda: el espacio de zoom se ajusta al árbol (sin vacío enorme) */
+/* Vista árbol de alimentaciones: ocupar y centrar en el viewport */
 .plant-zoom-space--focus {
-  min-width: 0;
-  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem;
+  overflow: visible;
+}
+
+.plant-zoom-space__focus-inner {
+  flex: 0 0 auto;
+  will-change: transform;
 }
 
 .search {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
+  flex: 1 1 18rem;
+  max-width: 28rem;
+  min-width: min(100%, 16rem);
+}
+
+.search__field {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+}
+
+.search__label {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.search--locate {
+  padding: 0.28rem 0.45rem;
+  border: 1px solid rgba(45, 212, 168, 0.45);
+  border-radius: var(--radius);
+  background: rgba(45, 212, 168, 0.08);
+}
+
+.search--locate .search__label {
+  color: var(--accent);
+}
+
+.search--locate input {
+  border-color: rgba(45, 212, 168, 0.35);
+}
+
+.search--feeds {
+  padding: 0.28rem 0.45rem;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  border-radius: var(--radius);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.search--feeds .search__label {
+  color: #93c5fd;
+}
+
+.search--feeds input {
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .search input {
-  width: min(240px, 55vw);
-  padding: 0.45rem 0.7rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-elevated);
   color: var(--text);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .search input:focus {
   outline: 1px solid var(--accent);
   border-color: var(--accent-dim);
+}
+
+.search--feeds input:focus {
+  outline: 1px solid #3b82f6;
+  border-color: #60a5fa;
+}
+
+.btn--feeds {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: #3b82f6;
+  color: #dbeafe;
+}
+
+.btn--feeds:hover {
+  background: rgba(59, 130, 246, 0.45);
 }
 
 .btn {
@@ -1001,6 +1103,72 @@ body {
   background: rgba(14, 22, 20, 0.92);
   font-size: 0.8rem;
   pointer-events: auto;
+}
+
+.casc__focus-bar--locate {
+  border-color: rgba(45, 212, 168, 0.55);
+  background: rgba(14, 28, 24, 0.94);
+  box-shadow: 0 0 0 1px rgba(45, 212, 168, 0.2);
+}
+
+.casc__focus-bar--feeds {
+  border-color: rgba(59, 130, 246, 0.55);
+  background: rgba(14, 20, 32, 0.94);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.22);
+}
+
+/* Halo de equipo localizado en el unifilar */
+.hbus-drop--locate,
+.equip-chassis--locate,
+.casc-gen--locate {
+  position: relative;
+  z-index: 4;
+}
+
+.hbus-drop--locate::after,
+.equip-chassis--locate::after,
+.casc-gen--locate::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 10px;
+  border: 2px solid rgba(45, 212, 168, 0.95);
+  box-shadow:
+    0 0 0 4px rgba(45, 212, 168, 0.22),
+    0 0 22px 4px rgba(45, 212, 168, 0.45);
+  pointer-events: none;
+  animation: locate-halo-pulse 1.4s ease-in-out infinite;
+}
+
+.hbus-drop--locate .hbus-drop__eq,
+.equip-chassis--locate .equip-chassis__label {
+  border-color: rgba(45, 212, 168, 0.75);
+}
+
+.locate-flash {
+  animation: locate-flash-kick 0.7s ease 2;
+}
+
+@keyframes locate-halo-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes locate-flash-kick {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.35);
+  }
 }
 
 .casc__stage--plant {
@@ -2242,31 +2410,62 @@ body {
 }
 
 /*
- * Recuadro + piernas de alimentación: mismo ancho y chips centrados
- * (el chip bajo ABT debe coincidir con el centro del recuadro).
+ * Recuadro ABT/TRF: ancho = columna VS (--feed-col sincronizado).
+ * QVS centrado en VS → mismo eje vertical.
  */
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__tops,
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap,
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__tops,
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap {
   width: var(--feed-col, 7.2rem);
-  max-width: var(--feed-col, 7.2rem);
+  min-width: var(--feed-col, 7.2rem);
+  max-width: none;
   align-self: flex-start;
   box-sizing: border-box;
+  /* Con LCS dual: desplazar ABT/TRF hasta la columna VS 440 */
+  margin-left: var(--feed-offset, 0px);
 }
 
-.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__tops,
+/*
+ * ABT → TRF sin interruptor: línea solo debajo del ABT (no atraviesa el texto),
+ * hasta el borde superior del TRF.
+ */
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus--direct {
+  margin-top: 0;
+  padding-top: 1.65rem;
+}
+
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  /* Solo bajante bajo el recuadro; sin continuidad a través del texto */
+  content: '';
+  top: 100%;
+  bottom: -1.65rem;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  opacity: 1;
+  background: var(--line-normal);
+}
+
+.hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open.hbus-drop--live:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  background: #e6c200;
+  opacity: 1;
+}
+
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+  display: none;
+}
+
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__tops {
   display: flex;
   justify-content: center;
   align-items: stretch;
 }
 
-/* Una sola pierna (TRF bajo ABT): forzar centrado en el eje del recuadro */
-.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__tops > .hbus-drop__leg,
-.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__tops > .hbus-drop__leg:only-child {
-  margin-left: auto;
-  margin-right: auto;
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap {
+  position: relative;
+  z-index: 1;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq,
@@ -2274,13 +2473,15 @@ body {
   width: 100%;
 }
 
-/* Stub bajo el recuadro (no atraviesa texto) */
-.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before,
-.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   top: 100%;
-  bottom: -0.85rem;
+  bottom: -1.35rem;
   opacity: 1;
   background: var(--line-normal);
+}
+
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  bottom: -1.35rem;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::before,
@@ -2293,6 +2494,87 @@ body {
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::after,
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::after {
   display: none;
+}
+
+/*
+ * TRF dual (230+440): exactamente dos bajantes (sin eje central),
+ * alineadas con QVS en coordenadas de layout (corregidas por zoom).
+ */
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  left: var(--trf-out-230, 25%);
+  top: 100%;
+  bottom: auto;
+  height: var(--trf-stub-h, 1.35rem);
+  width: 2px;
+  transform: translateX(-50%);
+  opacity: 1;
+  background: var(--line-normal);
+  content: '';
+  z-index: 3;
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+  display: block;
+  content: '';
+  position: absolute;
+  left: var(--trf-out-440, 75%);
+  top: 100%;
+  bottom: auto;
+  height: var(--trf-stub-h, 1.35rem);
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--line-normal);
+  opacity: 1;
+  z-index: 3;
+  pointer-events: none;
+  animation: none;
+  box-shadow: none;
+  border-radius: 0;
+  min-height: 0;
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--live > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--live > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+  background: #e6c200;
+}
+
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+  bottom: auto;
+  height: var(--trf-stub-h, 1.35rem);
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap {
+  overflow: visible;
+  /* Por encima del chasis LCS para que las bajantes no queden tapadas */
+  z-index: 8;
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq {
+  overflow: visible;
+}
+
+/* Stub llega al chip; tramo corto local + bajante hasta la barra */
+.lcs-dual--both .lcs440-rail__qvs-leg__wire--from {
+  flex: 0 0 0.2rem;
+  min-height: 0.2rem;
+  margin-top: 0;
+  /* El stub del TRF ya cubre TRF→chip; evitar doble trazo */
+  opacity: 0;
+}
+
+.lcs-dual--both .lcs440-rail__qvs-leg__wire--to-bus {
+  flex: 1 1 auto;
+  min-height: 1.5rem;
+  margin-bottom: -2px;
+}
+
+.equip-chassis--lcs:has(.lcs-dual--both) {
+  overflow: visible;
+  position: relative;
+  z-index: 1;
 }
 
 .hbus-drop--lcs-open .lcs-dual--inline {
@@ -2328,9 +2610,10 @@ body {
     rgba(14, 24, 34, 0.82) 100%
   );
   box-shadow: inset 0 0 0 1px rgba(90, 150, 210, 0.12);
-  margin-top: 0.15rem;
-  /* padding-left 0: eje TRF (--feed-col heredado) = inicio columna VS */
-  padding: 0.35rem 0.55rem 0.65rem 0;
+  /* Separado del TRF: la pierna QVS hace de puente vertical */
+  margin-top: 0.35rem;
+  /* Plantilla LCS-4PWS0001: padding izq = der (LCS_LAYOUT_TOKENS.chassisPadX) */
+  padding: 0.25rem 0.55rem 0.65rem;
   overflow: visible;
 }
 
@@ -2344,17 +2627,19 @@ body {
 .equip-chassis__label {
   position: absolute;
   top: 0.35rem;
-  right: 0.55rem;
+  left: 0.55rem;
+  right: auto;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0.1rem;
   margin: 0;
   padding: 0.1rem 0.25rem;
   cursor: pointer;
   user-select: none;
-  pointer-events: none;
+  /* Solo la etiqueta dispara el globo LCS (no el cuerpo con salidas) */
+  pointer-events: auto;
 }
 
 .equip-chassis__id {
@@ -2405,7 +2690,7 @@ body {
   width: 7.6rem;
 }
 
-/* Local: cable bajo el hueco de rejilla hasta el chip */
+/* Salidas LCS: pierna centrada (cable ≡ eje del chip), como MSB */
 .hbus--lcs-section .hbus-drop__tops {
   width: 100%;
   justify-content: center;
@@ -2415,16 +2700,27 @@ body {
 
 .hbus--lcs-section .hbus-drop__leg {
   align-items: center;
+  width: 3.4rem;
+  min-width: 3.4rem;
+}
+
+.hbus--lcs-section .hbus-drop__leg .casc-brk {
+  align-self: center;
+}
+
+.hbus--lcs-section .hbus-drop__leg .hbus-drop__wire {
+  align-self: center;
 }
 
 .hbus--lcs-section .hbus__drops {
   margin-top: 0 !important;
 }
 
+/* Cruza el hueco [bus-gap] y solapa 4px la barra para que visualmente toque */
 .hbus--lcs-section .hbus-drop__leg--local .hbus-drop__wire--from-bus {
-  margin-top: 0 !important;
-  min-height: 1.1rem;
-  flex: 0 0 1.1rem;
+  margin-top: calc(-1 * var(--lcs-bus-gap, 2.1rem) - 4px) !important;
+  min-height: calc(var(--lcs-bus-gap, 2.1rem) + 0.35rem) !important;
+  flex: 0 0 calc(var(--lcs-bus-gap, 2.1rem) + 0.35rem) !important;
   width: 2px;
   position: relative;
   z-index: 2;
@@ -2892,6 +3188,15 @@ body {
   margin-bottom: 0;
 }
 
+.stree-branch__wire--thru {
+  flex: 1 1 auto;
+  min-height: 1.6rem;
+  width: 2px;
+  margin: 0 auto;
+  background: currentColor;
+  opacity: 0.85;
+}
+
 /* Alimentación única: el pie del cable empalma con la caja del equipo */
 .stree-feed--single .stree-branch__wire--foot {
   min-height: 0.85rem;
@@ -2958,6 +3263,150 @@ body {
   margin-top: -1px;
 }
 
+/* LCS + CSB pares → barra VS; etiqueta a la izquierda; stem sin interrupción */
+.stree-branch--lcs {
+  min-width: 0;
+  overflow: visible;
+}
+
+.stree-lcs-infeed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  min-width: 5.75rem;
+  overflow: visible;
+}
+
+.stree-lcs-infeed--dual {
+  min-width: 14rem;
+}
+
+.stree-lcs-infeed__parents {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.75rem;
+  width: 100%;
+}
+
+.stree-lcs-infeed__leg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 5.75rem;
+  flex: 1 1 5.75rem;
+}
+
+/* Empalme pierna → barra (sin hueco) */
+.stree-lcs-infeed__to-bus {
+  min-height: 0.75rem;
+  margin-bottom: -1px;
+}
+
+/* Tramo entre interruptor de sección (QVM/QNV) y la barra siguiente */
+.stree-lcs-infeed__section-wire {
+  min-height: 0.85rem;
+  margin-bottom: -1px;
+}
+
+/*
+ * Barra a ancho completo (empalme con ambas piernas).
+ * Etiqueta a la izquierda de la barra (absoluta), sin desplazar el eje vertical.
+ */
+.stree-lcs-bus {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 0;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.stree-lcs-bus--dual {
+  width: 100%;
+}
+
+.stree-lcs-bus__tag {
+  position: absolute;
+  right: calc(100% + 0.4rem);
+  top: 2px;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  padding: 0.08rem 0.35rem;
+  white-space: nowrap;
+  background: color-mix(in srgb, #3d8a7a 35%, transparent);
+  color: #b8e8dc;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.stree-lcs-bus__tag--vm {
+  background: color-mix(in srgb, #8a6a3d 40%, transparent);
+  color: #f0d9a8;
+}
+
+.stree-lcs-bus__tag--nv {
+  background: color-mix(in srgb, #5a6a8a 40%, transparent);
+  color: #c8d4e8;
+}
+
+.stree-lcs-bus[data-voltage='230'] .stree-lcs-bus__tag:not(.stree-lcs-bus__tag--vm):not(.stree-lcs-bus__tag--nv) {
+  background: color-mix(in srgb, #8a7040 35%, transparent);
+  color: #e8d4a8;
+}
+
+.stree-lcs-bus__bar {
+  height: 4px;
+  width: 100%;
+  min-width: 4.5rem;
+  border-radius: 1px;
+  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+  flex-shrink: 0;
+}
+
+.stree-lcs-bus[data-voltage='230'] .stree-lcs-bus__bar {
+  background: linear-gradient(90deg, #8a7040, #c9a86a 45%, #8a7040);
+}
+
+.stree-lcs-bus__stem {
+  min-height: 0.85rem;
+  margin-top: 0;
+}
+
+/* Salida y cuadro: mismo eje que el stem central */
+.stree-lcs-infeed > .casc-brk {
+  flex-shrink: 0;
+}
+
+.stree-node--target > .stree-node__self {
+  align-items: center;
+}
+
+.stree-feed--single:has(.stree-branch--lcs) + .stree-node__self,
+.stree-feed--dual:has(.stree-branch--lcs) + .stree-node__self {
+  /* Empalme continuo al pie del infeed LCS */
+  margin-top: -1px;
+}
+
+.stree-eq--compact {
+  padding: 0.35rem 0.45rem;
+  min-width: 4.5rem;
+  gap: 0.15rem;
+}
+
+.stree-eq--compact .stree-eq__id {
+  font-size: 0.68rem;
+}
+
 .stree-eq {
   display: flex;
   flex-direction: column;
@@ -3018,7 +3467,7 @@ body {
   line-height: 1.25;
 }
 
-/* —— TRF banco + LCS 440 V (230 aparcado; barras continuas) —— */
+/* —— TRF banco + LCS 440/230 V (barras duales) —— */
 .hbus-drop__bank {
   display: block;
   width: 100%;
@@ -3030,6 +3479,12 @@ body {
 
 .trf-lcs,
 .lcs-dual {
+  /* Tokens plantilla LCS-4PWS0001 (ver abtDownstream/lcsBoardStyle.ts) */
+  --lcs-tie-w: 4.6rem;
+  --lcs-vs-col: 7.2rem;
+  --lcs-bus-gap: 2.1rem;
+  --lcs-qvs-leg-w: 3.4rem;
+  --lcs-dual-gap: 0.85rem;
   margin-top: 0.55rem;
   padding: 0.55rem 0.65rem 0.75rem;
   border: 1px solid color-mix(in srgb, var(--line-normal) 45%, transparent);
@@ -3037,6 +3492,23 @@ body {
   background: color-mix(in srgb, #1a2430 90%, transparent);
   min-width: min(68rem, 96vw);
   overflow-x: auto;
+}
+
+.lcs-dual--both {
+  min-width: min(96rem, 98vw);
+}
+
+.lcs-dual__rails {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: var(--lcs-dual-gap, 0.85rem);
+  width: max-content;
+}
+
+.lcs-dual__rails > .lcs440-board {
+  flex: 0 0 auto;
 }
 
 .trf-lcs--empty,
@@ -3305,7 +3777,7 @@ body {
   font-family: var(--mono);
 }
 
-/* Barra LCS 440: QVS (columna VS) → etiqueta → bus → hueco → salidas */
+/* Barra LCS: QVS (columna VS) → etiqueta → bus → hueco → salidas */
 .lcs440-board {
   display: flex;
   flex-direction: column;
@@ -3316,21 +3788,18 @@ body {
 }
 
 .lcs440-rail {
-  --lcs-tie-w: 4.6rem;
-  --lcs-vs-col: 7.2rem;
   display: grid;
   grid-template-columns:
-    minmax(var(--lcs-vs-col), max-content)
-    var(--lcs-tie-w)
+    minmax(var(--lcs-vs-col, 7.2rem), max-content)
+    var(--lcs-tie-w, 4.6rem)
     max-content
-    var(--lcs-tie-w)
+    var(--lcs-tie-w, 4.6rem)
     max-content;
-  /* Hueco [bus-gap] obligatorio: la barra NUNCA corta los chips */
   grid-template-rows:
-    [qvs] minmax(2.6rem, auto)
+    [qvs] minmax(3.2rem, auto)
     [label] auto
     [bus] 4px
-    [bus-gap] 1.85rem
+    [bus-gap] var(--lcs-bus-gap, 2.1rem)
     [drops] auto;
   column-gap: 0;
   row-gap: 0;
@@ -3339,70 +3808,158 @@ body {
   overflow: visible;
 }
 
-/*
- * QVS centrado en el ancho real de la barra VS (columna 1).
- * TRF llega por el eje --feed-col (izq): bajante → puente → centro → QVS → riser.
- */
-.lcs440-rail__feed-drop {
+/* 230 V: espejo NV — QNV — VM — QVM — VS (QVS en VS, a la derecha) */
+.lcs440-rail--mirror {
+  grid-template-columns:
+    max-content
+    var(--lcs-tie-w)
+    max-content
+    var(--lcs-tie-w)
+    minmax(var(--lcs-vs-col), max-content);
+}
+
+.lcs440-rail--mirror .lcs440-rail__qvs-leg {
+  grid-column: 5;
+}
+
+.lcs440-rail--mirror .lcs440-rail__vs-tag {
+  grid-column: 5;
+  justify-self: end;
+  margin-left: 0;
+  margin-right: 0.35rem;
+  max-width: calc(50% - 1.5rem);
+  text-align: right;
+}
+
+.lcs440-rail--mirror .lcs440-rail__vs-bus,
+.lcs440-rail--mirror .lcs440-rail__vs-bus-track,
+.lcs440-rail--mirror .lcs440-rail__vs-drops {
+  grid-column: 5;
+}
+
+.lcs440-rail--mirror .lcs440-rail__qvm {
+  grid-column: 4;
+}
+
+.lcs440-rail--mirror .lcs440-rail__vm-tag,
+.lcs440-rail--mirror .lcs440-rail__vm-bus,
+.lcs440-rail--mirror .lcs440-rail__vm-drops {
+  grid-column: 3;
+}
+
+.lcs440-rail--mirror .lcs440-rail__vm-tag,
+.lcs440-rail--mirror .lcs440-rail__nv-tag {
+  justify-self: end;
+  text-align: right;
+}
+
+.lcs440-rail--mirror .lcs440-rail__qnv {
+  grid-column: 2;
+}
+
+.lcs440-rail--mirror .lcs440-rail__nv-tag,
+.lcs440-rail--mirror .lcs440-rail__nv-bus,
+.lcs440-rail--mirror .lcs440-rail__nv-drops {
   grid-column: 1;
-  grid-row: qvs;
+}
+
+/* Halo de flujo en espejo: VS→NV va hacia la izquierda */
+.lcs440-rail--mirror .lcs440-cell__bus--live::after,
+.lcs440-rail--mirror .lcs440-tie--flow .lcs440-tie__bridge::after {
+  animation-direction: reverse;
+}
+
+/* Salidas del espejo crecen hacia el eje central (VS) */
+.lcs440-rail--mirror .lcs440-rail__vs-drops .hbus__drops,
+.lcs440-rail--mirror .lcs440-rail__vm-drops .hbus__drops,
+.lcs440-rail--mirror .lcs440-rail__nv-drops .hbus__drops {
+  justify-content: flex-end;
+}
+
+/*
+ * Pierna QVS centrada en la columna VS (= centro del TRF ensanchado).
+ */
+.lcs440-rail__qvs-leg {
+  grid-column: 1;
+  grid-row: qvs / bus;
+  justify-self: center;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 3.4rem;
+  min-width: 3.4rem;
+  margin: 0;
+  padding: 0;
+  z-index: 5;
+  pointer-events: none;
+  position: relative;
+  overflow: visible;
+}
+
+/*
+ * QVS + QS* en paralelo:
+ * - Columna VS crece a la dcha. (--lcs-vs-parallel-ext) → QVM se aleja
+ * - QVS centrado en el tramo core (sync TRF); QS1 en la extensión
+ * - CSB alineado en top/altura con el TRF vía syncParallelCsb
+ */
+.lcs440-board--parallel-feed {
+  --lcs-vs-parallel-ext: 6.4rem;
+}
+
+.lcs440-rail__feed-bay {
+  grid-column: 1;
+  grid-row: qvs / bus;
+  position: relative;
+  width: 100%;
+  min-width: 0;
   justify-self: stretch;
   align-self: stretch;
-  width: auto;
-  position: relative;
-  z-index: 4;
-  pointer-events: none;
-  min-height: 1.35rem;
-}
-
-.lcs440-rail__feed-drop::before {
-  content: '';
-  position: absolute;
-  /* Eje del TRF: centro de --feed-col desde el borde izquierdo de la columna VS */
-  left: calc(var(--feed-col, var(--lcs-vs-col)) / 2);
-  top: 0;
-  bottom: 50%;
-  width: 2px;
-  transform: translateX(-50%);
-  background: var(--line-normal);
-}
-
-.lcs440-rail__feed-jog {
-  grid-column: 1;
-  grid-row: qvs;
-  justify-self: stretch;
-  align-self: center;
-  height: 2px;
-  /* Puente: centro feed-col → centro de la columna VS */
-  margin-left: calc(var(--feed-col, var(--lcs-vs-col)) / 2);
-  margin-right: 50%;
-  width: auto;
-  background: var(--line-normal);
-  z-index: 3;
-  pointer-events: none;
-}
-
-.lcs440-rail__qvs {
-  grid-column: 1;
-  grid-row: qvs;
-  justify-self: stretch;
-  align-self: end;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-end;
-  width: 100%;
-  max-width: none;
-  box-sizing: border-box;
   z-index: 5;
-  margin: 0;
-  padding-top: 0.15rem;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.lcs440-board--parallel-feed .lcs440-rail__feed-bay {
+  z-index: 16;
+}
+
+.equip-chassis--lcs:has(.lcs440-board--parallel-feed) {
+  z-index: 12;
+}
+
+/* QVS: centro del tramo core (sin la extensión QS) */
+.lcs440-rail__feed-bay .lcs440-rail__qvs-leg {
+  grid-column: auto;
+  grid-row: auto;
+  position: absolute;
+  left: calc((100% - var(--lcs-vs-parallel-ext, 0rem)) / 2);
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  height: auto;
+}
+
+/* QS1 centrado en la extensión VS, a la izquierda de QVM */
+.lcs440-rail__qs-leg {
+  position: absolute;
+  left: calc(100% - var(--lcs-vs-parallel-ext, 6.4rem) / 2);
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 3.4rem;
+  min-width: 3.4rem;
+  transform: translateX(-50%);
   overflow: visible;
   pointer-events: none;
-  position: relative;
+  z-index: 6;
 }
 
-.lcs440-rail__qvs .casc-brk {
+.lcs440-rail__qs-leg .casc-brk {
   pointer-events: auto;
   flex: 0 0 auto;
   position: relative;
@@ -3412,44 +3969,175 @@ body {
   min-width: 2.6rem;
 }
 
-/* Cable QVS → barra VS: exactamente al 50% de la columna VS */
-.lcs440-rail__qvs-riser {
-  grid-column: 1;
-  grid-row: label / bus;
-  justify-self: center;
-  align-self: stretch;
-  position: relative;
-  width: 2px;
-  margin-top: -2px;
-  margin-bottom: 0;
-  z-index: 4;
-  pointer-events: none;
-  background: transparent;
-}
-
-.lcs440-rail__qvs-riser::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  transform: translateX(-50%);
-  background: var(--line-normal);
-}
-
-.equip-chassis--feed-alt .lcs440-rail__feed-drop::before,
-.equip-chassis--feed-alt .lcs440-rail__feed-jog,
-.equip-chassis--feed-alt .lcs440-rail__qvs-riser::before {
+/* QS1: alimentación normal (línea azul) */
+.lcs440-rail__qs-leg .lcs440-rail__qvs-leg__wire {
   background: var(--line-alt);
 }
 
-.equip-chassis--feed-flow .lcs440-rail__feed-drop::before,
-.equip-chassis--feed-flow .lcs440-rail__feed-jog,
-.equip-chassis--feed-flow .lcs440-rail__qvs-riser::before,
-.lcs440-rail__feed-drop--flow::before,
-.lcs440-rail__feed-jog--flow,
-.lcs440-rail__qvs-riser--flow::before {
+.lcs440-rail__qs-leg--flow .lcs440-rail__qvs-leg__wire {
+  background: var(--line-alt);
+}
+
+.lcs440-rail__qs-leg__wire--from {
+  /* El tramo CSB→QS1 lo pinta ::after del CSB (--qs-drop-h) */
+  flex: 0 0 0;
+  min-height: 0;
+  opacity: 0;
+}
+
+.lcs440-rail__parallel-src::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: var(--qs-drop-h, 0.85rem);
+  transform: translateX(-50%);
+  background: var(--line-alt);
+}
+
+/* CSB: misma familia visual que un cuadro; top/altura los pone el sync con TRF */
+.lcs440-rail__parallel-src {
+  position: absolute;
+  left: 50%;
+  top: -4.5rem;
+  bottom: auto;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  width: 7.2rem;
+  min-width: 7.2rem;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid rgba(140, 150, 170, 0.5);
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(32, 36, 44, 0.95),
+    rgba(22, 26, 32, 0.92)
+  );
+  color: inherit;
+  font: inherit;
+  box-sizing: border-box;
+  pointer-events: auto;
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.lcs440-rail__parallel-src .hbus-drop__sym {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.lcs440-rail__parallel-src .hbus-drop__id {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #c5ccd8;
+}
+
+.lcs440-rail__parallel-src .hbus-drop__name {
+  font-size: 0.52rem;
+  font-weight: 400;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.lcs440-rail__parallel-src--live,
+.lcs440-rail__parallel-src--flow {
+  border-color: color-mix(in srgb, var(--line-alt) 55%, var(--border));
+}
+
+/* Pista VS: tramo core (sync TRF) + extensión bajo QS1 */
+.lcs440-rail__vs-bus-track {
+  grid-column: 1;
+  grid-row: bus;
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
+  min-width: var(--lcs-vs-col);
+  z-index: 1;
+}
+
+.lcs440-board--parallel-feed .lcs440-rail__vs-bus-track {
+  min-width: calc(var(--lcs-vs-col) + var(--lcs-vs-parallel-ext));
+}
+
+.lcs440-rail__vs-bus-track .lcs440-rail__vs-bus {
+  grid-column: auto;
+  grid-row: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.lcs440-rail__vs-bus--parallel-ext {
+  flex: 0 0 var(--lcs-vs-parallel-ext);
+  width: var(--lcs-vs-parallel-ext);
+  min-width: var(--lcs-vs-parallel-ext);
+  margin-left: -1px;
+  border-radius: 0 1px 1px 0;
+}
+
+.lcs440-rail__vs-parallel-spacer {
+  flex: 0 0 var(--lcs-vs-parallel-ext, 6.4rem);
+  width: var(--lcs-vs-parallel-ext, 6.4rem);
+  min-width: var(--lcs-vs-parallel-ext, 6.4rem);
+  pointer-events: none;
+}
+
+.lcs440-rail__qvs-leg .casc-brk {
+  pointer-events: auto;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 4;
+  isolation: isolate;
+  background: var(--bg-elevated);
+  min-width: 2.6rem;
+}
+
+.lcs440-rail__qvs-leg__wire {
+  display: block;
+  position: relative;
+  width: 2px;
+  flex: 0 0 auto;
+  background: var(--line-normal);
+  align-self: center;
+  z-index: 2;
+}
+
+.lcs440-rail__qvs-leg__wire--from {
+  /* Separación TRF ↔ LCS: cable largo bajo el stub del transformador */
+  flex: 1 1 auto;
+  min-height: 2.4rem;
+  margin-top: 0.15rem;
+}
+
+.lcs440-rail__qvs-leg__wire--to-bus {
+  flex: 1 1 auto;
+  min-height: 1.5rem;
+  margin-bottom: -2px;
+}
+
+.lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire {
+  background: var(--line-normal);
+}
+
+.equip-chassis--feed-alt .lcs440-rail__qvs-leg__wire {
+  background: var(--line-alt);
+}
+
+.equip-chassis--feed-flow .lcs440-rail__qvs-leg__wire {
   background: var(--line-normal);
 }
 
@@ -3487,6 +4175,13 @@ body {
   padding-top: 0;
   position: relative;
   z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  width: max-content;
+}
+
+.lcs440-board--parallel-feed .lcs440-rail__vs-drops {
+  min-width: calc(var(--lcs-vs-col, 7.2rem) + var(--lcs-vs-parallel-ext));
 }
 
 .lcs440-rail__vm-tag {
@@ -3612,9 +4307,26 @@ body {
   z-index: 1;
 }
 
+/* Barras 230 V: tono bronce/ámbar para distinguirlas del azul-gris 440 V */
+.lcs440-board[data-voltage='230'] .lcs440-cell__bus {
+  background: linear-gradient(90deg, #8a7040, #c9a86a 45%, #8a7040);
+}
+
+.lcs440-board[data-voltage='230'] .lcs440-tie__bridge {
+  background: #b89a5c;
+}
+
 .lcs440-cell__bus--live {
   background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
   box-shadow: none;
+}
+
+.lcs440-board[data-voltage='230'] .lcs440-cell__bus--live {
+  background: linear-gradient(90deg, #b8860b, #ffd24a 45%, #b8860b);
+}
+
+.lcs440-board[data-voltage='230'] .lcs440-tie--flow .lcs440-tie__bridge {
+  background: #e6c200;
 }
 
 /* Mismo halo que el flujo vertical, orientado en horizontal */

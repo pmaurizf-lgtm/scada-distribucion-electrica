@@ -19,10 +19,21 @@ export interface LcsSection {
   outlets: LcsOutlet[]
 }
 
+/** Entrada paralela a QVS (p. ej. CSB → QS1-440 junto al TRF). */
+export interface LcsParallelIncoming {
+  circuit: Circuit
+  equipment: Equipment
+}
+
 export interface LcsVoltageBus {
   voltage: LoadCenterVoltage
   /** Interruptor de entrada desde TRF (QVS-440 / QVS-230) */
   incoming: Circuit
+  /**
+   * Alimentación paralela a QVS (arriba de la barra VS).
+   * Caso LCS-4PWS0003: CSB-4PWS0001 → QS1-440.
+   */
+  parallelIncoming?: LcsParallelIncoming
   sections: LcsSection[]
 }
 

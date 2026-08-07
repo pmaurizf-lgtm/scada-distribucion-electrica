@@ -1,0 +1,42 @@
+---
+description: Estilo canónico LCS dual (plantilla LCS-4PWS0001) — clonar en todo LCS nuevo
+globs: src/abtDownstream/**/*,src/components/LcsDualView.tsx,src/components/CascadeView.tsx,src/components/EquipmentBalloon.tsx,src/data/abtDownstream.json,src/App.css
+alwaysApply: false
+---
+
+# LCS dual — plantilla visual (`LCS-4PWS0001`, v2026-08-07)
+
+Fuente de verdad: `src/abtDownstream/lcsBoardStyle.ts` (`LCS_STYLE_PROFILE`).
+**Clonar este patrón** en cualquier LCS 440/230; no inventar layouts por id.
+
+## Topología visual
+
+```
+ABT → TRF (ancho = vano VS230+VS440; 2 bajantes)
+        ├─ QVS-230 → [230 espejo] NV—QNV—VM—QVM—VS
+        └─ QVS-440 → [440]         VS—QVM—VM—QNV—NV
+```
+
+## Checklist visual (referencia)
+
+- 230 izq. (`lcs440-rail--mirror`) / 440 der.; barras 230 bronce, 440 azul-gris.
+- Chasis `.equip-chassis--lcs`: **padding izq = der = 0.55rem** (barras no pegan al borde).
+- TRF `hbus-drop--dual-feed`: `--trf-out-*` / `--trf-stub-h` con **corrección de zoom**.
+- Salidas = `EquipmentBusDrop` + `hbus--lcs-section` (NORM/ALT como MSB).
+- Globo equipo: mismos campos MSB + **Local siempre** (datos: Excel + Main Equipment Report).
+- Etiqueta chasis a la izquierda; expandir `440/230`.
+
+## Cómo clonar otro LCS
+
+1. Chain + equipment + circuits en `abtDownstream.json` (Excel 440/230).
+2. Locals: `node scripts/fill-lcs-locals.mjs` si col. K viene NaN.
+3. P/Q/S/Ib: `node scripts/enrich-lcs-balloon-fields.mjs`.
+4. UI: `<LcsDualView lcsId="LCS-…" />` — sin vista nueva.
+5. CSS/tokens: `LCS_LAYOUT_TOKENS` + `.lcs-dual` / `.lcs440-*` / `.equip-chassis--lcs`.
+
+## No hacer
+
+- CSS o componente hardcodeado a un solo `LCS-…`.
+- Padding izquierdo 0 en el chasis; una sola bajante TRF si hay 230+440.
+- Medir geometría TRF/QVS sin dividir por zoom del unifilar.
+- Cambiar layout MSB (`msb-690-frozen.mdc`).

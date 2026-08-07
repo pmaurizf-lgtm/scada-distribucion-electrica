@@ -96,12 +96,8 @@ export function EquipmentBalloon({
         <dd>{equipment.name}</dd>
         <dt>Tipo</dt>
         <dd>{KIND_LABEL[equipment.kind] ?? equipment.kind}</dd>
-        {equipment.local && (
-          <>
-            <dt>Local</dt>
-            <dd>{equipment.local}</dd>
-          </>
-        )}
+        <dt>Local</dt>
+        <dd>{equipment.local?.trim() ? equipment.local : '—'}</dd>
         {equipment.voltage && (
           <>
             <dt>Tensión</dt>
@@ -163,6 +159,25 @@ export function EquipmentBalloon({
               <span className={`badge badge--svc-${primary.service}`}>
                 {primary.service}
               </span>
+            </dd>
+          </>
+        )}
+        {primary?.circuitRef && (
+          <>
+            <dt>Ref. circuito</dt>
+            <dd>{primary.circuitRef}</dd>
+          </>
+        )}
+        {(primary?.parallelCables != null || primary?.cableSection) && (
+          <>
+            <dt>Cable</dt>
+            <dd>
+              {primary.parallelCables != null ? `${primary.parallelCables}×` : ''}
+              {primary.cableSection ?? '—'}
+              {primary.cableSection &&
+              !String(primary.cableSection).includes('mm')
+                ? ' mm²'
+                : ''}
             </dd>
           </>
         )}

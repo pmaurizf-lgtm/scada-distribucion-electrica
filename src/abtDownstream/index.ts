@@ -9,6 +9,7 @@ export type {
   LoadCenterVoltage,
   LcsBoardModel,
   LcsOutlet,
+  LcsParallelIncoming,
   LcsSection,
   LcsVoltageBus,
 } from './types'
@@ -30,3 +31,14 @@ export {
   type TrfPhase,
   type TrfWindingLeg,
 } from './merge'
+
+export {
+  LCS_STYLE_PROFILE,
+  LCS_LAYOUT_TOKENS,
+  LCS_BUS_COLORS,
+  LCS_VOLTAGE_LAYOUT,
+  LCS_SERVICE_ORDER,
+  LCS_FEED_STYLE,
+  LCS_BALLOON_FIELDS,
+  type LcsStyleProfile,
+} from './lcsBoardStyle'
