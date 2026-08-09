@@ -11,11 +11,16 @@ import { system690 } from '../data/system690'
 import type { Circuit, Equipment, ProtectionState, ServiceClass } from '../types'
 import {
   incomingFeeds,
-  isAbtToTransformerFeed,
+  is24VCircuit,
+  isAbtOutgoingFeed,
+  isAux24Feed,
   isLcsOutletFeed,
+  isMsb24Equipment,
   isParallelLcsTopFeed,
+  isPendingFeed,
   isTrfToLcsQvsFeed,
   lineBadge,
+  msb24SourceForAuxOrigin,
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
 import {
@@ -23,7 +28,7 @@ import {
   normalizeLcsBusVoltage,
 } from '../utils/upstream'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
-import { CircuitBalloon } from './CircuitBalloon'
+import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 
 interface SearchTreeViewProps {
@@ -42,11 +47,17 @@ function eqById(id: string): Equipment | undefined {
   return system690.equipment.find((e) => e.id === id)
 }
 
-/** Nodos del cuadro principal (tope del árbol de búsqueda) */
+/**
+ * Tope del árbol de búsqueda (aguas arriba).
+ * - MSB-6PWS*: cuadro 690 V (sin generadores / QG*).
+ * - PNL-MSB*: no es tope — se sube al MSB por el BUS virtual.
+ * - 24 V ALT/AUX: tope MSB-24 en `upstreamEdges` / `capAtMsb24`.
+ */
 function isMainBoardNode(id: string): boolean {
-  if (/^PNL-MSB/i.test(id) || /^MSB-6PWS/i.test(id)) return true
+  if (/^MSB-6PWS/i.test(id)) return true
+  if (/^PNL-MSB/i.test(id)) return false
   const eq = eqById(id)
-  return eq?.kind === 'cuadro_principal' || eq?.kind === 'generador'
+  return eq?.kind === 'generador'
 }
 
 /** Origen por encima del cuadro (generadores / QG*) */
@@ -58,7 +69,19 @@ function isGeneratorSide(circuit: Circuit): boolean {
 
 /** Enlace continuo sin chip (ABT→TRF o TRF→LCS vía QVS). */
 function isThruFeed(circuit: Circuit): boolean {
-  return isAbtToTransformerFeed(circuit) || isTrfToLcsQvsFeed(circuit)
+  return isAbtOutgoingFeed(circuit) || isTrfToLcsQvsFeed(circuit)
+}
+
+/**
+ * 24 V alternativa / AUX / pendiente: no subir por encima del MSB-24.
+ * 24 V normal (potencia): desarrollo completo (RCT, LCS…).
+ */
+function feedCapsAtMsb24(circuit: Circuit): boolean {
+  if (isAux24Feed(circuit)) return true
+  if (!is24VCircuit(circuit)) return false
+  return (
+    circuit.lineType === 'alternativa' || isPendingFeed(circuit)
+  )
 }
 
 /**
@@ -66,12 +89,19 @@ function isThruFeed(circuit: Circuit): boolean {
  * No incluye generadores ni QG*. Las QS* paralelas no suben como padres del
  * LCS: viven con QVS en la barra VS bajo el cuadro.
  * `viaVoltage` mantiene la barra LCS (440 vs 230).
+ * 24 V: NORM completa; ALT/AUX tope en MSB-24PWxxxx.
+ * 690 / 440 / 230 no se recortan.
  */
 function upstreamEdges(
   equipmentId: string,
   viaVoltage?: string | null,
+  capAtMsb24 = false,
+  /** Mostrar acometidas AUX (solo el nodo objetivo del árbol). */
+  includeAuxFeeds = false,
 ): Circuit[] {
   if (isMainBoardNode(equipmentId)) return []
+  // ALT/AUX 24 V: hoja en el cuadro principal 24 V
+  if (capAtMsb24 && isMsb24Equipment(equipmentId)) return []
 
   const all = system690.circuits.filter(
     (c) =>
@@ -89,7 +119,11 @@ function upstreamEdges(
       }
       return a.lineType === 'normal' ? -1 : 1
     })
-  const base = real.length > 0 ? real : all.filter((c) => c.virtual)
+  let base = real.length > 0 ? real : all.filter((c) => c.virtual)
+  // No abrir AUX en nodos intermedios (solo en el equipo buscado)
+  if (!includeAuxFeeds && !capAtMsb24) {
+    base = base.filter((c) => !isAux24Feed(c))
+  }
   return filterFeedsByBusVoltage(base, viaVoltage)
 }
 
@@ -127,7 +161,8 @@ function BreakerMini({
       className={`casc-brk casc-brk--compact${state ? ` casc-brk--${state}` : ''}${flowing ? ' casc-brk--flow' : ''}${locked ? ' casc-brk--locked' : ''}`}
       data-circuit-id={circuit.id}
       onClick={onClick}
-      title={`${circuit.protectionName} · ${circuit.lineType} · mantén el puntero para ver detalles`}
+      aria-label={`${circuit.protectionName} · ${circuit.lineType}`}
+      title={onHoverInfo ? undefined : `${circuit.protectionName} · ${circuit.lineType}`}
       onMouseEnter={(e) => {
         if (!onHoverInfo) return
         clearHoverTimer()
@@ -155,11 +190,18 @@ function EquipCard({
   live,
   highlight,
   compact,
+  /** MSB-24 en rama ALT/AUX: doble clic para expandir/plegar aguas arriba. */
+  capExpandable,
+  capExpanded,
+  onToggleCapExpand,
 }: {
   equipment: Equipment
   live?: boolean
   highlight?: boolean
   compact?: boolean
+  capExpandable?: boolean
+  capExpanded?: boolean
+  onToggleCapExpand?: () => void
 }) {
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
@@ -191,10 +233,24 @@ function EquipCard({
   return (
     <div
       ref={wrapRef}
-      className={`stree-eq${compact ? ' stree-eq--compact' : ''}${live ? ' stree-eq--live' : ''}${highlight ? ' stree-eq--target' : ''}`}
+      className={`stree-eq${compact ? ' stree-eq--compact' : ''}${live ? ' stree-eq--live' : ''}${highlight ? ' stree-eq--target' : ''}${capExpandable ? ' stree-eq--cap' : ''}${capExpanded ? ' stree-eq--cap-open' : ''}`}
       data-equip={equipment.id}
+      aria-label={
+        capExpandable
+          ? capExpanded
+            ? 'Doble clic para plegar la rama ALT/AUX 24 V'
+            : 'Doble clic para expandir aguas arriba (ALT/AUX 24 V)'
+          : undefined
+      }
       onMouseEnter={() => setEqHover(true)}
       onMouseLeave={() => setEqHover(false)}
+      onDoubleClick={(e) => {
+        if (!capExpandable || !onToggleCapExpand) return
+        e.preventDefault()
+        e.stopPropagation()
+        setShowEqBalloon(false)
+        onToggleCapExpand()
+      }}
     >
       <span className="stree-eq__sym">{symbolFor(equipment.kind)}</span>
       <strong className="stree-eq__id">{equipment.id}</strong>
@@ -202,6 +258,11 @@ function EquipCard({
         <span className="stree-eq__dcp">{equipment.dcp10Id}</span>
       )}
       {!compact && <span className="stree-eq__name">{equipment.name}</span>}
+      {capExpandable && (
+        <span className="stree-eq__cap-hint" aria-hidden>
+          {capExpanded ? '▴' : '▾'}
+        </span>
+      )}
       {showEqBalloon && (
         <EquipmentBalloon
           equipment={equipment}
@@ -308,7 +369,10 @@ function useLcsOutletPath(outlet: Circuit) {
 function LcsOutletBranch({
   outlet,
   viaVoltage,
+  capAtMsb24 = false,
   visited,
+  expandedCapIds,
+  onToggleCapExpand,
   protectionStatus,
   lockedCircuits,
   energizedCircuitIds,
@@ -319,7 +383,10 @@ function LcsOutletBranch({
 }: {
   outlet: Circuit
   viaVoltage?: string | null
+  capAtMsb24?: boolean
   visited: Set<string>
+  expandedCapIds: ReadonlySet<string>
+  onToggleCapExpand: (id: string) => void
   protectionStatus: Record<string, ProtectionState>
   lockedCircuits: Set<string>
   energizedCircuitIds: Set<string>
@@ -344,7 +411,10 @@ function LcsOutletBranch({
         <TreeNode
           equipmentId={outlet.originId}
           viaVoltage={outlet.voltage ?? viaVoltage}
+          capAtMsb24={capAtMsb24}
           visited={visited}
+          expandedCapIds={expandedCapIds}
+          onToggleCapExpand={onToggleCapExpand}
           protectionStatus={protectionStatus}
           lockedCircuits={lockedCircuits}
           energizedCircuitIds={energizedCircuitIds}
@@ -389,7 +459,10 @@ function LcsOutletBranch({
           <TreeNode
             equipmentId={outlet.originId}
             viaVoltage={outlet.voltage ?? viaVoltage}
+            capAtMsb24={capAtMsb24}
             visited={visited}
+            expandedCapIds={expandedCapIds}
+            onToggleCapExpand={onToggleCapExpand}
             protectionStatus={protectionStatus}
             lockedCircuits={lockedCircuits}
             energizedCircuitIds={energizedCircuitIds}
@@ -471,7 +544,11 @@ function TreeNode({
   equipmentId,
   isTarget,
   viaVoltage,
+  /** Rama 24 V ALT/AUX: tope en MSB-24 salvo expansión por doble clic. */
+  capAtMsb24 = false,
   visited,
+  expandedCapIds,
+  onToggleCapExpand,
   protectionStatus,
   lockedCircuits,
   energizedCircuitIds,
@@ -484,7 +561,10 @@ function TreeNode({
   isTarget?: boolean
   /** Tensión del tramo por el que se llegó (continúa barra 440/230). */
   viaVoltage?: string | null
+  capAtMsb24?: boolean
   visited: Set<string>
+  expandedCapIds: ReadonlySet<string>
+  onToggleCapExpand: (id: string) => void
   protectionStatus: Record<string, ProtectionState>
   lockedCircuits: Set<string>
   energizedCircuitIds: Set<string>
@@ -494,9 +574,17 @@ function TreeNode({
   onHoverInfoEnd?: () => void
 }) {
   const equipment = eqById(equipmentId)
+  const capExpanded =
+    capAtMsb24 &&
+    isMsb24Equipment(equipmentId) &&
+    expandedCapIds.has(equipmentId)
+  /** Tope activo hasta que el usuario expande este MSB-24. */
+  const effectivelyCapped =
+    capAtMsb24 && !(isMsb24Equipment(equipmentId) && capExpanded)
   const feeds = useMemo(
-    () => upstreamEdges(equipmentId, viaVoltage),
-    [equipmentId, viaVoltage],
+    () =>
+      upstreamEdges(equipmentId, viaVoltage, effectivelyCapped, isTarget),
+    [equipmentId, viaVoltage, effectivelyCapped, isTarget],
   )
 
   if (!equipment) return null
@@ -514,6 +602,7 @@ function TreeNode({
   nextVisited.add(equipmentId)
 
   const dual = feeds.length > 1
+  const capExpandable = capAtMsb24 && isMsb24Equipment(equipmentId)
 
   return (
     <div
@@ -528,6 +617,15 @@ function TreeNode({
               const isAlt = feed.lineType === 'alternativa'
               const thru = isThruFeed(feed)
               const showLcsRail = isLcsOutletFeed(feed)
+              const feedIsAux = isAux24Feed(feed)
+              // Heredar tope ALT/AUX hasta el MSB-24; al expandirlo, NORM (RCT…) sigue completa
+              const nextCap =
+                feedCapsAtMsb24(feed) ||
+                (capAtMsb24 && !isMsb24Equipment(equipmentId))
+              // AUX: saltar SSB-24 intermedio → hoja MSB-24PWxxxx
+              const parentId = feedIsAux
+                ? msb24SourceForAuxOrigin(system690, feed.originId)
+                : feed.originId
 
               if (showLcsRail) {
                 return (
@@ -538,7 +636,10 @@ function TreeNode({
                     <LcsOutletBranch
                       outlet={feed}
                       viaVoltage={viaVoltage}
+                      capAtMsb24={nextCap}
                       visited={nextVisited}
+                      expandedCapIds={expandedCapIds}
+                      onToggleCapExpand={onToggleCapExpand}
                       protectionStatus={protectionStatus}
                       lockedCircuits={lockedCircuits}
                       energizedCircuitIds={energizedCircuitIds}
@@ -554,12 +655,15 @@ function TreeNode({
               return (
                 <div
                   key={feed.id}
-                  className={`stree-branch${isAlt ? ' stree-branch--alt' : ' stree-branch--norm'}`}
+                  className={`stree-branch${isAlt ? ' stree-branch--alt' : ' stree-branch--norm'}${feedIsAux ? ' stree-branch--aux' : ''}`}
                 >
                   <TreeNode
-                    equipmentId={feed.originId}
+                    equipmentId={parentId}
                     viaVoltage={feed.voltage ?? viaVoltage}
+                    capAtMsb24={nextCap}
                     visited={nextVisited}
+                    expandedCapIds={expandedCapIds}
+                    onToggleCapExpand={onToggleCapExpand}
                     protectionStatus={protectionStatus}
                     lockedCircuits={lockedCircuits}
                     energizedCircuitIds={energizedCircuitIds}
@@ -582,9 +686,9 @@ function TreeNode({
                           onHoverInfoEnd={onHoverInfoEnd}
                         />
                         <span
-                          className={`stree-branch__tag${isAlt ? ' stree-branch__tag--alt' : ''}`}
+                          className={`stree-branch__tag${isAlt ? ' stree-branch__tag--alt' : ''}${feedIsAux ? ' stree-branch__tag--aux' : ''}`}
                         >
-                          {lineBadge(feed.lineType)}
+                          {feedIsAux ? 'AUX' : lineBadge(feed.lineType)}
                         </span>
                       </>
                     ) : feed.virtual ? (
@@ -628,6 +732,13 @@ function TreeNode({
           equipment={equipment}
           live={energizedEquipmentIds.has(equipment.id)}
           highlight={isTarget}
+          capExpandable={capExpandable}
+          capExpanded={capExpanded}
+          onToggleCapExpand={
+            capExpandable
+              ? () => onToggleCapExpand(equipmentId)
+              : undefined
+          }
         />
       </div>
     </div>
@@ -643,7 +754,9 @@ export function SearchTreeView({
   energizedEquipmentIds,
   onBreaker,
 }: SearchTreeViewProps) {
-  const direct = upstreamEdges(equipmentId).filter((c) => !c.virtual)
+  const direct = upstreamEdges(equipmentId, null, false, true).filter(
+    (c) => !c.virtual,
+  )
   const realInTrace = trace.circuits.filter(
     (c) => !c.virtual && !isGeneratorSide(c),
   ).length
@@ -653,12 +766,30 @@ export function SearchTreeView({
     left: number
     top: number
   } | null>(null)
+  /** MSB-24 en ramas ALT/AUX expandidos por doble clic. */
+  const [expandedCapIds, setExpandedCapIds] = useState<Set<string>>(
+    () => new Set(),
+  )
+
+  useEffect(() => {
+    setExpandedCapIds(new Set())
+  }, [equipmentId])
+
+  const toggleCapExpand = (id: string) => {
+    setExpandedCapIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const showBreakerInfo = (circuit: Circuit, rect: DOMRect) => {
+    const { x, y } = placeCircuitBalloon(rect)
     setBrkBalloon({
       circuit,
-      left: rect.right + 8,
-      top: Math.max(8, rect.top),
+      left: x,
+      top: y,
     })
   }
 
@@ -667,10 +798,12 @@ export function SearchTreeView({
       <header className="stree__head">
         <h3>Árbol de alimentaciones · {equipmentId}</h3>
         <p>
-          Del cuadro principal hacia abajo (sin generadores ni QG*). Misma
-          filosofía en 440 V y 230 V: QVS (y QS* paralela, si existe) alimentan
-          VS bajo el LCS; QVM/VM y QNV/NV solo si el equipo está en esa barra.
-          El equipo aparece una sola vez
+          Del cuadro principal (MSB-6PWS) hacia abajo, sin generadores ni QG*.
+          Los paneles PNL-MSB suben al MSB por el BUS. Misma filosofía en 440 V
+          y 230 V: QVS (y QS* paralela, si existe) alimentan VS bajo el LCS;
+          QVM/VM y QNV/NV solo si el equipo está en esa barra. En 24 V: NORM
+          completa; ALT y AUX hasta el MSB-24PWxxxx (doble clic en ese cuadro
+          para expandir aguas arriba). El equipo aparece una sola vez
           {direct.length > 1
             ? ` · ${direct.length} alimentaciones NORM/ALT convergentes`
             : ''}
@@ -683,6 +816,8 @@ export function SearchTreeView({
           equipmentId={equipmentId}
           isTarget
           visited={new Set()}
+          expandedCapIds={expandedCapIds}
+          onToggleCapExpand={toggleCapExpand}
           protectionStatus={protectionStatus}
           lockedCircuits={lockedCircuits}
           energizedCircuitIds={energizedCircuitIds}

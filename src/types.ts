@@ -31,6 +31,11 @@ export interface Equipment {
    * `id` es la denominación PUMA (cols I / E).
    */
   dcp10Id?: string
+  /**
+   * Interruptor de entrada del cuadro (Excel «Incoming Power Switch», p. ej. INS 160).
+   * Típico en SSB 440 V aguas abajo del LCS.
+   */
+  incomingSwitch?: string
 }
 
 export interface Circuit {

@@ -1,6 +1,6 @@
 ---
-description: Extensión aguas abajo de ABT (TRF → LCS 440/230) — módulo aislado del MSB
-globs: src/abtDownstream/**/*,src/components/LcsDualView.tsx,src/data/abtDownstream.json
+description: Extensión aguas abajo de ABT (TRF → LCS 440/230 → SSB) — módulo aislado del MSB
+globs: src/abtDownstream/**/*,src/components/LcsDualView.tsx,src/components/SsbBoardView.tsx,src/data/abtDownstream.json
 alwaysApply: false
 ---
 
@@ -8,16 +8,34 @@ alwaysApply: false
 
 ```
 ABT-…  →  TRF-… (690/440-230)  →  LCS dual
-                              ├─ 230 V (izq., espejo)
-                              └─ 440 V (der.)
+                              ├─ 230 V (izq., espejo) → SSB-2PWS… / Lighting (2LGS·2ELG·2LGE)
+                              └─ 440 V (der.) → SSB-4PWS… / CCM / FAC / cargas
+                                   SSB: INS (no motorizado) → barra → salidas
+                                   SSB especiales 440 (p. ej. 4PWS1130):
+                                     Q03 → UPS → Q03-01/02 (115 V)
+                                     Q04 → TRF 440→115 → Q04-01 → BUS-*-115 → Q51…
 ```
 
 ## Reglas
 
-- Lógica/UI de la cadena en `src/abtDownstream/` + `LcsDualView.tsx`.
-- Datos 440/230 en `src/data/abtDownstream.json` (fuente Excel), no inventar en `system690.json`.
-- **Estilo LCS**: plantilla `LCS-4PWS0001` v2026-08-07 en `lcsBoardStyle.ts` + regla `lcs-dual-style.mdc` — clonar en todo LCS nuevo.
-- UI: TRF con 2 bajantes (QVS-230 / QVS-440) si hay ambas tensiones; sync con corrección de zoom.
-- Energía: salidas VM/NV solo con QVM/QNV cerrado.
-- No tocar layout MSB / bus-tie / RESPETO / núcleo `energyFlow` (ver `msb-690-frozen.mdc`).
+- Lógica/UI: `src/abtDownstream/` + `LcsDualView.tsx` + `SsbBoardView.tsx`.
+- Datos 440/230 en `src/data/abtDownstream.json` (Excel), no inventar en `system690.json`.
+- SSB: `incomingSwitch` (INS xxx **o** NSX de cabecera) + circuito `notes: ssb-incoming`; UI entrada → barra → salidas; chips no motorizados (NG125/iC60/INS; NSX … NA).
+- SSB con trafo interno 115 V: Excel suele cerrar ciclo TRF→SSB; el import materializa `BUS-SSB-*-115` (`notes: ssb-115-bus`) y reparenta Q5x. UI: al expandir el TRF se ve Q0n-01 + barra 115 + salidas.
+- Paneles 440 V (CCM-VEMS, FAC-VENT, FCP/FUP/UCP-ACON): doble acometida VS+NV → NORM/ALT (NV = alternativa). Interior: barra horizontal + salidas (como SSB, sin INS).
+- Downstream LCS **440 / 230 / Lighting**: mismos scripts parametrizados por LCS:
+  - `node scripts/import-lcs0001-downstream-440.mjs LCS-4PWS000N`
+  - `node scripts/import-lcs0001-downstream-230.mjs LCS-4PWS000N`
+  - `node scripts/import-lcs0001-downstream-lighting.mjs LCS-4PWS000N`
+  - Lote 0002…0006: `node scripts/import-lcs-downstream-all.mjs`
+- Relleno global (TRF→SSB 230/115, destinos faltantes, paneles): `node scripts/import-downstream-fill.mjs`
+- Sistema 24 V: `node scripts/import-24v-power.mjs` (Excel sheet6). Cadena `SSB-4PWS → RCT-24PW → MSB-24PW → SSB-24PW → cargas`.
+  - RCT→MSB = `normal`; MSB↔MSB (cualquier Q) = `alternativa` (`notes: msb24-interconnect`); no anidar peers MSB como salidas.
+  - MSB 0003–0006: 1 NORM + 2 ALT. Col. M en el resto (p. ej. PSP-GMDS ALT desde SSB-24).
+  - **AUX 24 V** (`notes: aux-24`): LCS, CCM, panel 0 MSB, y **cualquier** 24 V a un equipo que ya tenga acometida 690/440/230/115 (p. ej. STA-SWFS/STA-CIS, CWP, CBX, PSP…). Perna superior estilo remota a la izquierda de ALT/NORM (`--line-aux`), cartel «AUX 24 V»; no es ALT de potencia; no desarrollar bajo el alimentador 24 V; no energiza barra de potencia.
+- SSB especiales (p. ej. `SSB-2PWS2209` y topologías atípicas): import genérico primero; afinar después.
+  - `SSB-2PWS2209`: multi-barra (`scripts/import-ssb-2pws2209.mjs`). QN→SALIDAS 1; QA→Q0T-II; Q0T-I+II→SALIDAS 2; Q03→Q03.01…09; S2→Q01/UPS/Q02 + Q05 → SALIDAS 3 (Q05.1…15) + Q04. UI: `Ssb2209BoardView`.
+  - **Acometida 4Q08→QN congelada**: eje CSS col `3.6rem` (QN + tops); puente vertical `.ssb2209-acometida-bridge`. No `--ssb2209-tops-ml`. Ver `ssb-2209-acometida-frozen.mdc`.
+- Energía: VM/NV con QVM/QNV cerrado; salidas SSB con INS cerrado.
+- No tocar layout MSB (ver `msb-690-frozen.mdc`).
 - UX: clic = conmutar; globo ~1,8 s; doble clic expandir.

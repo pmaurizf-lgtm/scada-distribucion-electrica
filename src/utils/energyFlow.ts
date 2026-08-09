@@ -3,6 +3,7 @@ import {
   allSectionCouplers,
   boardFromOrigin,
   halfFromPanel,
+  isAux24Feed,
 } from './cascadeModel'
 
 const QT_NAMES = new Set(['QT1B', 'QT2A'])
@@ -179,6 +180,12 @@ export function computeEnergyFlow(
       // Circuito real (QG, salidas, etc.): solo si el interruptor está cerrado
       if (protectionStatus[circuit.id] !== 'cerrada') continue
 
+      // AUX 24 V (maniobra LCS / panel 0 MSB): fluye el circuito, no la barra.
+      if (isAux24Feed(circuit)) {
+        energizedCircuitIds.add(circuit.id)
+        continue
+      }
+
       // LCS: salidas VM/NV requieren QVM/QNV cerrado (como QBT entre mitades MSB)
       if (
         circuit.originId.startsWith('LCS-') &&
@@ -192,6 +199,28 @@ export function computeEnergyFlow(
           (c) => c.protectionName === needName,
         )
         if (coupler && protectionStatus[coupler.id] !== 'cerrada') continue
+      }
+
+      // SSB: salidas requieren interruptor de entrada cerrado (INS / NSX cabecera).
+      // Excepción: acometida ALT propia (p. ej. QA en SSB-2PWS2209) no depende de QN.
+      if (
+        circuit.originId.startsWith('SSB-') &&
+        circuit.notes !== 'ssb-incoming' &&
+        circuit.notes !== 'ssb-2209-qa' &&
+        !/^INS\s*\d/i.test(circuit.protectionName) &&
+        !(
+          circuit.destinationId.startsWith('BUS-') &&
+          /^NSX\b/i.test(circuit.protectionName)
+        )
+      ) {
+        const ins = (byOrigin.get(circuit.originId) ?? []).find(
+          (c) =>
+            c.notes === 'ssb-incoming' ||
+            (c.destinationId.startsWith('BUS-') &&
+              (/^INS\s*\d{2,3}$/i.test(c.protectionName) ||
+                /^NSX\b/i.test(c.protectionName))),
+        )
+        if (ins && protectionStatus[ins.id] !== 'cerrada') continue
       }
 
       energizedCircuitIds.add(circuit.id)

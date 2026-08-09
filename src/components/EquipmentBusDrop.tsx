@@ -9,11 +9,16 @@ import {
 import { system690 } from '../data/system690'
 import type { Circuit, Equipment, ProtectionState } from '../types'
 import {
+  aux24FeedsForEquipment,
+  foldedLcsQvsLegs,
   incomingFeeds,
+  isAux24Feed,
   isPendingFeed,
   lineBadge,
+  pairedRemoteFeeds,
 } from '../utils/cascadeModel'
 import { isSpareEquipment } from '../utils/spareCircuits'
+import { Aux24Incoming } from './Aux24Incoming'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBalloon } from './EquipmentBalloon'
 
@@ -100,30 +105,31 @@ export function EquipmentBusDrop({
   children,
 }: EquipmentBusDropProps) {
   const spare = isSpareEquipment(equipment) || !!circuit.spare
-  const feeds = useMemo(
-    () => (spare ? [circuit] : incomingFeeds(system690, equipment.id)),
-    [spare, circuit, equipment.id],
-  )
+  const feeds = useMemo(() => {
+    const all = spare ? [circuit] : incomingFeeds(system690, equipment.id)
+    // AUX 24 V se muestra aparte (LCS/MSB/CCM); no cuenta como pierna NORM/ALT
+    if (isAux24Feed(circuit)) return [circuit]
+    return all.filter((c) => !isAux24Feed(c))
+  }, [spare, circuit, equipment.id])
   const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
-  /**
-   * Doble alimentación: hay ALT o pendiente en el destino.
-   * - Vista desde NORM → muestra patas remotas ALT / pendiente.
-   * - Vista desde ALT (o pendiente) → también la NORM remota.
-   * Varios NORM sin ALT (p. ej. TBX bajo dos LCS) no son doble acometida.
-   */
-  const isDualDestination = feeds.some(
-    (c) => c.lineType === 'alternativa' || isPendingFeed(c),
+  const aux24Feeds = useMemo(
+    () =>
+      isAux24Feed(circuit)
+        ? []
+        : aux24FeedsForEquipment(system690, equipment.id),
+    [circuit, equipment.id],
   )
-  const localIsAltSide =
-    localFeed.lineType === 'alternativa' || isPendingFeed(localFeed)
-  const remoteFeeds = isDualDestination
-    ? feeds.filter((c) => {
-        if (c.id === localFeed.id) return false
-        if (c.lineType === 'alternativa' || isPendingFeed(c)) return true
-        return localIsAltSide && c.lineType === 'normal'
-      })
-    : []
-  const dual = remoteFeeds.length > 0
+  /**
+   * Multi-acometida: empareja NORM↔ALT de *esta* acometida (no todas las
+   * paralelas al mismo destino: p. ej. PWP-GENS con 3×NORM+3×ALT).
+   */
+  const remoteFeeds = pairedRemoteFeeds(feeds, localFeed)
+  /** LCS plegado: QVS-230 + QVS-440 (ambas NORM desde el mismo TRF). */
+  const qvsLegs = useMemo(
+    () => foldedLcsQvsLegs(feeds, localFeed),
+    [feeds, localFeed],
+  )
+  const dual = remoteFeeds.length > 0 || (qvsLegs != null && qvsLegs.length > 1)
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
@@ -141,19 +147,25 @@ export function EquipmentBusDrop({
   }, [eqHover])
 
   const displayFeeds = useMemo(
-    () => [localFeed, ...remoteFeeds],
-    [localFeed, remoteFeeds],
+    () => (qvsLegs != null ? [...qvsLegs, ...remoteFeeds] : [localFeed, ...remoteFeeds]),
+    [localFeed, remoteFeeds, qvsLegs],
   )
 
-  const feedSummaries = useMemo(
-    () =>
-      displayFeeds.map((f) => ({
-        name: f.protectionName,
-        lineType: f.lineType,
-        originId: f.originId,
-      })),
-    [displayFeeds],
-  )
+  const feedSummaries = useMemo(() => {
+    const list = displayFeeds.map((f) => ({
+      name: f.protectionName,
+      lineType: f.lineType,
+      originId: f.originId,
+    }))
+    for (const aux of aux24Feeds) {
+      list.push({
+        name: `${aux.protectionName} (AUX 24 V)`,
+        lineType: aux.lineType,
+        originId: aux.originId,
+      })
+    }
+    return list
+  }, [displayFeeds, aux24Feeds])
 
   const toggleExpand = (e: ReactMouseEvent) => {
     if (!canExpand || !onToggleExpand) return
@@ -215,7 +227,7 @@ export function EquipmentBusDrop({
           }}
         />
         <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
-        {dual && (
+        {(dual || aux24Feeds.length > 0) && (
           <span
             className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
           >
@@ -230,13 +242,16 @@ export function EquipmentBusDrop({
     )
   }
 
+  const hasAuxTops = aux24Feeds.length > 0
+  const showTops = !linkOnlyFromParent || hasAuxTops
+
   return (
     <div
-      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${linkOnlyFromParent ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}${rootClassName ? ` ${rootClassName}` : ''}`}
+      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual || hasAuxTops ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${linkOnlyFromParent ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}${rootClassName ? ` ${rootClassName}` : ''}`}
       data-equip={equipment.id}
       data-locate={located ? '1' : undefined}
       data-circuit-id={localFeed.id}
-      title={
+      aria-label={
         spare
           ? `${localFeed.protectionName} · RESPETO (reserva)`
           : canExpand
@@ -245,67 +260,88 @@ export function EquipmentBusDrop({
       }
       onDoubleClick={toggleExpand}
     >
-      {linkOnlyFromParent ? null : (
+      {showTops ? (
         <div className="hbus-drop__tops">
-          {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
-          {renderLeg(localFeed, 'local')}
+          {aux24Feeds.map((aux) => (
+            <Aux24Incoming
+              key={aux.id}
+              circuit={aux}
+              protectionStatus={protectionStatus}
+              energizedCircuitIds={energizedCircuitIds}
+              lockedCircuits={lockedCircuits}
+              onLocalBreaker={onLocalBreaker}
+              onJumpToCircuit={onJumpToCircuit}
+              onHoverInfo={onHoverInfo}
+              onHoverInfoEnd={onHoverInfoEnd}
+            />
+          ))}
+          {!linkOnlyFromParent && (
+            <>
+              {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
+              {qvsLegs != null
+                ? qvsLegs.map((qvs) => renderLeg(qvs, 'local'))
+                : renderLeg(localFeed, 'local')}
+            </>
+          )}
         </div>
-      )}
+      ) : null}
 
-      <div
-        ref={eqWrapRef}
-        className="hbus-drop__eq-wrap"
-        onMouseEnter={() => setEqHover(true)}
-        onMouseLeave={() => setEqHover(false)}
-      >
-        <button
-          type="button"
-          className={`hbus-drop__eq hbus-drop__eq--fam-${equipFam}${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
-          data-equip={equipment.id}
-          title={
-            spare
-              ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
-              : canExpand
-                ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
-                : undefined
-          }
-          onClick={(e) => e.stopPropagation()}
-          onDoubleClick={toggleExpand}
-          disabled={!canExpand}
+      <div className="hbus-drop__eq-row">
+        <div
+          ref={eqWrapRef}
+          className="hbus-drop__eq-wrap"
+          onMouseEnter={() => setEqHover(true)}
+          onMouseLeave={() => setEqHover(false)}
         >
-          <span className="hbus-drop__sym">
-            {spare ? 'R' : symbolFor(equipment.kind)}
-          </span>
-          <span className="hbus-drop__id">
-            {spare ? localFeed.protectionName : equipment.id}
-          </span>
-          {!spare && equipment.dcp10Id && (
-            <span className="hbus-drop__dcp" title="Denominación DCP-10">
-              {equipment.dcp10Id}
+          <button
+            type="button"
+            className={`hbus-drop__eq hbus-drop__eq--fam-${equipFam}${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
+            data-equip={equipment.id}
+            aria-label={
+              spare
+                ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
+                : canExpand
+                  ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
+                  : undefined
+            }
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={toggleExpand}
+            disabled={!canExpand}
+          >
+            <span className="hbus-drop__sym">
+              {spare ? 'R' : symbolFor(equipment.kind)}
             </span>
-          )}
-          <span className="hbus-drop__name">
-            {spare ? 'RESPETO' : equipment.name}
-          </span>
-          {bankNote && (
-            <span className="hbus-drop__bank" title={bankNote}>
-              690/440-230
+            <span className="hbus-drop__id">
+              {spare ? localFeed.protectionName : equipment.id}
             </span>
-          )}
-          {canExpand && (
-            <span className="hbus-drop__more">
-              {expandLabel ?? `${expanded ? '▴' : '▾'}`}
+            {!spare && equipment.dcp10Id && (
+              <span className="hbus-drop__dcp" title="Denominación DCP-10">
+                {equipment.dcp10Id}
+              </span>
+            )}
+            <span className="hbus-drop__name">
+              {spare ? 'RESPETO' : equipment.name}
             </span>
+            {bankNote && (
+              <span className="hbus-drop__bank" title={bankNote}>
+                690/440-230
+              </span>
+            )}
+            {canExpand && (
+              <span className="hbus-drop__more">
+                {expandLabel ?? `${expanded ? '▴' : '▾'}`}
+              </span>
+            )}
+          </button>
+          {showEqBalloon && (
+            <EquipmentBalloon
+              equipment={equipment}
+              feeds={feedSummaries}
+              circuits={displayFeeds}
+              anchorRef={eqWrapRef}
+            />
           )}
-        </button>
-        {showEqBalloon && (
-          <EquipmentBalloon
-            equipment={equipment}
-            feeds={feedSummaries}
-            circuits={displayFeeds}
-            anchorRef={eqWrapRef}
-          />
-        )}
+        </div>
       </div>
 
       {children}

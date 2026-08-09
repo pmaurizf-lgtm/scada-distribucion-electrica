@@ -1,3 +1,8 @@
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { createPortal } from 'react-dom'
 import type { Circuit, ProtectionState } from '../types'
 import { dcp10Of } from '../data/system690'
@@ -8,7 +13,7 @@ interface CircuitBalloonProps {
   x: number
   y: number
   onClose: () => void
-  /** Si true, se ancla en viewport (portal) — vista de búsqueda */
+  /** Si true, se ancla en viewport (portal) — planta y árbol */
   fixed?: boolean
 }
 
@@ -35,6 +40,30 @@ function DenomPair({ pumaId }: { pumaId: string }) {
   )
 }
 
+const VIEW_PAD = 10
+
+/** Coloca el globo en viewport sin salir por bordes (ni statusbar). */
+export function placeCircuitBalloon(
+  anchor: DOMRect,
+  size = { w: 280, h: 420 },
+): { x: number; y: number } {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  let x = anchor.right + 10
+  if (x + size.w > vw - VIEW_PAD) {
+    x = Math.max(VIEW_PAD, anchor.left - size.w - 10)
+  }
+  let y = anchor.top
+  if (y + size.h > vh - VIEW_PAD) {
+    y = Math.max(VIEW_PAD, vh - size.h - VIEW_PAD)
+  }
+  // Si el ancla está abajo, preferir abrir hacia arriba del chip
+  if (anchor.bottom > vh * 0.55 && anchor.top > size.h + VIEW_PAD) {
+    y = Math.max(VIEW_PAD, anchor.top - size.h)
+  }
+  return { x, y }
+}
+
 export function CircuitBalloon({
   circuit,
   state,
@@ -43,10 +72,34 @@ export function CircuitBalloon({
   onClose,
   fixed = false,
 }: CircuitBalloonProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ x, y })
+
+  useLayoutEffect(() => {
+    setPos({ x, y })
+  }, [x, y, circuit.id])
+
+  useLayoutEffect(() => {
+    if (!fixed) return
+    const el = ref.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    let nx = pos.x
+    let ny = pos.y
+    if (r.right > vw - VIEW_PAD) nx = Math.max(VIEW_PAD, vw - r.width - VIEW_PAD)
+    if (r.left < VIEW_PAD) nx = VIEW_PAD
+    if (r.bottom > vh - VIEW_PAD) ny = Math.max(VIEW_PAD, vh - r.height - VIEW_PAD)
+    if (r.top < VIEW_PAD) ny = VIEW_PAD
+    if (nx !== pos.x || ny !== pos.y) setPos({ x: nx, y: ny })
+  }, [fixed, pos.x, pos.y, circuit.id])
+
   const node = (
     <div
+      ref={ref}
       className={`circuit-balloon${fixed ? ' circuit-balloon--fixed' : ''}`}
-      style={{ left: x, top: y }}
+      style={{ left: pos.x, top: pos.y }}
       role="dialog"
       aria-label={`Protección ${circuit.protectionName}`}
     >

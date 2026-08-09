@@ -1,0 +1,41 @@
+---
+description: SSB-2PWS2209 — acometida 4Q08→QN / Q03→QA y rejilla Q03∥S2
+globs: src/components/Ssb2209BoardView.tsx,src/components/LcsDualView.tsx,src/App.css
+alwaysApply: false
+---
+
+# SSB-2PWS2209 — layout congelado
+
+## Rejilla shell (no pasar a 5 columnas)
+
+```
+grid-template-columns: max-content 3.8rem 3.8rem max-content;
+areas: s1stack | qa/q0tii | S2-ext
+```
+
+- Col 1 = `max-content` (ancho de Q03). **No** `1fr`.
+- Q03 y SALIDAS 2 en **filas distintas** (`q03bus`/`s2`, `q03out`/`s2body`).
+
+## Entrada NORM = centro de SALIDAS 1 (DEFINITIVO, CSS)
+
+`.ssb2209-s1-stack` agrupa QN + barra S1:
+
+```
+grid-template-columns: 6.5rem minmax(8rem, 1fr);  /* gutter cartel | trazo barra */
+QN → column 2, justify-self: center
+barra → padding-left: 6.5rem (mismo gutter)
+```
+
+**No** volver a `justify-self: end/center` sobre el área ancha de Q03 ni medir el centro de S1 con JS.
+
+## Acometidas fuera del chasis
+
+- **NORM** `4Q08` → eje QN (JS solo sigue el chip).
+- **ALT** `SSB-2PWS2410-Q03` → eje QA.
+- Vertical: JS alarga `to-eq` con `setProperty(..., 'important')` + `::before`/`::after` + risers.
+
+## Prohibido
+
+- Centrar QN midiendo la barra o con `left`/`end` ad hoc sobre cols 1–2.
+- Portal puente / `::after` del drop (halo).
+- Rejilla de 5 columnas.

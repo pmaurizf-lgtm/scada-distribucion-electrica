@@ -1,4 +1,4 @@
-/** Símbolos IEC y candado de bloqueo para interruptores motorizados */
+/** Símbolos IEC y candado de bloqueo para interruptores */
 
 import type { ProtectionState } from '../types'
 
@@ -24,7 +24,6 @@ export function MotorizedBreakerSymbol({
       aria-hidden
       style={horizontal ? { transform: 'rotate(90deg)' } : undefined}
     >
-      {/* Conductor superior */}
       <line
         x1="12"
         y1="1"
@@ -34,7 +33,6 @@ export function MotorizedBreakerSymbol({
         strokeWidth="2"
         strokeLinecap="round"
       />
-      {/* Contacto: abierto en diagonal / cerrado continuo */}
       {open ? (
         <line
           x1="12"
@@ -56,7 +54,6 @@ export function MotorizedBreakerSymbol({
           strokeLinecap="round"
         />
       )}
-      {/* Conductor inferior */}
       <line
         x1="12"
         y1={open ? 22 : 22}
@@ -66,7 +63,6 @@ export function MotorizedBreakerSymbol({
         strokeWidth="2"
         strokeLinecap="round"
       />
-      {/* Caja del mecanismo / polo */}
       <rect
         x="5"
         y="16"
@@ -77,7 +73,6 @@ export function MotorizedBreakerSymbol({
         stroke={color}
         strokeWidth="1.5"
       />
-      {/* Operador motorizado (IEC) */}
       <rect
         x="19"
         y="17.5"
@@ -99,11 +94,95 @@ export function MotorizedBreakerSymbol({
       >
         M
       </text>
-      {/* Terminal inferior */}
       <line
         x1="12"
         y1="32"
         x2="12"
+        y2="39"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+/**
+ * Interruptor no motorizado (INS, NG125, iC60…): mismo polo IEC sin caja «M».
+ */
+export function ManualBreakerSymbol({
+  state,
+  orientation = 'vertical',
+}: {
+  state?: ProtectionState
+  orientation?: 'vertical' | 'horizontal'
+}) {
+  const open = state !== 'cerrada'
+  const color = open ? 'var(--prot-open)' : 'var(--prot-closed)'
+  const horizontal = orientation === 'horizontal'
+
+  return (
+    <svg
+      className={`casc-brk__iec casc-brk__iec--manual${horizontal ? ' casc-brk__iec--horizontal' : ''}`}
+      viewBox="0 0 22 40"
+      width={horizontal ? 30 : 20}
+      height={horizontal ? 20 : 28}
+      aria-hidden
+      style={horizontal ? { transform: 'rotate(90deg)' } : undefined}
+    >
+      <line
+        x1="11"
+        y1="1"
+        x2="11"
+        y2={open ? 11 : 14}
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      {open ? (
+        <line
+          x1="11"
+          y1="11"
+          x2="18"
+          y2="18"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      ) : (
+        <line
+          x1="11"
+          y1="14"
+          x2="11"
+          y2="22"
+          stroke={color}
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      )}
+      <line
+        x1="11"
+        y1="22"
+        x2="11"
+        y2="32"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <rect
+        x="4"
+        y="16"
+        width="14"
+        height="10"
+        rx="1"
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+      />
+      <line
+        x1="11"
+        y1="32"
+        x2="11"
         y2="39"
         stroke={color}
         strokeWidth="2"

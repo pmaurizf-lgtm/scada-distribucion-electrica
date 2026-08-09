@@ -8,7 +8,7 @@ import {
   type RefObject,
 } from 'react'
 import { system690 } from '../data/system690'
-import type { Circuit, ProtectionState, ServiceClass } from '../types'
+import type { Circuit, Equipment, ProtectionState, ServiceClass } from '../types'
 import {
   buildLcsBoardModel,
   LCS_STYLE_PROFILE,
@@ -18,9 +18,27 @@ import {
   type LcsSection,
   type LcsVoltageBus,
 } from '../abtDownstream'
+import {
+  hasSsbBoardLayout,
+  isSsbIncomingCircuit,
+} from '../abtDownstream/ssbBoard'
+import {
+  aux24FeedsForEquipment,
+  feedScopedChildFeeders,
+  incomingFeeds,
+  isAbtOutgoingFeed,
+  isAux24Feed,
+  isPendingFeed,
+  lineBadge,
+  nestableChildFeeders,
+  pairedRemoteFeeds,
+} from '../utils/cascadeModel'
+import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
+import { Aux24Incoming } from './Aux24Incoming'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { EquipmentBusDrop, equipFamOf, symbolFor } from './EquipmentBusDrop'
+import { SsbBoardView } from './SsbBoardView'
 
 type FeedSyncVars = {
   feedCol: number
@@ -105,7 +123,7 @@ function syncFeedCol(
 
   const trfDrop = findTrfDrop(vs440)
   const trfEq = trfDrop?.querySelector(
-    ':scope > .hbus-drop__eq-wrap > .hbus-drop__eq',
+    ':scope > .hbus-drop__eq-row > .hbus-drop__eq-wrap > .hbus-drop__eq, :scope > .hbus-drop__eq-wrap > .hbus-drop__eq',
   ) as HTMLElement | null
 
   if (!trfEq || !vs230 || !qvs230 || !qvs440) {
@@ -233,6 +251,8 @@ type SharedProps = {
   onHoverInfoEnd?: () => void
   /** Equipo resaltado por el localizador del unifilar. */
   locateEquipmentId?: string | null
+  expandedEquip?: Set<string>
+  onToggleEquip?: (id: string) => void
 }
 
 function sectionOf(bus: LcsVoltageBus, service: ServiceClass): LcsSection | undefined {
@@ -242,6 +262,8 @@ function sectionOf(bus: LcsVoltageBus, service: ServiceClass): LcsSection | unde
 function BusDrops({
   outlets,
   locateEquipmentId,
+  expandedEquip,
+  onToggleEquip,
   ...shared
 }: {
   outlets: LcsOutlet[]
@@ -251,17 +273,339 @@ function BusDrops({
       <div className="hbus__drops">
         {outlets.map(({ circuit, equipment }) => (
           <div key={circuit.id} className="hbus__slot">
-            <EquipmentBusDrop
+            <LcsOutletDrop
               circuit={circuit}
               equipment={equipment}
-              equipFam={equipFamOf(equipment)}
-              located={locateEquipmentId === equipment.id}
+              locateEquipmentId={locateEquipmentId}
+              expandedEquip={expandedEquip ?? new Set()}
+              onToggleEquip={onToggleEquip ?? (() => {})}
               {...shared}
             />
           </div>
         ))}
       </div>
     </div>
+  )
+}
+
+/** Salida LCS expandible (SSB con INS+barra u otros cuadros con hijos). */
+function LcsOutletDrop({
+  circuit,
+  equipment,
+  protectionStatus,
+  energizedCircuitIds,
+  energizedEquipmentIds,
+  lockedCircuits,
+  onLocalBreaker,
+  onJumpToCircuit,
+  onHoverInfo,
+  onHoverInfoEnd,
+  locateEquipmentId,
+  expandedEquip,
+  onToggleEquip,
+  ancestorIds,
+}: {
+  circuit: Circuit
+  equipment: Equipment
+  ancestorIds?: ReadonlySet<string>
+} & SharedProps & {
+  expandedEquip: Set<string>
+  onToggleEquip: (id: string) => void
+}) {
+  const kids = useMemo(() => {
+    if (isAux24Feed(circuit)) return []
+    const all = nestableChildFeeders(system690, equipment.id, {
+      feedParentId: circuit.originId,
+      ancestorIds,
+    })
+    const filtered = hasSsbBoardLayout(equipment)
+      ? all.filter(
+          (x) =>
+            !isSsbIncomingCircuit(x.circuit) &&
+            !x.equipment.virtual &&
+            !x.circuit.destinationId.startsWith('BUS-'),
+        )
+      : // Permitir barra 115 V virtual tras TRF interno de SSB especiales
+        all.filter(
+          (x) =>
+            !x.equipment.virtual ||
+            /^BUS-SSB-.+-115$/i.test(x.equipment.id),
+        )
+    return feedScopedChildFeeders(filtered, circuit)
+  }, [equipment, circuit, ancestorIds])
+
+  const canExpand =
+    !isAux24Feed(circuit) &&
+    (kids.length > 0 || hasSsbBoardLayout(equipment))
+  const expanded = expandedEquip.has(equipment.id)
+  /** Solo SSB con INS/NSX: chasis dedicado. CCM usa EquipmentBusDrop (doble acometida). */
+  const ssbOpen =
+    Boolean(equipment.incomingSwitch) &&
+    hasSsbBoardLayout(equipment) &&
+    expanded
+  const aux24Feeds = useMemo(
+    () =>
+      isAux24Feed(circuit)
+        ? []
+        : aux24FeedsForEquipment(system690, equipment.id),
+    [circuit, equipment.id],
+  )
+  const powerFeeds = useMemo(() => {
+    if (isAux24Feed(circuit)) return [circuit]
+    return incomingFeeds(system690, equipment.id).filter((c) => !isAux24Feed(c))
+  }, [circuit, equipment.id])
+  const localFeed = powerFeeds.find((c) => c.id === circuit.id) ?? circuit
+  const remoteFeeds = pairedRemoteFeeds(powerFeeds, localFeed)
+  const dualIncoming = remoteFeeds.length > 0
+  const is2209 = isSsb2Pws2209(equipment.id)
+  const localFlowing = energizedCircuitIds.has(circuit.id)
+  const eqEnergized = energizedEquipmentIds.has(equipment.id)
+  const isAltLocal = circuit.lineType === 'alternativa'
+  const equipFam = equipFamOf(equipment)
+  const located = locateEquipmentId === equipment.id
+  const nextAncestors = useMemo(() => {
+    const s = new Set(ancestorIds ?? [])
+    s.add(equipment.id)
+    return s
+  }, [ancestorIds, equipment.id])
+
+  if (ssbOpen) {
+    const linkOnly = isAbtOutgoingFeed(circuit)
+
+    const renderIncomingLeg = (feed: Circuit, kind: 'local' | 'remote') => {
+      const isAlt = feed.lineType === 'alternativa'
+      const flowing = energizedCircuitIds.has(feed.id)
+      const pending = isPendingFeed(feed)
+      return (
+        <div
+          key={feed.id}
+          className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}`}
+          data-circuit-id={kind === 'local' ? feed.id : undefined}
+          data-remote-circuit={kind === 'remote' ? feed.id : undefined}
+          title={
+            kind === 'remote'
+              ? pending
+                ? `Alimentación ${lineBadge(feed.lineType)} · origen pendiente`
+                : `Alimentación ${lineBadge(feed.lineType)} desde ${feed.originId}`
+              : undefined
+          }
+        >
+          {kind === 'remote' ? (
+            <span className="hbus-drop__free-end" aria-hidden />
+          ) : (
+            <span
+              className="hbus-drop__wire hbus-drop__wire--from-bus"
+              aria-hidden
+            />
+          )}
+          <BreakerChip
+            name={feed.protectionName}
+            state={protectionStatus[feed.id]}
+            compact
+            circuitId={feed.id}
+            circuit={feed}
+            flowing={flowing}
+            locked={lockedCircuits.has(feed.id) || pending}
+            title={
+              kind === 'remote'
+                ? pending
+                  ? `Origen pendiente (${lineBadge(feed.lineType)})`
+                  : `Ir a ${feed.protectionName} en ${feed.originId}`
+                : undefined
+            }
+            onHoverInfo={onHoverInfo}
+            onHoverInfoEnd={onHoverInfoEnd}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (kind === 'remote') {
+                if (!pending) onJumpToCircuit?.(feed)
+                return
+              }
+              onLocalBreaker(feed, e)
+            }}
+          />
+          <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
+          {(dualIncoming || aux24Feeds.length > 0) && (
+            <span
+              className={`hbus-drop__tag${isAlt ? ' hbus-drop__tag--alt' : ' hbus-drop__tag--norm'}`}
+            >
+              {lineBadge(feed.lineType)}
+            </span>
+          )}
+          <span
+            className={`hbus-drop__wire hbus-drop__wire--to-eq${flowing ? ' hbus-drop__wire--flow' : ''}`}
+            aria-hidden
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div
+        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''} hbus-drop--expandable hbus-drop--ssb-open${dualIncoming ? ' hbus-drop--dual' : ''}${is2209 ? ' hbus-drop--ssb2209' : ''}${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
+        data-equip={equipment.id}
+        data-locate={located ? '1' : undefined}
+        data-circuit-id={circuit.id}
+        aria-label={`${equipment.id} · doble clic para plegar`}
+        onDoubleClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          onToggleEquip(equipment.id)
+        }}
+      >
+        {!linkOnly && (
+          <div className="hbus-drop__tops">
+            {aux24Feeds.map((aux) => (
+              <Aux24Incoming
+                key={aux.id}
+                circuit={aux}
+                protectionStatus={protectionStatus}
+                energizedCircuitIds={energizedCircuitIds}
+                lockedCircuits={lockedCircuits}
+                onLocalBreaker={onLocalBreaker}
+                onJumpToCircuit={onJumpToCircuit}
+                onHoverInfo={onHoverInfo}
+                onHoverInfoEnd={onHoverInfoEnd}
+              />
+            ))}
+            {/* ALT/remotas primero (como plegado): en 2209 van sobre QA */}
+            {remoteFeeds.map((remote) => renderIncomingLeg(remote, 'remote'))}
+            {renderIncomingLeg(localFeed, 'local')}
+          </div>
+        )}
+        {linkOnly && aux24Feeds.length > 0 && (
+          <div className="hbus-drop__tops hbus-drop__tops--aux">
+            {aux24Feeds.map((aux) => (
+              <Aux24Incoming
+                key={aux.id}
+                circuit={aux}
+                protectionStatus={protectionStatus}
+                energizedCircuitIds={energizedCircuitIds}
+                lockedCircuits={lockedCircuits}
+                onLocalBreaker={onLocalBreaker}
+                onJumpToCircuit={onJumpToCircuit}
+                onHoverInfo={onHoverInfo}
+                onHoverInfoEnd={onHoverInfoEnd}
+              />
+            ))}
+          </div>
+        )}
+        <div className="hbus-drop__eq-row">
+          <div
+            className={`equip-chassis equip-chassis--ssb${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
+            onDoubleClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onToggleEquip(equipment.id)
+            }}
+          >
+            <div className="equip-chassis__label">
+              <span className="equip-chassis__id">{equipment.id}</span>
+              <span className="equip-chassis__name">{equipment.name}</span>
+              <span className="equip-chassis__hint">doble clic · plegar</span>
+            </div>
+            <div className="equip-chassis__body">
+              <SsbBoardView
+                ssb={equipment}
+                feed={circuit}
+                protectionStatus={protectionStatus}
+                energizedCircuitIds={energizedCircuitIds}
+                energizedEquipmentIds={energizedEquipmentIds}
+                lockedCircuits={lockedCircuits}
+                onLocalBreaker={onLocalBreaker}
+                onJumpToCircuit={onJumpToCircuit}
+                onHoverInfo={onHoverInfo}
+                onHoverInfoEnd={onHoverInfoEnd}
+                expandedEquip={expandedEquip}
+                onToggleEquip={onToggleEquip}
+                locateEquipmentId={locateEquipmentId}
+                ancestorIds={nextAncestors}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <EquipmentBusDrop
+      circuit={circuit}
+      equipment={equipment}
+      protectionStatus={protectionStatus}
+      energizedCircuitIds={energizedCircuitIds}
+      energizedEquipmentIds={energizedEquipmentIds}
+      lockedCircuits={lockedCircuits}
+      onLocalBreaker={onLocalBreaker}
+      onJumpToCircuit={onJumpToCircuit}
+      onHoverInfo={onHoverInfo}
+      onHoverInfoEnd={onHoverInfoEnd}
+      canExpand={canExpand}
+      expanded={expanded}
+      expandLabel={
+        canExpand
+          ? `${kids.length} ${expanded ? '▴' : '▾'}`
+          : undefined
+      }
+      onToggleExpand={
+        canExpand ? () => onToggleEquip(equipment.id) : undefined
+      }
+      equipFam={equipFam}
+      located={located}
+      linkOnlyFromParent={isAbtOutgoingFeed(circuit)}
+      rootClassName={
+        expanded && (kids.length > 0 || hasSsbBoardLayout(equipment))
+          ? hasSsbBoardLayout(equipment)
+            ? 'hbus-drop--ssb-open'
+            : 'hbus-drop--chain-open'
+          : undefined
+      }
+    >
+      {expanded && hasSsbBoardLayout(equipment) && (
+        <SsbBoardView
+          ssb={equipment}
+          feed={circuit}
+          protectionStatus={protectionStatus}
+          energizedCircuitIds={energizedCircuitIds}
+          energizedEquipmentIds={energizedEquipmentIds}
+          lockedCircuits={lockedCircuits}
+          onLocalBreaker={onLocalBreaker}
+          onJumpToCircuit={onJumpToCircuit}
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
+          locateEquipmentId={locateEquipmentId}
+          expandedEquip={expandedEquip}
+          onToggleEquip={onToggleEquip}
+          ancestorIds={nextAncestors}
+        />
+      )}
+      {expanded && !hasSsbBoardLayout(equipment) && kids.length > 0 && (
+        <div className="hbus hbus--nested hbus--direct">
+          <div className="hbus__drops">
+            {kids.map(({ circuit: c, equipment: eq }) => (
+              <div key={c.id} className="hbus__slot">
+                <LcsOutletDrop
+                  circuit={c}
+                  equipment={eq}
+                  protectionStatus={protectionStatus}
+                  energizedCircuitIds={energizedCircuitIds}
+                  energizedEquipmentIds={energizedEquipmentIds}
+                  lockedCircuits={lockedCircuits}
+                  onLocalBreaker={onLocalBreaker}
+                  onJumpToCircuit={onJumpToCircuit}
+                  onHoverInfo={onHoverInfo}
+                  onHoverInfoEnd={onHoverInfoEnd}
+                  locateEquipmentId={locateEquipmentId}
+                  expandedEquip={expandedEquip}
+                  onToggleEquip={onToggleEquip}
+                  ancestorIds={nextAncestors}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </EquipmentBusDrop>
   )
 }
 
@@ -281,6 +625,8 @@ export function LcsVoltageBoard({
   onHoverInfo,
   onHoverInfoEnd,
   locateEquipmentId,
+  expandedEquip,
+  onToggleEquip,
 }: {
   bus: LcsVoltageBus
   /** Circuito QVS (energía); el chip está en la pierna TRF→LCS. */
@@ -317,6 +663,8 @@ export function LcsVoltageBoard({
     onHoverInfo,
     onHoverInfoEnd,
     locateEquipmentId,
+    expandedEquip,
+    onToggleEquip,
   }
 
   const qvsLeg = feed ? (
@@ -518,7 +866,6 @@ function ParallelFeedLeg({
         ref={eqWrapRef}
         className={`lcs440-rail__parallel-src hbus-drop__eq--fam-${equipFamOf(equipment)}${eqLive ? ' lcs440-rail__parallel-src--live' : ''}${flowing ? ' lcs440-rail__parallel-src--flow' : ''}`}
         data-equip={equipment.id}
-        title={`${equipment.id} · ${equipment.name} · alimentación → ${circuit.protectionName}`}
         onMouseEnter={() => setEqHover(true)}
         onMouseLeave={() => setEqHover(false)}
       >
@@ -571,6 +918,7 @@ export function LcsDualView({
   lcsId,
   inline = false,
   incoming,
+  expandedEquip,
   ...props
 }: SharedProps & {
   lcsId: string
@@ -616,11 +964,14 @@ export function LcsDualView({
     if (qvs440) ro.observe(qvs440)
     const qvs230 = qvs230Ref.current
     if (qvs230) ro.observe(qvs230)
+    // Salidas abiertas (SSB…) ensanchan el rail; re-sincronizar stubs TRF→QVS
+    const dualRoot = railsEl.closest('.lcs-dual')
+    if (dualRoot) ro.observe(dualRoot)
     return () => {
       ro.disconnect()
       clearFeedSync(vs440)
     }
-  }, [board, bus230, bus440, incoming])
+  }, [board, bus230, bus440, incoming, expandedEquip])
 
   if (!board || (!bus440 && !bus230)) {
     return (
@@ -633,8 +984,8 @@ export function LcsDualView({
   return (
     <div
       className={`lcs-dual${inline ? ' lcs-dual--inline' : ''}${bus230 && bus440 ? ' lcs-dual--both' : ''}`}
-      title={`${board.lcs.id} · ${board.lcs.name}`}
       data-lcs-style={LCS_STYLE_PROFILE.referenceId}
+      aria-label={`${board.lcs.id} · ${board.lcs.name}`}
     >
       {!inline && (
         <header className="lcs-dual__head">
@@ -657,6 +1008,7 @@ export function LcsDualView({
             mirror
             vsBusRef={vs230Ref}
             qvsLegRef={qvs230Ref}
+            expandedEquip={expandedEquip}
             {...props}
           />
         )}
@@ -666,6 +1018,7 @@ export function LcsDualView({
             incoming={inline ? incoming ?? bus440.incoming : bus440.incoming}
             vsBusRef={vs440Ref}
             qvsLegRef={qvs440Ref}
+            expandedEquip={expandedEquip}
             {...props}
           />
         )}

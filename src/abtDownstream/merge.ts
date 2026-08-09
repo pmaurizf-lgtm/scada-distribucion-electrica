@@ -24,6 +24,8 @@ interface RawEq {
   voltage?: string | null
   spare?: boolean
   virtual?: boolean
+  /** Incoming Power Switch Excel (p. ej. INS 160) */
+  incomingSwitch?: string | null
 }
 
 interface RawCircuit {
@@ -90,6 +92,7 @@ function cleanEq(e: RawEq): Equipment {
   if (e.voltage) out.voltage = e.voltage.includes('V') ? e.voltage : `${e.voltage} V`
   if (e.spare) out.spare = true
   if (e.virtual) out.virtual = true
+  if (e.incomingSwitch) out.incomingSwitch = e.incomingSwitch
   return out
 }
 

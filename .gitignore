@@ -28,3 +28,6 @@ dist-ssr
 
 .tmp-pdf/
 
+
+# Excel unpack / scratch
+.tmp/

@@ -11,6 +11,7 @@
   --accent-dim: #2a6b62;
   --line-normal: #e6c200;
   --line-alt: #3b82f6;
+  --line-aux: #e8958b;
   --alt: #3b82f6;
   --alt-dim: #1d4ed8;
   --prot-closed: #d64545;
@@ -136,6 +137,94 @@ body {
   font-family: var(--mono);
 }
 
+/* Planta 115 V / 400 Hz */
+.casc--secondary {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.sys-plant__banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  padding: 0.45rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(14, 22, 20, 0.75);
+  font-size: 0.82rem;
+}
+
+.sys-plant__banner strong {
+  color: var(--line-normal);
+  font-family: var(--mono);
+}
+
+.sys-plant__banner span {
+  color: var(--muted);
+}
+
+.sys-plant {
+  padding: 1.25rem 1.5rem 2.5rem;
+  min-width: max-content;
+}
+
+.sys-plant__rows {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.75rem 2.25rem;
+}
+
+.sys-plant__chain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 7.5rem;
+}
+
+.sys-plant__chain--locate {
+  outline: 2px solid rgba(0, 220, 200, 0.65);
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+
+.sys-plant__source {
+  width: 100%;
+  min-width: 8.5rem;
+  cursor: default;
+}
+
+.sys-plant__riser {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 3.6rem;
+  margin: 0.15rem 0;
+}
+
+.sys-plant__wire {
+  width: 2px;
+  flex: 0 0 1.1rem;
+  min-height: 1.1rem;
+  background: var(--line-normal);
+  opacity: 0.85;
+}
+
+.sys-plant__wire--flow {
+  background: #e6c200;
+  opacity: 1;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #e6c200 35%, transparent);
+}
+
+.sys-plant__empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 2rem;
+}
+
 .statusbar__actions {
   display: flex;
   flex-wrap: wrap;
@@ -253,22 +342,18 @@ body {
   padding: 1.5rem;
 }
 
-/* Vista árbol de alimentaciones: ocupar y centrar en el viewport */
+/* Vista árbol: caja w×h×zoom + padding JS para centrar (sin min 100%:
+   si no, el árbol queda pegado a la izquierda del viewport). */
 .plant-zoom-space--focus {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  min-width: 100%;
-  min-height: 100%;
-  box-sizing: border-box;
-  padding: 1.5rem;
+  display: block;
+  position: relative;
+  box-sizing: content-box;
   overflow: visible;
 }
 
 .plant-zoom-space__focus-inner {
-  flex: 0 0 auto;
+  display: block;
+  width: max-content;
   will-change: transform;
 }
 
@@ -518,8 +603,17 @@ body {
 
 .circuit-balloon--fixed {
   position: fixed;
-  z-index: 80;
+  /* Por encima del globo de equipo (10050) y de titles nativos residuales */
+  z-index: 10100;
   width: min(280px, calc(100vw - 24px));
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+}
+
+/* Con protección abierta, ocultar globo de equipo para no taparlo */
+body:has(.circuit-balloon--fixed) .equip-balloon--portal {
+  visibility: hidden;
+  opacity: 0;
 }
 
 @keyframes balloon-in {
@@ -1143,6 +1237,29 @@ body {
 .hbus-drop--locate .hbus-drop__eq,
 .equip-chassis--locate .equip-chassis__label {
   border-color: rgba(45, 212, 168, 0.75);
+}
+
+/* Resaltado tras saltar desde acometida remota / AUX */
+.hbus-drop--jump-hl {
+  position: relative;
+  z-index: 5;
+}
+
+.hbus-drop--jump-hl::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 10px;
+  border: 2px solid rgba(230, 194, 0, 0.95);
+  box-shadow:
+    0 0 0 4px rgba(230, 194, 0, 0.22),
+    0 0 22px 4px rgba(230, 194, 0, 0.4);
+  pointer-events: none;
+  animation: locate-halo-pulse 1.4s ease-in-out infinite;
+}
+
+.hbus-drop--jump-hl .hbus-drop__eq {
+  border-color: rgba(230, 194, 0, 0.75);
 }
 
 .locate-flash {
@@ -2071,6 +2188,80 @@ body {
   color: var(--line-alt);
 }
 
+.hbus-drop__tag--aux {
+  color: var(--line-aux);
+}
+
+.hbus-drop__leg--aux .hbus-drop__free-end {
+  background: var(--line-aux) !important;
+}
+
+.hbus-drop__leg--aux .hbus-drop__free-end::after {
+  background: var(--line-aux);
+}
+
+.hbus-drop__leg--aux .hbus-drop__wire,
+.hbus-drop__leg--aux .hbus-drop__wire--mid,
+.hbus-drop__leg--aux .hbus-drop__wire--to-eq,
+.hbus-drop__leg--aux.hbus-drop__leg--flow .hbus-drop__wire,
+.hbus-drop__leg--aux .hbus-drop__wire--flow {
+  background: var(--line-aux) !important;
+}
+
+.hbus-drop__leg--aux {
+  /* Cartel «AUX 24 V» más largo que NORM/ALT */
+  width: 4.2rem;
+  min-width: 4.2rem;
+}
+
+.hbus-drop__tops--aux {
+  margin-bottom: -2px;
+}
+
+/* AUX del MSB: encima del marco, anclado al borde izquierdo del recuadro.
+ * Absolute para no intercalarse entre gens y caja (empalme gen→QG).
+ * Misma geometría plegado/desplegado. */
+.plant-msb__aux-tops {
+  position: absolute;
+  left: 0.35rem;
+  top: auto;
+  bottom: 100%;
+  z-index: 5;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 0.35rem;
+  margin: 0 0 1px;
+  padding: 0;
+  width: auto;
+  pointer-events: auto;
+}
+
+.plant-msb__aux-tops .hbus-drop__leg--aux {
+  justify-content: flex-end;
+}
+
+.plant-msb__aux-tops .hbus-drop__leg--aux .hbus-drop__wire--to-eq {
+  /* Stub corto que empalma con el borde superior del marco */
+  flex: 0 0 0.55rem;
+  min-height: 0.55rem;
+  margin-bottom: 0;
+}
+
+.plant-msb__aux-tops .hbus-drop__leg--aux .hbus-drop__tag--aux {
+  bottom: calc(0.55rem + 0.15rem);
+  left: calc(50% + 8px);
+}
+
+.hbus-drop__eq-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
 /* Flujo: color original del cable + halo claro en movimiento */
 .hbus-drop__leg--flow .hbus-drop__wire,
 .hbus-drop__wire--flow {
@@ -2376,6 +2567,79 @@ body {
 }
 
 /*
+ * TRF → LCS plegado (solo .fam-trf; NO el ABT padre — :has(.fam-lcs) también
+ * matcheaba ABT y cortaba ABT→TRF).
+ * Sin stub central del TRF; piernas QVS cortas hasta el borde del recuadro.
+ */
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(
+    > .hbus--direct
+      > .hbus__drops
+      > .hbus__slot
+      > .hbus-drop--fam-lcs:not(.hbus-drop--lcs-open)
+  )
+  > .hbus--direct {
+  padding-top: 0.2rem;
+  margin-top: 0;
+}
+
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(
+    > .hbus--direct
+      > .hbus__drops
+      > .hbus__slot
+      > .hbus-drop--fam-lcs:not(.hbus-drop--lcs-open)
+  )
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(
+    > .hbus--direct
+      > .hbus__drops
+      > .hbus__slot
+      > .hbus-drop--fam-lcs:not(.hbus-drop--lcs-open)
+  )
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus--direct
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop--fam-trf.hbus-drop--chain-open:has(
+    > .hbus--direct
+      > .hbus__drops
+      > .hbus__slot
+      > .hbus-drop--fam-lcs:not(.hbus-drop--lcs-open)
+  )
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus--direct
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop--fam-trf.hbus-drop--chain-open:has(
+    > .hbus--direct
+      > .hbus__drops
+      > .hbus__slot
+      > .hbus-drop--fam-lcs:not(.hbus-drop--lcs-open)
+  )
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before {
+  bottom: 0;
+}
+
+.hbus--direct
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop--fam-lcs:not(.hbus-drop--lcs-open)
+  > .hbus-drop__tops
+  .hbus-drop__leg:not(.hbus-drop__leg--aux)
+  .hbus-drop__wire--from-bus {
+  min-height: 1.05rem;
+  flex: 0 0 1.05rem;
+  margin-top: -0.35rem;
+  position: relative;
+  z-index: 2;
+}
+
+/*
  * LCS desplegado + cadena ABT→TRF.
  * --feed-col: eje vertical común centrado bajo el recuadro ABT/TRF.
  */
@@ -2427,15 +2691,16 @@ body {
 }
 
 /*
- * ABT → TRF sin interruptor: línea solo debajo del ABT (no atraviesa el texto),
- * hasta el borde superior del TRF.
+ * ABT → hijo (SSB/TRF/carga) sin interruptor: línea solo debajo del ABT
+ * (no atraviesa el texto del recuadro), hasta el borde superior del hijo.
  */
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus--direct {
   margin-top: 0;
   padding-top: 1.65rem;
 }
 
-.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   /* Solo bajante bajo el recuadro; sin continuidad a través del texto */
   content: '';
   top: 100%;
@@ -2448,13 +2713,26 @@ body {
 }
 
 .hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
-.hbus-drop.hbus-drop--chain-open.hbus-drop--live:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open.hbus-drop--live:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open.hbus-drop--live:has(.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   background: #e6c200;
   opacity: 1;
 }
 
-.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
   display: none;
+}
+
+/* SSB abierto colgando de ABT: el stub llega al riser del INS (sin Q de salida) */
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--ssb-open.hbus-drop--link-only) > .hbus--direct {
+  padding-top: 0.85rem;
+}
+
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--ssb-open.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--ssb-open.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  bottom: -0.85rem;
 }
 
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__tops {
@@ -2463,44 +2741,57 @@ body {
   align-items: stretch;
 }
 
-.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap {
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap,
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap {
   position: relative;
   z-index: 1;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq,
-.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq {
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq {
   width: 100%;
 }
 
-.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   top: 100%;
   bottom: -1.35rem;
   opacity: 1;
   background: var(--line-normal);
 }
 
-.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   bottom: -1.35rem;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--flow > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--live > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--live > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
-.hbus-drop.hbus-drop--chain-open.hbus-drop--live:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--lcs-open) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open.hbus-drop--live:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open.hbus-drop--live:has(.hbus-drop--lcs-open) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   background: #e6c200;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::after,
-.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+.hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
   display: none;
 }
 
 /*
  * TRF dual (230+440): exactamente dos bajantes (sin eje central),
  * alineadas con QVS en coordenadas de layout (corregidas por zoom).
+ * Estructura actual: .hbus-drop > .eq-row > .eq-wrap > .eq
  */
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   left: var(--trf-out-230, 25%);
   top: 100%;
   bottom: auto;
@@ -2513,7 +2804,8 @@ body {
   z-index: 3;
 }
 
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
   display: block;
   content: '';
   position: absolute;
@@ -2534,35 +2826,42 @@ body {
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--live > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--live > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::after,
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--live > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--live > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--live > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
   background: #e6c200;
 }
 
 .hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before,
-.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after {
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after,
+.hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
   bottom: auto;
   height: var(--trf-stub-h, 1.35rem);
 }
 
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap {
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap {
   overflow: visible;
   /* Por encima del chasis LCS para que las bajantes no queden tapadas */
   z-index: 8;
 }
 
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq {
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq {
   overflow: visible;
 }
 
-/* Stub llega al chip; tramo corto local + bajante hasta la barra */
+/* Stub TRF cubre TRF→chip; dejar un tramo local corto visible por si el stub falla */
 .lcs-dual--both .lcs440-rail__qvs-leg__wire--from {
-  flex: 0 0 0.2rem;
-  min-height: 0.2rem;
+  flex: 0 0 0.55rem;
+  min-height: 0.55rem;
   margin-top: 0;
-  /* El stub del TRF ya cubre TRF→chip; evitar doble trazo */
-  opacity: 0;
+  opacity: 1;
 }
 
 .lcs-dual--both .lcs440-rail__qvs-leg__wire--to-bus {
@@ -2615,6 +2914,893 @@ body {
   /* Plantilla LCS-4PWS0001: padding izq = der (LCS_LAYOUT_TOKENS.chassisPadX) */
   padding: 0.25rem 0.55rem 0.65rem;
   overflow: visible;
+}
+
+/* SSB 440/230 V: mismo chasis que LCS, tono un poco más cerrado */
+.equip-chassis--ssb {
+  border-color: rgba(110, 140, 170, 0.6);
+  background: linear-gradient(
+    180deg,
+    rgba(24, 40, 56, 0.9) 0%,
+    rgba(12, 20, 30, 0.86) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(110, 140, 170, 0.1);
+  margin-top: 0.2rem;
+  /* Etiqueta absolute: reservar hueco para que INS no invada el rótulo */
+  padding: 2.35rem 0.55rem 0.55rem;
+  overflow: visible;
+  width: max-content;
+  max-width: none;
+}
+
+.equip-chassis__name {
+  font-size: 0.58rem;
+  color: var(--muted);
+  max-width: 14rem;
+  line-height: 1.2;
+}
+
+/* Interior SSB: INS → barra → salidas */
+.ssb-board {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  min-width: 7.2rem;
+  padding-top: 0.2rem;
+  gap: 0;
+}
+
+/* En chasis el hueco del rótulo ya está en padding del chasis */
+.equip-chassis--ssb .ssb-board {
+  padding-top: 0;
+}
+
+.ssb-board__feed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  z-index: 3;
+}
+
+.ssb-board__riser {
+  display: block;
+  width: 2px;
+  height: 0.55rem;
+  background: var(--line-normal);
+  flex-shrink: 0;
+}
+
+/*
+ * Continuidad vertical en chasis SSB: línea centrada detrás del rótulo
+ * (etiqueta a la izquierda, z-index mayor). Sin margen negativo en el INS.
+ */
+.equip-chassis--ssb::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 2.35rem;
+  transform: translateX(-50%);
+  background: var(--line-normal);
+  opacity: 0.9;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.equip-chassis--ssb.equip-chassis--feed-flow::before,
+.equip-chassis--ssb.equip-chassis--live::before {
+  background: #e6c200;
+}
+
+.equip-chassis--ssb.equip-chassis--feed-alt::before {
+  background: var(--line-alt);
+}
+
+/* Chasis: riser bajo la zona del rótulo, sin trepar al cuadro */
+.hbus-drop--ssb-open > .equip-chassis--ssb .ssb-board__feed > .ssb-board__riser:first-child,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .equip-chassis--ssb .ssb-board__feed > .ssb-board__riser:first-child {
+  margin-top: 0;
+  height: 0.5rem;
+  position: relative;
+  z-index: 3;
+}
+
+/*
+ * SSB anidado (EquipmentBusDrop): besar el borde inferior del chip
+ * (−2px, mismo criterio que --to-eq / --to-bus), sin invadir el interior.
+ */
+.hbus-drop--ssb-open > .hbus-drop__eq-wrap + .ssb-board .ssb-board__feed > .ssb-board__riser:first-child {
+  margin-top: -2px;
+  margin-bottom: -2px;
+  height: 0.65rem;
+}
+
+.hbus-drop--ssb-open > .hbus-drop__eq-wrap + .ssb-board,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap + .ssb-board {
+  margin-top: 0;
+  padding-top: 0;
+  position: relative;
+  z-index: 0;
+}
+
+.hbus-drop--ssb-open > .hbus-drop__eq-wrap,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap {
+  position: relative;
+  z-index: 3;
+}
+
+.hbus-drop--ssb-open > .hbus-drop__eq-wrap .hbus-drop__eq,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq {
+  overflow: hidden;
+}
+
+.ssb-board__riser--to-bus {
+  height: 0.55rem;
+  margin-bottom: -2px;
+}
+
+.ssb-board__riser--flow,
+.equip-chassis--feed-flow .ssb-board__riser {
+  background: var(--line-normal);
+}
+
+.equip-chassis--feed-alt .ssb-board__riser {
+  background: var(--line-alt);
+}
+
+.ssb-board__bus {
+  height: 4px;
+  width: 100%;
+  min-width: 7.2rem;
+  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+  border-radius: 1px;
+  z-index: 1;
+}
+
+.ssb-board__bus--live {
+  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+}
+
+.ssb-board__bus-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.12rem;
+}
+
+.ssb-board__bus-tag {
+  align-self: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #6b7c8a;
+  line-height: 1;
+}
+
+.ssb-board--115 {
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.35rem 0.35rem;
+  border: 1px dashed color-mix(in srgb, #6a8aaa 50%, transparent);
+  border-radius: 4px;
+}
+
+/* CCM / cuadro sin INS: puente corto desde el chasis a la barra */
+.ssb-board--bus-only .ssb-board__feed > .ssb-board__riser:first-child {
+  height: 0.45rem;
+  margin-top: 0.1rem;
+}
+
+.hbus-drop--ssb-open > .equip-chassis--ssb .ssb-board--bus-only .ssb-board__feed > .ssb-board__riser:first-child,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .equip-chassis--ssb .ssb-board--bus-only .ssb-board__feed > .ssb-board__riser:first-child {
+  margin-top: 0;
+  height: 0.45rem;
+}
+
+.ssb-board__drops {
+  margin-top: 0.2rem;
+}
+
+/* SSB-2PWS2209: una sola rejilla (QN/QA no se desalinean del cuerpo) */
+.ssb-board--2209 {
+  min-width: 32rem;
+  width: max-content;
+  max-width: none;
+  gap: 0;
+  padding: 0;
+  align-items: stretch;
+}
+
+.ssb2209-shell {
+  display: grid;
+  /*
+   * 4 columnas. Col 1 = max-content (ancho de Q03), NO 1fr.
+   * s1stack = QN + SALIDAS 1 (QN centrado en el trazo de la barra).
+   */
+  grid-template-columns: max-content 3.8rem 3.8rem max-content;
+  grid-template-areas:
+    "s1stack s1stack qa     ."
+    "s1stack s1stack qathru ."
+    "q03f    q0ti    q0tii  ."
+    "q03bus  s2      s2     s2"
+    "q03out  s2body  s2body s2body"
+    ".       s3b     s3b    s3b";
+  column-gap: 1.15rem;
+  row-gap: 0;
+  align-items: start;
+  width: max-content;
+  min-width: 28rem;
+  overflow: visible;
+}
+
+/*
+ * DEFINITIVO — entrada NORM centrada en SALIDAS 1.
+ * Gutter 6.5rem (= padding del cartel) + pista 1fr (= trazo de la barra).
+ * QN en la pista, justify-self:center → siempre al centro del trazo.
+ */
+.ssb2209-s1-stack {
+  grid-area: s1stack;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(8rem, 1fr);
+  grid-template-rows: auto auto;
+  width: 100%;
+  min-width: 16rem;
+  align-items: start;
+  justify-items: stretch;
+}
+
+.ssb2209-s1-stack > .ssb2209-feed-qn {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  position: relative;
+  left: 0;
+  z-index: 3;
+}
+
+.ssb2209-s1-stack > .ssb2209-s1-cut {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  min-width: 0;
+}
+
+.ssb2209-feed-qa {
+  grid-area: qa;
+  justify-self: center;
+}
+.ssb2209-qa-thru { grid-area: qathru; }
+.ssb2209-q03-branch__feed { grid-area: q03f; }
+.ssb2209-a-q0ti { grid-area: q0ti; justify-self: center; }
+.ssb2209-a-q0tii { grid-area: q0tii; justify-self: center; }
+.ssb2209-a-q03bus { grid-area: q03bus; }
+.ssb2209-a-s2 { grid-area: s2; }
+.ssb2209-a-q03out { grid-area: q03out; min-width: 0; }
+.ssb2209-a-s2body { grid-area: s2body; }
+.ssb2209-a-s3block {
+  grid-area: s3b;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: stretch;
+  align-self: start;
+  width: auto;
+  min-width: max-content;
+  overflow: visible;
+  z-index: 2;
+}
+
+/* QN en col fija 3.6rem (= tops 4Q08). QA sobre Q0T-II. */
+.ssb-board--2209 .ssb2209-feed-qn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 3.6rem;
+  max-width: 3.6rem;
+  z-index: 3;
+  position: relative;
+}
+
+.ssb-board--2209 .ssb2209-feed-qa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 3.6rem;
+  z-index: 5;
+  position: relative;
+}
+
+/* Entrada remota ALT: stub vertical + barrita horizontal (como free-end LCS) */
+.ssb-board--2209 .ssb2209-qa-free-end {
+  background: var(--line-alt) !important;
+  flex: 0 0 0.85rem;
+  height: 0.85rem;
+  margin-bottom: 0;
+}
+.ssb-board--2209 .ssb2209-qa-free-end::after {
+  background: var(--line-alt);
+}
+.ssb-board--2209 .ssb2209-qa-free-end--flow,
+.ssb-board--2209 .ssb2209-qa-free-end--flow::after {
+  background: var(--line-alt);
+}
+
+.ssb-board--2209 .ssb2209-feed-qn > .ssb2209-feed-qn__to-bus,
+.ssb-board--2209 .ssb2209-feed-qa > .ssb2209-feed-qa__to-q0t {
+  height: 1.55rem;
+  margin-bottom: -4px;
+}
+
+.ssb-board--2209 .ssb2209-feed-qn > .hbus-drop__tag,
+.ssb-board--2209 .ssb2209-feed-qa > .hbus-drop__tag {
+  bottom: 0.45rem;
+  top: auto;
+}
+
+.ssb-board__riser--alt {
+  background: var(--line-alt);
+}
+
+.ssb-board--2209 .ssb2209-feed-qa > .ssb-board__riser--alt,
+.ssb-board--2209 .ssb2209-feed-qa > .ssb2209-feed-qa__to-q0t {
+  background: var(--line-alt);
+}
+.ssb-board--2209 .ssb2209-feed-qa > .ssb-board__riser--alt.ssb-board__riser--flow,
+.ssb-board--2209 .ssb2209-feed-qa > .ssb2209-feed-qa__to-q0t.ssb-board__riser--flow {
+  background: var(--line-alt);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--line-alt) 35%, transparent);
+}
+
+.equip-chassis--ssb .ssb-board--2209 .ssb2209-feed-qn {
+  padding-top: 0;
+}
+
+.ssb2209-s1-cut > .ssb2209-bus {
+  width: 100%;
+  margin: 0;
+}
+
+.ssb2209-qa-thru {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-self: center;
+  align-self: stretch;
+  width: 3.6rem;
+  z-index: 3;
+}
+
+.ssb2209-qa-thru .ssb2209-wire--mid {
+  flex: 1 1 auto;
+  min-height: 4px;
+  width: 2px;
+  margin-top: -2px;
+  margin-bottom: -4px;
+  background: var(--line-alt);
+}
+
+.ssb2209-qa-thru .ssb2209-wire--mid.ssb2209-wire--flow {
+  background: var(--line-alt);
+}
+
+.ssb2209-q03-branch__feed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: start;
+  /* Mismo inset que Barra Q03 (cartel) → Q03 centrado en el trazo de la barra */
+  justify-self: stretch;
+  width: auto;
+  margin-left: 4rem;
+  margin-right: 0;
+  box-sizing: border-box;
+  z-index: 3;
+}
+
+.ssb2209-q03-branch__feed .ssb2209-wire--from {
+  margin-top: -4px;
+  min-height: 1.45rem;
+  flex-basis: 1.45rem;
+}
+
+.ssb2209-q03-branch__feed .ssb2209-wire--to {
+  margin-bottom: -4px;
+  min-height: 1.45rem;
+  flex-basis: 1.45rem;
+}
+
+.ssb2209-a-q03bus.ssb2209-bus {
+  padding-left: 4rem;
+  margin: 0;
+  align-self: start;
+  height: 4px;
+}
+
+.ssb2209-a-q03bus .ssb2209-bus__tag {
+  max-width: 3.8rem;
+}
+
+/* Salidas Q03: pegadas a la barra (sin hueco de fila inflada) */
+.ssb2209-a-q03out {
+  margin-top: 0;
+  align-self: start;
+}
+
+.ssb-board--2209 .ssb2209-a-q03out .ssb2209-outlets {
+  margin-top: 0;
+}
+
+.ssb-board--2209 .ssb2209-a-q03out .ssb2209-outlets.hbus--ssb-section .hbus-drop__leg--local .hbus-drop__wire--from-bus {
+  margin-top: -4px !important;
+  min-height: 1.2rem !important;
+  flex: 0 0 1.2rem !important;
+}
+
+/*
+ * SALIDAS 2: misma fila/altura que Barra Q03.
+ * Ancho = cols 2–4 (Q0T + extensión Q01/Q04/Q05); s2body fija la col 4.
+ */
+/* Cartel S2 en s2body (bajo la barra), no encima: Q0T-I/II lo tapaban */
+.ssb2209-a-s2.ssb2209-bus {
+  padding-left: 0;
+  height: 4px;
+  margin: 0;
+  align-self: start;
+  justify-self: stretch;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  z-index: 2;
+}
+
+.ssb2209-a-s2body > .ssb2209-bus-caption {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  max-width: 7.5rem;
+  /* Empujar el cartel a la zona de cargas (col 4), fuera de Q0T-I/II */
+  margin: 0.35rem 0.85rem 0.15rem calc(3.8rem + 1.15rem + 3.8rem + 2.5rem);
+  z-index: 1;
+  position: relative;
+}
+
+.ssb2209-a-s3.ssb2209-bus {
+  padding-left: 0;
+  height: 4px;
+  margin: 0;
+  width: 100%;
+  min-width: 100%;
+  overflow: visible;
+  z-index: 2;
+}
+
+.ssb2209-a-s2 .ssb2209-bus__bar,
+.ssb2209-a-s3 .ssb2209-bus__bar {
+  width: 100%;
+}
+
+.ssb2209-bus-caption {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  max-width: 7.2rem;
+  margin: 0.15rem 0.75rem 0 0;
+  padding: 0.12rem 0.2rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #6b7c8a;
+  line-height: 1.2;
+  text-align: left;
+  pointer-events: none;
+  white-space: normal;
+}
+
+.ssb2209-a-s2body {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 1.1rem;
+  justify-self: stretch;
+  align-self: stretch;
+  width: auto;
+  min-width: max-content;
+  height: 100%;
+  margin-top: 0;
+  overflow: visible;
+}
+
+.ssb2209-a-s2body > .ssb2209-stack {
+  align-self: stretch;
+  min-height: 100%;
+  height: auto;
+}
+
+.ssb2209-a-s2body > .ssb2209-outlets,
+.ssb2209-a-s2body > .hbus {
+  align-self: flex-start;
+}
+
+.ssb2209-a-s2body > .ssb2209-stack .ssb2209-wire--grow {
+  flex: 1 1 auto;
+  min-height: 1.2rem;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.ssb2209-a-s2body > .ssb2209-stack .ssb2209-wire--to {
+  margin-bottom: -4px;
+}
+
+.ssb2209-a-s2body > .ssb2209-stack > .ssb2209-wire--from {
+  margin-top: -4px;
+}
+
+.ssb2209-a-s3out {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: max-content;
+  min-width: 100%;
+  gap: 0.75rem;
+  margin-top: 0;
+  overflow: visible;
+}
+
+.ssb2209-a-s3out > .ssb2209-bus-caption {
+  margin: 0.35rem 0 0;
+  flex: 0 0 auto;
+}
+
+.ssb2209-a-s3out > .ssb2209-outlets {
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 0;
+  margin-top: 0;
+  margin-left: 0.35rem;
+}
+
+.ssb-board--2209 .ssb2209-a-s3out > .ssb2209-outlets.hbus--ssb-section .hbus-drop__leg--local .hbus-drop__wire--from-bus,
+.ssb-board--2209 .ssb2209-a-s2body .ssb2209-outlets.hbus--ssb-section .hbus-drop__leg--local .hbus-drop__wire--from-bus {
+  margin-top: -4px !important;
+  min-height: 1.2rem !important;
+  flex: 0 0 1.2rem !important;
+}
+
+.ssb-board--2209 .ssb2209-a-q03out .ssb2209-outlets.hbus--ssb-section .hbus-drop__leg--local .hbus-drop__wire--from-bus,
+.ssb-board--2209 .ssb2209-outlets.hbus--ssb-section .hbus-drop__leg--local .hbus-drop__wire--from-bus {
+  margin-top: -4px !important;
+  min-height: 1.2rem !important;
+  flex: 0 0 1.2rem !important;
+  width: 2px !important;
+  background: var(--line-normal) !important;
+}
+
+.ssb2209-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 3.6rem;
+}
+
+.ssb2209-wire {
+  display: block;
+  width: 2px;
+  flex: 0 0 auto;
+  align-self: center;
+  background: var(--line-normal);
+  position: relative;
+  z-index: 3;
+}
+
+.ssb2209-wire--stub { min-height: 0.7rem; flex-basis: 0.7rem; }
+.ssb2209-wire--from {
+  margin-top: -4px;
+  min-height: 1.35rem;
+  flex-basis: 1.35rem;
+}
+.ssb2209-wire--to {
+  margin-bottom: -4px;
+  min-height: 1.35rem;
+  flex-basis: 1.35rem;
+}
+.ssb2209-wire--mid { min-height: 0.7rem; flex-basis: 0.7rem; }
+.ssb2209-wire--grow {
+  margin-top: -4px;
+  margin-bottom: -4px;
+  flex: 1 1 auto;
+  min-height: 1.2rem;
+}
+
+.ssb2209-wire--alt,
+.ssb2209-stack--alt .ssb2209-wire { background: var(--line-alt); }
+
+.ssb2209-wire--flow {
+  background: var(--line-hot, #e6c200);
+}
+.ssb2209-wire--alt.ssb2209-wire--flow,
+.ssb2209-stack--alt .ssb2209-wire--flow {
+  background: var(--line-alt);
+}
+
+.ssb2209-a-q0ti .ssb2209-wire--from,
+.ssb2209-a-q0tii .ssb2209-wire--from {
+  margin-top: -4px;
+}
+
+.ssb2209-a-q0ti .ssb2209-wire--to,
+.ssb2209-a-q0tii .ssb2209-wire--to {
+  margin-bottom: -4px;
+}
+
+.ssb2209-bus {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 4px;
+  padding-left: 6.5rem;
+  box-sizing: border-box;
+  z-index: 2;
+  overflow: visible;
+}
+
+.ssb2209-s1-cut > .ssb2209-bus {
+  padding-left: 6.5rem;
+}
+
+.ssb2209-bus__tag {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 6.3rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #6b7c8a;
+  line-height: 1.15;
+  text-align: right;
+  pointer-events: none;
+}
+
+.ssb2209-bus__bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+}
+.ssb2209-bus__bar--live {
+  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+}
+.ssb2209-bus__bar--ups {
+  background: linear-gradient(90deg, #6a8aaa, #b8a060 45%, #6a8aaa);
+}
+.ssb2209-bus__bar--ups.ssb2209-bus__bar--live {
+  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+}
+
+.ssb2209-outlets { margin-top: 0.1rem; }
+
+.ssb2209-ups {
+  min-width: 2.8rem;
+  margin: 0.1rem 0;
+  padding: 0.28rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: #5a6a78;
+  border: 1px solid color-mix(in srgb, #6a8aaa 55%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, #dce6ee 70%, transparent);
+  z-index: 2;
+}
+.ssb2209-ups--live {
+  color: #6a5200;
+  border-color: color-mix(in srgb, #c9a400 60%, transparent);
+  background: color-mix(in srgb, #ffe066 35%, #fff8d6);
+}
+
+/* Continuidad chasis → feed QN / QA (ejes 4Q08 / Q03 ALT) */
+.hbus-drop--ssb-open > .equip-chassis--ssb .ssb-board--2209 > .ssb2209-shell > .ssb2209-feed-qn > .ssb-board__riser:first-child,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .equip-chassis--ssb .ssb-board--2209 > .ssb2209-shell > .ssb2209-feed-qn > .ssb-board__riser:first-child,
+.hbus-drop--ssb-open > .equip-chassis--ssb .ssb-board--2209 > .ssb2209-shell > .ssb2209-feed-qa > .ssb-board__riser:first-child,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .equip-chassis--ssb .ssb-board--2209 > .ssb2209-shell > .ssb2209-feed-qa > .ssb-board__riser:first-child {
+  margin-top: -2.35rem;
+  height: calc(2.35rem + 0.85rem);
+  flex: 0 0 calc(2.35rem + 0.85rem);
+  position: relative;
+  z-index: 6;
+}
+
+.hbus-drop--ssb-open > .hbus-drop__eq-wrap + .ssb-board--2209 > .ssb2209-shell > .ssb2209-feed-qn > .ssb-board__riser:first-child {
+  margin-top: -2.35rem;
+  height: calc(2.35rem + 0.85rem);
+  flex: 0 0 calc(2.35rem + 0.85rem);
+}
+
+/* Solape extra to-eq ↔ chasis en 2209 */
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops .hbus-drop__wire--to-eq {
+  margin-bottom: -6px;
+}
+
+
+.hbus-drop--ssb-open {
+  align-items: flex-start;
+  width: max-content;
+  /* Por encima del flujo de vecinos solo en el eje X: el hueco vertical evita solape */
+  position: relative;
+  z-index: 2;
+}
+
+/*
+ * CONGELADO — tops dual 2209: NORM→QN + ALT(Q03)→QA fuera del chasis.
+ * Ancho/margen del tops lo escribe JS (= chasis). Piernas absolutas en ejes.
+ */
+.hbus-drop--ssb-open:has(.ssb-board--2209) {
+  align-items: flex-start;
+  position: relative;
+}
+
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops {
+  justify-content: flex-start;
+  align-self: flex-start;
+  position: relative;
+  margin-left: calc(0.55rem + 1px);
+  width: 3.6rem;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 0 0 auto;
+  /* Hueco para piernas absolutas (from-bus/free + chip + mid + to-eq) */
+  min-height: 11.5rem;
+}
+
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops > .hbus-drop__leg,
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops > .hbus-drop__leg {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops > .hbus-drop__leg--norm {
+  left: var(--ssb2209-qn-axis, calc(0.55rem + 1px + 1.8rem));
+}
+
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops > .hbus-drop__leg--alt {
+  left: var(--ssb2209-qa-axis, 50%);
+}
+
+/* Dual genérico no debe forzar min-width:100% sobre el tops 2209 */
+.hbus-drop--ssb-open.hbus-drop--dual:has(.ssb-board--2209) > .hbus-drop__tops {
+  min-width: 0;
+  width: auto;
+  justify-content: flex-start;
+}
+
+/* Rótulo a la izquierda; hilos en ejes QN/QA */
+.equip-chassis--ssb:has(.ssb-board--2209) > .equip-chassis__label {
+  left: 0.55rem;
+  right: auto;
+  max-width: min(18rem, calc(100% - 1.2rem));
+}
+
+/*
+ * Continuidad vertical:
+ *   NORM: to-eq → ::before → riser QN
+ *   ALT:  to-eq → ::after  → riser QA
+ */
+.equip-chassis--ssb:has(.ssb-board--2209)::before {
+  left: var(--ssb2209-axis, calc(0.55rem + 1px + 1.8rem));
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.equip-chassis--ssb:has(.ssb-board--2209)::after {
+  content: '';
+  position: absolute;
+  left: var(--ssb2209-qa-axis, 70%);
+  top: 0;
+  width: 2px;
+  height: 2.35rem;
+  transform: translateX(-50%);
+  background: var(--line-alt);
+  opacity: 0.9;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.equip-chassis--ssb.equip-chassis--feed-flow:has(.ssb-board--2209)::after,
+.equip-chassis--ssb.equip-chassis--live:has(.ssb-board--2209)::after {
+  /* Solo fluye si la pierna ALT está en marcha; el JS no pinta ::after.
+     Color base ALT; el brillo lo da la pierna tops. */
+  opacity: 1;
+}
+
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__eq-row {
+  justify-content: flex-start;
+  align-self: flex-start;
+  width: max-content;
+  max-width: none;
+}
+
+/*
+ * Bajante LCS→SSB 2209: altura fija (no var JS).
+ * El riser de QN completa el tramo dentro del chasis.
+ */
+/*
+ * Bajante LCS→SSB 2209: fallback; la altura real la escribe JS hasta QN/QA.
+ */
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops .hbus-drop__wire--to-eq {
+  flex: 0 0 7.25rem !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: 7.25rem !important;
+  min-height: 7.25rem !important;
+  height: 7.25rem !important;
+  margin-bottom: -6px;
+  z-index: 4;
+}
+
+/*
+ * Bajante LCS→SSB genérico al desplegar (no 2209): empuja el cuadro bajo vecinos.
+ */
+.hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb) > .hbus-drop__tops .hbus-drop__wire--to-eq,
+.lcs-out--dual .hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb) > .hbus-drop__tops .hbus-drop__wire--to-eq {
+  flex: 0 0 7.25rem;
+  min-height: 7.25rem;
+  margin-bottom: -2px;
+}
+
+/*
+ * Varios SSB abiertos (no 2209): bajante corta para no crear franja vacía.
+ */
+.hbus--lcs-section:has(
+    .hbus__slot:has(.hbus-drop--ssb-open) ~ .hbus__slot:has(.hbus-drop--ssb-open)
+  )
+  .hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb)
+  > .hbus-drop__tops
+  .hbus-drop__wire--to-eq,
+.lcs-out--dual
+  .hbus--lcs-section:has(
+    .hbus__slot:has(.hbus-drop--ssb-open) ~ .hbus__slot:has(.hbus-drop--ssb-open)
+  )
+  .hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb)
+  > .hbus-drop__tops
+  .hbus-drop__wire--to-eq {
+  flex: 0 0 1.15rem;
+  min-height: 1.15rem;
+}
+
+.hbus-drop--ssb-open > .equip-chassis--ssb,
+.hbus-drop--ssb-open > .hbus-drop__eq-row > .equip-chassis--ssb {
+  margin-top: 0;
+  /* Conservar padding-top del rótulo (2.35rem); no resetear a 0.15rem */
+  align-self: center;
+}
+
+/* 2209: chasis a la izquierda */
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .equip-chassis--ssb,
+.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__eq-row > .equip-chassis--ssb {
+  align-self: flex-start;
+  width: max-content;
+  max-width: none;
+}
+
+/* El hueco del unifilar LCS crece con el SSB abierto y aparta a los vecinos */
+.hbus--lcs-section .hbus__slot:has(.hbus-drop--ssb-open),
+.hbus--ssb-section .hbus__slot:has(.hbus-drop--ssb-open) {
+  width: max-content;
+  min-width: max-content;
+  flex: 0 0 auto;
+  align-self: flex-start;
+}
+
+.hbus--lcs-section .hbus__drops,
+.hbus--ssb-section .hbus__drops {
+  align-items: flex-start;
 }
 
 .equip-chassis--live {
@@ -2687,7 +3873,8 @@ body {
 }
 
 .hbus--lcs-section .hbus__slot:has(.hbus-drop--dual) {
-  width: 7.6rem;
+  width: max-content;
+  min-width: 7.6rem;
 }
 
 /* Salidas LCS: pierna centrada (cable ≡ eje del chip), como MSB */
@@ -2726,6 +3913,34 @@ body {
   z-index: 2;
 }
 
+/*
+ * SSB interior: NO heredar --lcs-bus-gap (no hay [bus-gap]).
+ * Stub corto centrado en el chip, solapando 4px la barra del SSB.
+ */
+.hbus--ssb-section.hbus--lcs-section .hbus-drop__leg--local .hbus-drop__wire--from-bus,
+.hbus--ssb-section .hbus-drop__leg--local .hbus-drop__wire--from-bus {
+  margin-top: -4px !important;
+  min-height: 1.15rem !important;
+  flex: 0 0 1.15rem !important;
+  width: 2px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Pierna centrada bajo la barra: cable ≡ eje del símbolo IEC */
+.hbus--ssb-section .hbus-drop__tops {
+  justify-content: center;
+}
+
+.hbus--ssb-section .hbus-drop__leg {
+  align-items: center;
+}
+
+.hbus--ssb-section .hbus-drop__leg .casc-brk,
+.hbus--ssb-section .hbus-drop__leg .hbus-drop__wire {
+  align-self: center;
+}
+
 .hbus--lcs-section .casc-brk {
   position: relative;
   z-index: 3;
@@ -2757,6 +3972,10 @@ body {
 
 .hbus--lcs-section .hbus-drop__leg--norm .hbus-drop__wire {
   background: var(--line-normal) !important;
+}
+
+.hbus--lcs-section .hbus-drop__leg--aux .hbus-drop__wire {
+  background: var(--line-aux) !important;
 }
 
 
@@ -2832,8 +4051,22 @@ body {
   width: 7.2rem;
 }
 
+/* Dual / multi-pierna: el slot crece con las piernas (antes 7.6rem fijo
+ * aplastaba 3–4 piernas y se solapaban con los vecinos). */
 .hbus__slot:has(.hbus-drop--dual) {
-  width: 7.6rem;
+  width: max-content;
+  min-width: 7.6rem;
+}
+
+.hbus__slot:has(.hbus-drop__leg--aux) {
+  width: max-content;
+  min-width: 9.5rem;
+}
+
+.hbus-drop--dual > .hbus-drop__tops {
+  width: max-content;
+  min-width: 100%;
+  justify-content: center;
 }
 
 .hbus__coupler {
@@ -2966,11 +4199,13 @@ body {
   overflow: visible;
 }
 
-.hbus-drop--chain-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus-drop--chain-open > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop--chain-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   bottom: -1.15rem;
 }
 
-.hbus--direct .hbus-drop--chain-open > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+.hbus--direct .hbus-drop--chain-open > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus--direct .hbus-drop--chain-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   bottom: -1.55rem;
 }
 
@@ -3213,6 +4448,10 @@ body {
   background: var(--line-alt);
 }
 
+.stree-branch--aux .stree-branch__wire {
+  background: var(--line-aux);
+}
+
 .stree-branch__tag {
   font-family: var(--mono);
   font-size: 0.58rem;
@@ -3223,6 +4462,10 @@ body {
 
 .stree-branch__tag--alt {
   color: var(--line-alt);
+}
+
+.stree-branch__tag--aux {
+  color: var(--line-aux);
 }
 
 .stree-branch__bus {
@@ -3306,12 +4549,6 @@ body {
   margin-bottom: -1px;
 }
 
-/* Tramo entre interruptor de sección (QVM/QNV) y la barra siguiente */
-.stree-lcs-infeed__section-wire {
-  min-height: 0.85rem;
-  margin-bottom: -1px;
-}
-
 /*
  * Barra a ancho completo (empalme con ambas piernas).
  * Etiqueta a la izquierda de la barra (absoluta), sin desplazar el eje vertical.
@@ -3333,35 +4570,40 @@ body {
 
 .stree-lcs-bus__tag {
   position: absolute;
-  right: calc(100% + 0.4rem);
-  top: 2px;
+  /* A la izquierda de la barra, sin montarse sobre ella ni la adyacente */
+  right: calc(100% + 0.55rem);
+  top: 0;
   transform: translateY(-50%);
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   border-radius: 3px;
-  padding: 0.08rem 0.35rem;
+  padding: 0.1rem 0.38rem;
   white-space: nowrap;
-  background: color-mix(in srgb, #3d8a7a 35%, transparent);
+  background: #1a3330;
   color: #b8e8dc;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #3d8a7a 55%, transparent);
   pointer-events: none;
   z-index: 2;
 }
 
 .stree-lcs-bus__tag--vm {
-  background: color-mix(in srgb, #8a6a3d 40%, transparent);
+  background: #2a2418;
   color: #f0d9a8;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #8a6a3d 55%, transparent);
 }
 
 .stree-lcs-bus__tag--nv {
-  background: color-mix(in srgb, #5a6a8a 40%, transparent);
+  background: #1c2230;
   color: #c8d4e8;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #5a6a8a 55%, transparent);
 }
 
 .stree-lcs-bus[data-voltage='230'] .stree-lcs-bus__tag:not(.stree-lcs-bus__tag--vm):not(.stree-lcs-bus__tag--nv) {
-  background: color-mix(in srgb, #8a7040 35%, transparent);
+  background: #2a2418;
   color: #e8d4a8;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #8a7040 55%, transparent);
 }
 
 .stree-lcs-bus__bar {
@@ -3380,6 +4622,12 @@ body {
 .stree-lcs-bus__stem {
   min-height: 0.85rem;
   margin-top: 0;
+}
+
+/* Más aire entre barras apiladas VS→VM→NV para que el cartel no alcance la adyacente */
+.stree-lcs-infeed__section-wire {
+  min-height: 1.35rem;
+  margin-bottom: -1px;
 }
 
 /* Salida y cuadro: mismo eje que el stem central */
@@ -3428,6 +4676,27 @@ body {
   min-width: 8rem;
   max-width: 12rem;
   padding: 0.65rem 0.55rem;
+}
+
+.stree-eq--cap {
+  cursor: pointer;
+  border-color: rgba(232, 149, 139, 0.55);
+}
+
+.stree-eq--cap:hover {
+  border-color: rgba(232, 149, 139, 0.9);
+}
+
+.stree-eq--cap-open {
+  border-color: rgba(232, 149, 139, 0.95);
+  box-shadow: 0 0 0 1px rgba(232, 149, 139, 0.35);
+}
+
+.stree-eq__cap-hint {
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--line-aux);
+  margin-top: 0.1rem;
 }
 
 .stree-eq--live {
@@ -3797,7 +5066,8 @@ body {
     max-content;
   grid-template-rows:
     [qvs] minmax(3.2rem, auto)
-    [label] auto
+    /* Reserva vertical para carteles flotando sobre la barra (no montados en ella) */
+    [label] minmax(1.75rem, auto)
     [bus] 4px
     [bus-gap] var(--lcs-bus-gap, 2.1rem)
     [drops] auto;
@@ -3825,9 +5095,8 @@ body {
 .lcs440-rail--mirror .lcs440-rail__vs-tag {
   grid-column: 5;
   justify-self: end;
-  margin-left: 0;
+  margin-left: auto;
   margin-right: 0.35rem;
-  max-width: calc(50% - 1.5rem);
   text-align: right;
 }
 
@@ -4145,19 +5414,26 @@ body {
 .lcs440-rail__vm-tag,
 .lcs440-rail__nv-tag {
   position: relative;
-  z-index: 3;
+  z-index: 6;
   justify-self: start;
   align-self: end;
-  margin: 0 0 0.2rem 0;
-  max-width: calc(50% - 0.4rem);
+  /*
+   * Cartel completamente por encima de la barra: la línea NO atraviesa el texto.
+   * Evita el aspecto «montado» sobre el bus propio y el solape con el adyacente.
+   */
+  margin: 0 0 0.85rem 0.2rem;
+  max-width: none;
+  width: max-content;
+  white-space: nowrap;
+  pointer-events: none;
+  box-sizing: border-box;
 }
 
 .lcs440-rail__vs-tag {
   grid-column: 1;
   grid-row: label;
-  /* Etiqueta a la izquierda del QVS centrado */
   margin-left: 0.35rem;
-  max-width: calc(50% - 1.5rem);
+  margin-right: auto;
 }
 
 .lcs440-rail__vs-bus {
@@ -4187,6 +5463,7 @@ body {
 .lcs440-rail__vm-tag {
   grid-column: 3;
   grid-row: label;
+  margin-left: 0.25rem;
 }
 
 .lcs440-rail__vm-bus {
@@ -4207,6 +5484,7 @@ body {
 .lcs440-rail__nv-tag {
   grid-column: 5;
   grid-row: label;
+  margin-left: 0.25rem;
 }
 
 .lcs440-rail__nv-bus {
@@ -4276,24 +5554,31 @@ body {
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 700;
-  padding: 0.08rem 0.35rem;
+  line-height: 1.15;
+  padding: 0.12rem 0.38rem;
   border-radius: 3px;
   letter-spacing: 0.03em;
+  /* Fondo opaco: la barra no se ve a través del cartel */
+  background-color: #121c24;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 .lcs440-cell__tag--VS {
-  background: color-mix(in srgb, #3d8a7a 35%, transparent);
+  background: #1a3330;
   color: #b8e8dc;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #3d8a7a 55%, transparent);
 }
 
 .lcs440-cell__tag--VM {
-  background: color-mix(in srgb, #8a6a3d 40%, transparent);
+  background: #2a2418;
   color: #f0d9a8;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #8a6a3d 55%, transparent);
 }
 
 .lcs440-cell__tag--NV {
-  background: color-mix(in srgb, #5a6a8a 40%, transparent);
+  background: #1c2230;
   color: #c8d4e8;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #5a6a8a 55%, transparent);
 }
 
 .lcs440-cell__bus {
