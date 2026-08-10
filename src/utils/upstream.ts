@@ -200,17 +200,28 @@ export function getPlantRevealPath(
   const isMsb24Tie = (originId: string, destId: string) =>
     /^MSB-24PW/i.test(originId) && /^MSB-24PW/i.test(destId)
 
-  /** Cadena desplegable aguas abajo del MSB 690 (incl. RCT / MSB-24). */
+  const isMsb4SfsTie = (originId: string, destId: string) =>
+    /^MSB-4SFS/i.test(originId) &&
+    /^MSB-4SFS/i.test(destId) &&
+    originId !== destId
+
+  /** Cadena desplegable aguas abajo del MSB 690 (incl. RCT / MSB-24 / 400 Hz). */
   const isExpandableLink = (id: string) =>
-    /^(ABT|TRF|LCS|SSB|CCM|UPS|BUS|RCT|FAC|FCP|FUP|UCP|FAP)-/i.test(id) ||
-    /^MSB-24PW/i.test(id)
+    /^(ABT|TRF|LCS|SSB|CCM|UPS|BUS|RCT|FAC|FCP|FUP|UCP|FAP|SCV|SBT|FIU)-/i.test(
+      id,
+    ) ||
+    /^MSB-24PW/i.test(id) ||
+    /^MSB-4SFS/i.test(id)
 
   /**
    * Padres de la cadena planta 690→ABT→TRF→LCS (evita el lazo 24 V
    * LCS↔SSB-24↔MSB-24↔RCT↔SSB-4PWS… que abría cuadros hermanos al localizar).
+   * Incluye SBT/SCV/MSB-4SFS para revelar 400 Hz bajo el MSB 690.
    */
   const isPrimaryPlantParent = (id: string) =>
-    /^(ABT|TRF|LCS|CCM|PNL-MSB)/i.test(id) || /^MSB-6PWS/i.test(id)
+    /^(ABT|TRF|LCS|CCM|PNL-MSB|SBT|SCV)/i.test(id) ||
+    /^MSB-6PWS/i.test(id) ||
+    /^MSB-4SFS/i.test(id)
 
   const parentsOf = (id: string): string[] => {
     const incoming = data.circuits.filter(
@@ -219,13 +230,18 @@ export function getPlantRevealPath(
         c.destinationId === id &&
         c.originId !== 'ORIGEN-PENDIENTE' &&
         // No revelar subiendo acopladores MSB-24↔MSB-24 (ALT)
-        !isMsb24Tie(c.originId, c.destinationId),
+        !isMsb24Tie(c.originId, c.destinationId) &&
+        // Ni acopladores entre MSB-4SFS (Q01/Q51)
+        !isMsb4SfsTie(c.originId, c.destinationId),
     )
     // Preferir acometida normal (RCT→MSB, VS, …); si no hay, usar todas
     const norms = incoming.filter((c) => c.lineType === 'normal')
     const use = norms.length > 0 ? norms : incoming
     const ids = [...new Set(use.map((c) => c.originId))]
     const plant = ids.filter(isPrimaryPlantParent)
+    // 400 Hz: subir por SCV, no por retorno TRF ni otras acometidas
+    const scv = plant.filter((p) => /^SCV-4SFS/i.test(p))
+    if (scv.length > 0) return scv
     // Si hay feeder de planta (p. ej. TRF→LCS), no subir también por SSB-24PW…
     return plant.length > 0 ? plant : ids
   }

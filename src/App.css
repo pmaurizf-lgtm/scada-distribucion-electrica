@@ -225,6 +225,255 @@ body {
   padding: 2rem;
 }
 
+/* MSB-4SFS (400 Hz): chasis + dual barra 440 / 115 */
+.equip-chassis--msb4sfs {
+  border-color: rgba(130, 120, 190, 0.55);
+  background: linear-gradient(
+    180deg,
+    rgba(28, 32, 52, 0.92) 0%,
+    rgba(14, 16, 28, 0.88) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(130, 120, 190, 0.12);
+  margin-top: 0;
+  padding: 2.35rem 0.55rem 0.55rem;
+  overflow: visible;
+  width: max-content;
+  max-width: none;
+}
+
+.equip-chassis--msb4sfs::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 2.35rem;
+  transform: translateX(-50%);
+  background: var(--line-normal);
+  opacity: 0.9;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.equip-chassis--msb4sfs.equip-chassis--feed-flow::before,
+.equip-chassis--msb4sfs.equip-chassis--live::before {
+  background: #e6c200;
+}
+
+.equip-chassis--msb4sfs.equip-chassis--feed-alt::before {
+  background: var(--line-alt);
+}
+
+.hbus-drop--msb4sfs-open {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+}
+
+.hbus-drop--msb4sfs-open > .hbus-drop__tops {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: 4;
+}
+
+.hbus-drop--msb4sfs-open > .hbus-drop__tops .hbus-drop__wire--to-eq {
+  flex: 0 0 1.35rem;
+  min-height: 1.35rem;
+  margin-bottom: -2px;
+}
+
+.hbus-drop--msb4sfs-open > .hbus-drop__eq-row {
+  display: flex;
+  justify-content: center;
+  width: max-content;
+}
+
+.hbus-drop--msb4sfs-open > .hbus-drop__eq-row > .equip-chassis--msb4sfs {
+  margin-top: 0;
+  align-self: center;
+}
+
+.msb4sfs-board {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: max-content;
+  min-width: 10rem;
+}
+
+.msb4sfs-bus {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 9rem;
+  padding: 0.35rem 0.45rem 0.5rem;
+  border: 1px solid rgba(120, 130, 170, 0.35);
+  border-radius: 4px;
+  background: rgba(10, 14, 24, 0.45);
+}
+
+.msb4sfs-bus--440 {
+  border-color: rgba(150, 130, 210, 0.4);
+}
+
+.msb4sfs-bus--115 {
+  border-color: rgba(100, 160, 190, 0.4);
+}
+
+.msb4sfs-bus--live {
+  box-shadow: inset 0 0 0 1px rgba(230, 194, 0, 0.2);
+}
+
+.msb4sfs-bus__tag {
+  align-self: flex-start;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #8a9bb0;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+
+/* Retorno TRF → barra 115: misma idea que INS de SSB */
+.msb4sfs-bus__incoming {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  margin: 0.1rem 0 0;
+  z-index: 3;
+}
+
+.msb4sfs-bus__incoming-from {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: #9ab0c4;
+  margin-bottom: 0.15rem;
+}
+
+.msb4sfs-bus__incoming-riser {
+  display: block;
+  width: 2px;
+  height: 0.55rem;
+  background: var(--line-normal);
+  flex-shrink: 0;
+}
+
+.msb4sfs-bus__incoming-riser--flow {
+  background: #e6c200;
+}
+
+.msb4sfs-bus__rail {
+  height: 3px;
+  border-radius: 1px;
+  background: #6a5a9a;
+  margin: 0.05rem 0 0.15rem;
+  opacity: 0.85;
+}
+
+.msb4sfs-bus__rail--live {
+  background: #e6c200;
+  opacity: 1;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #e6c200 35%, transparent);
+}
+
+.msb4sfs-bus--115 .msb4sfs-bus__rail {
+  background: #4a8aaa;
+}
+
+.msb4sfs-bus--115 .msb4sfs-bus__rail--live {
+  background: #e6c200;
+}
+
+.msb4sfs-bus__drops {
+  margin-top: 0.15rem;
+}
+
+.msb4sfs-bus__drops.hbus--ssb-section {
+  width: max-content;
+  max-width: none;
+}
+
+.msb4sfs-bus__drops .hbus__drops {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.45rem 0.65rem;
+  margin-top: 0;
+}
+
+/* Acoplo compacto bajo la barra */
+.msb4sfs-tie {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 3.6rem;
+  min-width: 3.6rem;
+}
+
+.msb4sfs-tie__wire {
+  display: block;
+  width: 2px;
+  height: 0.55rem;
+  background: var(--line-normal);
+  flex-shrink: 0;
+}
+
+.msb4sfs-tie__wire:first-child {
+  margin-top: -4px;
+  height: 1.05rem;
+}
+
+.msb4sfs-tie__wire--flow {
+  background: #e6c200;
+}
+
+.msb4sfs-tie__peer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  margin-top: 0.15rem;
+  padding: 0.2rem 0.25rem;
+  border: 1px dashed rgba(120, 130, 160, 0.45);
+  border-radius: 3px;
+  background: rgba(16, 22, 34, 0.75);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  max-width: 5.5rem;
+}
+
+.msb4sfs-tie__peer:hover {
+  border-color: rgba(160, 170, 200, 0.65);
+}
+
+.msb4sfs-tie__peer--locate {
+  outline: 2px solid rgba(0, 220, 200, 0.65);
+  outline-offset: 2px;
+}
+
+.msb4sfs-tie__acople {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #7a8898;
+}
+
+.msb4sfs-tie__id {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #9ab8d0;
+  text-align: center;
+  line-height: 1.15;
+  word-break: break-all;
+}
+
 .statusbar__actions {
   display: flex;
   flex-wrap: wrap;
@@ -246,10 +495,10 @@ body {
 .topbar__brand {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 1rem;
   flex: 0 1 auto;
   min-width: 12rem;
-  padding-top: 0.15rem;
+  padding-top: 0.1rem;
 }
 
 .topbar__mark {
@@ -257,6 +506,33 @@ body {
   height: 36px;
   border-radius: 2px;
   background: linear-gradient(180deg, var(--accent), var(--alt));
+}
+
+.navantia-logo {
+  display: block;
+  height: 1.65rem;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+  /* Asset oficial en azul corporativo → blanco sobre topbar oscuro */
+  filter: brightness(0) invert(1);
+}
+
+.topbar__brand-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  padding-left: 0.85rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.topbar__brand-title {
+  margin: 0 !important;
+  font-size: 0.82rem !important;
+  font-weight: 600;
+  color: var(--text) !important;
+  letter-spacing: 0.01em;
 }
 
 .topbar h1 {
@@ -270,6 +546,10 @@ body {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.topbar__brand-meta p {
+  margin: 0;
 }
 
 .topbar__main {
@@ -1211,6 +1491,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.22);
 }
 
+.casc__focus-bar--jump {
+  border-color: rgba(232, 121, 249, 0.5);
+  background: rgba(28, 18, 32, 0.94);
+  box-shadow: 0 0 0 1px rgba(232, 121, 249, 0.2);
+}
+
 /* Halo de equipo localizado en el unifilar */
 .hbus-drop--locate,
 .equip-chassis--locate,
@@ -1232,6 +1518,17 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
     0 0 22px 4px rgba(45, 212, 168, 0.45);
   pointer-events: none;
   animation: locate-halo-pulse 1.4s ease-in-out infinite;
+}
+
+/*
+ * SSB-2PWS2209: un solo marco (el del chasis). El ::after del drop
+ * envolvería todo el cuadro abierto → doble marco; se oculta.
+ * El hilo ALT ya no usa ::after del chasis (ver .ssb2209-chassis-alt-riser).
+ */
+.hbus-drop--ssb-open:has(.ssb-board--2209).hbus-drop--locate::after,
+.hbus-drop--ssb2209.hbus-drop--locate::after {
+  content: none;
+  display: none;
 }
 
 .hbus-drop--locate .hbus-drop__eq,
@@ -2218,12 +2515,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-bottom: -2px;
 }
 
-/* AUX del MSB: encima del marco, anclado al borde izquierdo del recuadro.
- * Absolute para no intercalarse entre gens y caja (empalme gen→QG).
- * Misma geometría plegado/desplegado. */
+/* AUX del MSB: encima del marco, en el lado opuesto al bus-tie (QT*),
+ * para no solaparse con la interconexión. Absolute: no se intercala entre gens y caja. */
 .plant-msb__aux-tops {
   position: absolute;
-  left: 0.35rem;
   top: auto;
   bottom: 100%;
   z-index: 5;
@@ -2237,6 +2532,16 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   pointer-events: auto;
 }
 
+.plant-msb__aux-tops--left {
+  left: 0.35rem;
+  right: auto;
+}
+
+.plant-msb__aux-tops--right {
+  right: 0.35rem;
+  left: auto;
+}
+
 .plant-msb__aux-tops .hbus-drop__leg--aux {
   justify-content: flex-end;
 }
@@ -2248,9 +2553,16 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-bottom: 0;
 }
 
-.plant-msb__aux-tops .hbus-drop__leg--aux .hbus-drop__tag--aux {
+.plant-msb__aux-tops--left .hbus-drop__leg--aux .hbus-drop__tag--aux {
   bottom: calc(0.55rem + 0.15rem);
   left: calc(50% + 8px);
+  right: auto;
+}
+
+.plant-msb__aux-tops--right .hbus-drop__leg--aux .hbus-drop__tag--aux {
+  bottom: calc(0.55rem + 0.15rem);
+  right: calc(50% + 8px);
+  left: auto;
 }
 
 .hbus-drop__eq-row {
@@ -3690,7 +4002,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 /*
  * Continuidad vertical:
  *   NORM: to-eq → ::before → riser QN
- *   ALT:  to-eq → ::after  → riser QA
+ *   ALT:  to-eq → .ssb2209-chassis-alt-riser → riser QA
+ *   (::after del chasis queda libre para el halo de localizar)
  */
 .equip-chassis--ssb:has(.ssb-board--2209)::before {
   left: var(--ssb2209-axis, calc(0.55rem + 1px + 1.8rem));
@@ -3698,8 +4011,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   z-index: 4;
 }
 
-.equip-chassis--ssb:has(.ssb-board--2209)::after {
-  content: '';
+.ssb2209-chassis-alt-riser {
   position: absolute;
   left: var(--ssb2209-qa-axis, 70%);
   top: 0;
@@ -3712,10 +4024,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   pointer-events: none;
 }
 
-.equip-chassis--ssb.equip-chassis--feed-flow:has(.ssb-board--2209)::after,
-.equip-chassis--ssb.equip-chassis--live:has(.ssb-board--2209)::after {
-  /* Solo fluye si la pierna ALT está en marcha; el JS no pinta ::after.
-     Color base ALT; el brillo lo da la pierna tops. */
+.equip-chassis--ssb.equip-chassis--feed-flow:has(.ssb-board--2209) > .ssb2209-chassis-alt-riser,
+.equip-chassis--ssb.equip-chassis--live:has(.ssb-board--2209) > .ssb2209-chassis-alt-riser {
   opacity: 1;
 }
 

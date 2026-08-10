@@ -44,6 +44,7 @@ interface RawCircuit {
 interface RawSystem {
   title: string
   vessel: string
+  sourceFile?: string
   equipment: RawEquipment[]
   circuits: RawCircuit[]
 }
@@ -51,9 +52,18 @@ interface RawSystem {
 const system = raw as RawSystem
 const dcp10ByPuma = dcp10Map as Record<string, string>
 
+/** Nombre de archivo Excel sin sufijo «_trabajo» ni extensión. */
+export function displaySourceFileName(fileName: string): string {
+  return fileName
+    .replace(/_trabajo(?=\.[^.]+$)/i, '')
+    .replace(/_trabajo$/i, '')
+    .replace(/\.[^.]+$/, '')
+}
+
 const base: DistributionData = {
   title: system.title,
   vessel: system.vessel,
+  sourceFile: system.sourceFile,
   equipment: system.equipment.map(
     (eq): Equipment => ({
       id: eq.id,

@@ -76,6 +76,8 @@ export interface Circuit {
 export interface DistributionData {
   title: string
   vessel: string
+  /** Nombre del Excel fuente del unifilar (si existe). */
+  sourceFile?: string
   equipment: Equipment[]
   circuits: Circuit[]
 }

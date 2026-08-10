@@ -499,6 +499,9 @@ function LcsOutletDrop({
               onToggleEquip(equipment.id)
             }}
           >
+            {is2209 && (
+              <span className="ssb2209-chassis-alt-riser" aria-hidden />
+            )}
             <div className="equip-chassis__label">
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>

@@ -43,7 +43,10 @@ export function isDownstreamPanelBoard(equipment: Equipment): boolean {
 /** Cuadro con layout entrada/barra → salidas (SSB con INS/NSX, o panel 440 V). */
 export function hasSsbBoardLayout(equipment: Equipment): boolean {
   if (isSsbIncomingSwitchName(equipment.incomingSwitch)) return true
-  return isDownstreamPanelBoard(equipment)
+  if (isDownstreamPanelBoard(equipment)) return true
+  // Cuadros 400 Hz sin INS materializado: barra + salidas (bus-only).
+  if (/^SSB-[12]SFS/i.test(equipment.id)) return true
+  return false
 }
 
 /** Barra virtual 115 V interna de SSB especiales. */

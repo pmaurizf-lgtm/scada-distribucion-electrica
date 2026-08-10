@@ -38,11 +38,14 @@ import {
   trfLoadCenterFeed,
   windingNotesForTrf,
 } from '../abtDownstream'
+import { isMsb4Sfs } from '../voltageSystems/hz400'
+import { Msb4SfsBoardView } from './Msb4SfsBoardView'
 import {
   hasSsbBoardLayout,
   isSsb115InternalBus,
   isSsbIncomingCircuit,
 } from '../abtDownstream/ssbBoard'
+import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
 import { Aux24Incoming } from './Aux24Incoming'
 import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
@@ -60,6 +63,8 @@ export type LockTool = 'none' | 'lock' | 'unlock'
 export type CascadeViewHandle = {
   expandAll: () => void
   collapseAll: () => void
+  /** Restaura zoom/expansión/scroll previos a localizar o saltar a remoto. */
+  goBack: () => void
 }
 
 export interface CascadeFocus {
@@ -90,6 +95,14 @@ interface CascadeViewProps {
 }
 
 const MSB_BOARD_IDS = ['MSB-6PWS0002', 'MSB-6PWS0001'] as const
+
+type PlantViewSnapshot = {
+  boards: string[]
+  equip: string[]
+  zoom: number
+  scrollLeft: number
+  scrollTop: number
+}
 
 /** Equipos del unifilar que admiten despliegue (cadena / LCS / SSB / paneles). */
 function allPlantExpandEquipIds(): string[] {
@@ -353,6 +366,7 @@ function BusDrop({
     (children.length > 0 ||
       isLcsEquipment(equipment.id) ||
       isTrfWithLoadCenter(system690, equipment.id) ||
+      isMsb4Sfs(equipment.id) ||
       hasSsbBoardLayout(equipment))
   const trfBankNote = useMemo(
     () =>
@@ -421,10 +435,14 @@ function BusDrop({
 
   const lcsOpen =
     !isAux24Feed(circuit) && isLcsEquipment(equipment.id) && expanded
+  const msb4sfsOpen =
+    !isAux24Feed(circuit) && isMsb4Sfs(equipment.id) && expanded
   const ssbOpen =
-    Boolean(equipment.incomingSwitch) &&
+    !msb4sfsOpen &&
+    Boolean(equipment.incomingSwitch || /^SSB-[12]SFS/i.test(equipment.id)) &&
     hasSsbBoardLayout(equipment) &&
     expanded
+  const ssb2209 = isSsb2Pws2209(equipment.id)
   const equipFam = equipFamOf(equipment, isLcsEquipment(equipment.id))
   const expandLabel = isTrfWithLoadCenter(system690, equipment.id)
     ? expanded
@@ -434,11 +452,15 @@ function BusDrop({
       ? expanded
         ? '▴ 440/230'
         : '▾ 440/230'
-      : hasSsbBoardLayout(equipment)
+      : isMsb4Sfs(equipment.id)
         ? expanded
-          ? `▴ ${children.length}`
-          : `▾ ${children.length}`
-        : `${children.length} ${expanded ? '▴' : '▾'}`
+          ? '▴ 400 Hz'
+          : '▾ 400 Hz'
+        : hasSsbBoardLayout(equipment)
+          ? expanded
+            ? `▴ ${children.length}`
+            : `▾ ${children.length}`
+          : `${children.length} ${expanded ? '▴' : '▾'}`
 
   if (lcsOpen) {
     const located = locateEquipmentId === equipment.id
@@ -513,12 +535,112 @@ function BusDrop({
     )
   }
 
+  if (msb4sfsOpen) {
+    const located = locateEquipmentId === equipment.id
+    return (
+      <div
+        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--msb4sfs-open${located ? ' hbus-drop--locate' : ''}`}
+        data-equip={equipment.id}
+        data-locate={located ? '1' : undefined}
+        data-circuit-id={localFeed.id}
+        aria-label={`${equipment.id} · doble clic para plegar`}
+        onDoubleClick={toggleExpand}
+      >
+        <div className="hbus-drop__tops">
+          {aux24Feeds.length > 0 &&
+            !isAux24Feed(localFeed) &&
+            aux24Feeds.map((aux) => (
+              <Aux24Incoming
+                key={aux.id}
+                circuit={aux}
+                protectionStatus={protectionStatus}
+                energizedCircuitIds={energizedCircuitIds}
+                lockedCircuits={lockedCircuits}
+                onLocalBreaker={onLocalBreaker}
+                onJumpToCircuit={onJumpToCircuit}
+                onHoverInfo={onHoverInfo}
+                onHoverInfoEnd={onHoverInfoEnd}
+              />
+            ))}
+          <div
+            className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+            data-circuit-id={localFeed.id}
+          >
+            <span
+              className="hbus-drop__wire hbus-drop__wire--from-bus"
+              aria-hidden
+            />
+            <BreakerChip
+              name={localFeed.protectionName}
+              state={protectionStatus[localFeed.id]}
+              compact
+              circuitId={localFeed.id}
+              circuit={localFeed}
+              flowing={localFlowing}
+              locked={lockedCircuits.has(localFeed.id)}
+              onClick={(e) => onLocalBreaker(localFeed, e)}
+              onHoverInfo={onHoverInfo}
+              onHoverInfoEnd={onHoverInfoEnd}
+            />
+            <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
+            <span
+              className={`hbus-drop__wire hbus-drop__wire--to-eq${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
+              aria-hidden
+            />
+          </div>
+        </div>
+        <div className="hbus-drop__eq-row">
+          <div
+            className={`equip-chassis equip-chassis--msb4sfs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
+            onDoubleClick={toggleExpand}
+            aria-label={`${equipment.id} · doble clic para plegar`}
+          >
+            <div
+              ref={eqWrapRef}
+              className="equip-chassis__label"
+              onMouseEnter={() => setEqHover(true)}
+              onMouseLeave={() => setEqHover(false)}
+            >
+              <span className="equip-chassis__id">{equipment.id}</span>
+              <span className="equip-chassis__hint">doble clic · plegar</span>
+              {showEqBalloon && (
+                <EquipmentBalloon
+                  equipment={equipment}
+                  feeds={feedSummaries}
+                  circuits={feeds}
+                  anchorRef={eqWrapRef}
+                />
+              )}
+            </div>
+            <div className="equip-chassis__body">
+              <Msb4SfsBoardView
+                msb={equipment}
+                feed={localFeed}
+                protectionStatus={protectionStatus}
+                energizedCircuitIds={energizedCircuitIds}
+                energizedEquipmentIds={energizedEquipmentIds}
+                lockedCircuits={lockedCircuits}
+                onLocalBreaker={onLocalBreaker}
+                onJumpToCircuit={onJumpToCircuit}
+                onHoverInfo={onHoverInfo}
+                onHoverInfoEnd={onHoverInfoEnd}
+                expandedEquip={expandedEquip}
+                onToggleEquip={onToggleEquip}
+                locateEquipmentId={locateEquipmentId}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (ssbOpen) {
     const located = locateEquipmentId === equipment.id
     const linkOnly = isAbtOutgoingFeed(localFeed)
     return (
       <div
-        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--ssb-open${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
+        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--ssb-open${ssb2209 ? ' hbus-drop--ssb2209' : ''}${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
@@ -593,6 +715,9 @@ function BusDrop({
             onDoubleClick={toggleExpand}
             aria-label={`${equipment.id} · doble clic para plegar`}
           >
+            {ssb2209 && (
+              <span className="ssb2209-chassis-alt-riser" aria-hidden />
+            )}
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
@@ -664,18 +789,39 @@ function BusDrop({
       located={locateEquipmentId === equipment.id}
       linkOnlyFromParent={isAbtOutgoingFeed(localFeed)}
       rootClassName={[
-        expanded &&
-        (childItems.length > 0 || hasSsbBoardLayout(equipment))
-          ? hasSsbBoardLayout(equipment)
-            ? 'hbus-drop--ssb-open'
-            : 'hbus-drop--chain-open'
-          : '',
+        expanded && isMsb4Sfs(equipment.id)
+          ? 'hbus-drop--msb4sfs-open'
+          : expanded &&
+              (childItems.length > 0 || hasSsbBoardLayout(equipment))
+            ? hasSsbBoardLayout(equipment)
+              ? 'hbus-drop--ssb-open'
+              : 'hbus-drop--chain-open'
+            : '',
         feedsOpenLcs ? 'hbus-drop--feeds-lcs-open' : '',
       ]
         .filter(Boolean)
         .join(' ') || undefined}
     >
-      {expanded && hasSsbBoardLayout(equipment) && (
+      {expanded && isMsb4Sfs(equipment.id) && (
+        <Msb4SfsBoardView
+          msb={equipment}
+          feed={localFeed}
+          protectionStatus={protectionStatus}
+          energizedCircuitIds={energizedCircuitIds}
+          energizedEquipmentIds={energizedEquipmentIds}
+          lockedCircuits={lockedCircuits}
+          onLocalBreaker={onLocalBreaker}
+          onJumpToCircuit={onJumpToCircuit}
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
+          expandedEquip={expandedEquip}
+          onToggleEquip={onToggleEquip}
+          locateEquipmentId={locateEquipmentId}
+        />
+      )}
+      {expanded &&
+        !isMsb4Sfs(equipment.id) &&
+        hasSsbBoardLayout(equipment) && (
         <SsbBoardView
           ssb={equipment}
           feed={localFeed}
@@ -693,7 +839,10 @@ function BusDrop({
           locateEquipmentId={locateEquipmentId}
         />
       )}
-      {expanded && !hasSsbBoardLayout(equipment) && childItems.length > 0 && (
+      {expanded &&
+        !isMsb4Sfs(equipment.id) &&
+        !hasSsbBoardLayout(equipment) &&
+        childItems.length > 0 && (
         <HorizontalBus
           nested
           direct={directChain}
@@ -904,6 +1053,18 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     () => new Set(MSB_BOARD_IDS),
   )
   const [expandedEquip, setExpandedEquip] = useState<Set<string>>(new Set())
+  const expandedBoardsRef = useRef(expandedBoards)
+  expandedBoardsRef.current = expandedBoards
+  const expandedEquipRef = useRef(expandedEquip)
+  expandedEquipRef.current = expandedEquip
+  /** Vista previa a localizar / saltar a acometida remota (una sola captura). */
+  const viewOriginRef = useRef<PlantViewSnapshot | null>(null)
+  const [hasViewBack, setHasViewBack] = useState(false)
+  const [backKind, setBackKind] = useState<'locate' | 'jump' | null>(null)
+  const pendingRestoreScroll = useRef<{ left: number; top: number } | null>(
+    null,
+  )
+  const [restoreNonce, setRestoreNonce] = useState(0)
   const [balloon, setBalloon] = useState<{
     circuit: Circuit
     x: number
@@ -953,6 +1114,18 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     if (!locateEquipmentId) {
       pendingLocateScroll.current = null
       return
+    }
+    if (!viewOriginRef.current) {
+      const stage = panRef.current
+      viewOriginRef.current = {
+        boards: [...expandedBoardsRef.current],
+        equip: [...expandedEquipRef.current],
+        zoom: zoomRef.current,
+        scrollLeft: stage?.scrollLeft ?? 0,
+        scrollTop: stage?.scrollTop ?? 0,
+      }
+      setHasViewBack(true)
+      setBackKind('locate')
     }
     const path = getPlantRevealPath(locateEquipmentId, system690)
     pendingLocateScroll.current = locateEquipmentId
@@ -1624,7 +1797,48 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     })
   }
 
+  const clearJumpHighlights = useCallback(() => {
+    const plant = plantRef.current
+    if (!plant) return
+    plant.querySelectorAll('.hbus-drop--jump-hl').forEach((el) => {
+      el.classList.remove('hbus-drop--jump-hl')
+    })
+    if (jumpHighlightTimer.current != null) {
+      window.clearTimeout(jumpHighlightTimer.current)
+      jumpHighlightTimer.current = null
+    }
+  }, [])
+
+  const goBackToOrigin = useCallback(() => {
+    const snap = viewOriginRef.current
+    if (!snap) return
+    viewOriginRef.current = null
+    setHasViewBack(false)
+    setBackKind(null)
+    pendingLocateScroll.current = null
+    pendingJumpScroll.current = null
+    pendingFocusTarget.current = null
+    pendingViewFit.current = null
+    fitZoomPending.current = false
+    clearJumpHighlights()
+    onClearLocate?.()
+    pendingRestoreScroll.current = {
+      left: snap.scrollLeft,
+      top: snap.scrollTop,
+    }
+    setExpandedBoards(new Set(snap.boards))
+    setExpandedEquip(new Set(snap.equip))
+    if (zoomRef.current !== snap.zoom) {
+      onZoomChange(snap.zoom)
+    }
+    setRestoreNonce((n) => n + 1)
+  }, [clearJumpHighlights, onClearLocate, onZoomChange])
+
   const expandAll = useCallback(() => {
+    viewOriginRef.current = null
+    setHasViewBack(false)
+    setBackKind(null)
+    pendingRestoreScroll.current = null
     pendingFocusTarget.current = null
     pendingZoomScroll.current = null
     pendingViewFit.current = 'fit'
@@ -1634,6 +1848,10 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   }, [])
 
   const collapseAll = useCallback(() => {
+    viewOriginRef.current = null
+    setHasViewBack(false)
+    setBackKind(null)
+    pendingRestoreScroll.current = null
     pendingFocusTarget.current = null
     pendingZoomScroll.current = null
     pendingViewFit.current = 'zoom100'
@@ -1651,8 +1869,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     () => ({
       expandAll,
       collapseAll,
+      goBack: goBackToOrigin,
     }),
-    [expandAll, collapseAll],
+    [expandAll, collapseAll, goBackToOrigin],
   )
 
   const showBalloonAt = useCallback((circuit: Circuit, rect: DOMRect) => {
@@ -1681,6 +1900,19 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const onJumpToCircuit = useCallback((circuit: Circuit) => {
     if (isPendingFeed(circuit)) return
 
+    if (!viewOriginRef.current) {
+      const stage = panRef.current
+      viewOriginRef.current = {
+        boards: [...expandedBoardsRef.current],
+        equip: [...expandedEquipRef.current],
+        zoom: zoomRef.current,
+        scrollLeft: stage?.scrollLeft ?? 0,
+        scrollTop: stage?.scrollTop ?? 0,
+      }
+      setHasViewBack(true)
+      setBackKind('jump')
+    }
+
     // Revelar la cadena hasta el origen de la acometida remota (SSB/LCS/…)
     // y abrir ese origen para ver la instancia LOCAL del interruptor.
     const path = getPlantRevealPath(circuit.originId, system690)
@@ -1708,20 +1940,61 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     setJumpNonce((n) => n + 1)
   }, [])
 
+  /** Restaurar scroll de la vista previa tras Volver. */
+  useLayoutEffect(() => {
+    if (!pendingRestoreScroll.current) return
+    let cancelled = false
+    const delays = [0, 40, 120, 280, 500]
+    const tryRestore = (i: number) => {
+      if (cancelled) return
+      const snap = pendingRestoreScroll.current
+      const stage = panRef.current
+      if (snap && stage) {
+        stage.scrollLeft = snap.left
+        stage.scrollTop = snap.top
+        if (i + 1 >= delays.length) {
+          pendingRestoreScroll.current = null
+          return
+        }
+      }
+      if (i + 1 < delays.length) {
+        window.setTimeout(
+          () => tryRestore(i + 1),
+          delays[i + 1]! - delays[i]!,
+        )
+      }
+    }
+    const t = window.setTimeout(() => tryRestore(0), delays[0])
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [restoreNonce, expandedBoards, expandedEquip, zoom])
+
   const [boardPopa, boardProa] = boards
 
   return (
     <div className="casc" ref={stageRef} onClick={() => setBalloon(null)}>
-      {locateEquipmentId && !focus && (
-        <div className="casc__focus-bar casc__focus-bar--overlay casc__focus-bar--locate">
+      {hasViewBack && !focus && (
+        <div
+          className={`casc__focus-bar casc__focus-bar--overlay${
+            locateEquipmentId || backKind === 'locate'
+              ? ' casc__focus-bar--locate'
+              : ' casc__focus-bar--jump'
+          }`}
+        >
           <span>
-            Localizado en unifilar: <strong>{locateEquipmentId}</strong>
+            {locateEquipmentId ? (
+              <>
+                Localizado en unifilar: <strong>{locateEquipmentId}</strong>
+              </>
+            ) : (
+              'Vista de acometida remota'
+            )}
           </span>
-          {onClearLocate && (
-            <button type="button" className="btn" onClick={onClearLocate}>
-              Quitar localización
-            </button>
-          )}
+          <button type="button" className="btn" onClick={goBackToOrigin}>
+            Volver
+          </button>
         </div>
       )}
       {focus && (
@@ -2100,7 +2373,10 @@ function BoardColumn({
 
       <section className={`plant-msb${expanded ? ' plant-msb--open' : ''}`}>
         {msbAux24Feeds.length > 0 && (
-          <div className="plant-msb__aux-tops" aria-label="Alimentaciones AUX 24 V">
+          <div
+            className={`plant-msb__aux-tops plant-msb__aux-tops--${tieSide === 'left' ? 'right' : 'left'}`}
+            aria-label="Alimentaciones AUX 24 V"
+          >
             {msbAux24Feeds.map((aux) => (
               <Aux24Incoming
                 key={aux.id}

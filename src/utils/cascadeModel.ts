@@ -235,7 +235,7 @@ export function isMsb24Interconnect(circuit: Circuit): boolean {
 /**
  * Hijos para anidar en el unifilar: excluye retorno al padre de acometida
  * y a ancestros ya abiertos (rompe ciclos p. ej. SSB↔TRF que congelan al expandir).
- * También excluye acopladores MSB-24↔MSB-24 (van como ALT en acometida).
+ * También excluye acopladores MSB-24↔MSB-24 y MSB-4SFS↔MSB-4SFS.
  */
 export function nestableChildFeeders(
   data: DistributionData,
@@ -254,7 +254,20 @@ export function nestableChildFeeders(
     for (const id of options.ancestorIds) blocked.add(id)
   }
   return childFeeders(data, equipmentId).filter(
-    (x) => !blocked.has(x.equipment.id) && !isMsb24Interconnect(x.circuit),
+    (x) =>
+      !blocked.has(x.equipment.id) &&
+      !isMsb24Interconnect(x.circuit) &&
+      !isMsb4SfsPeerTie(x.circuit),
+  )
+}
+
+/** Acoplador entre cuadros principales 400 Hz (Q01 / Q51). */
+export function isMsb4SfsPeerTie(circuit: Circuit): boolean {
+  return (
+    !circuit.virtual &&
+    /^MSB-4SFS/i.test(circuit.originId) &&
+    /^MSB-4SFS/i.test(circuit.destinationId) &&
+    circuit.originId !== circuit.destinationId
   )
 }
 

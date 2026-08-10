@@ -6,7 +6,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from 'react'
-import { system690 } from '../data/system690'
+import { displaySourceFileName, system690 } from '../data/system690'
 import {
   sampleProtectionStatus,
   toProtectionStatusMap,
@@ -20,19 +20,12 @@ import {
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
 import { allSectionCouplers, isPendingFeed } from '../utils/cascadeModel'
 import {
-  SYSTEM_TABS,
-  type SystemTabId,
-} from '../voltageSystems/model'
-import {
   CascadeView,
   type CascadeFocus,
   type CascadeViewHandle,
   type LockTool,
 } from './CascadeView'
-import {
-  SecondarySystemView,
-  type SecondarySystemViewHandle,
-} from './SecondarySystemView'
+import { NavantiaLogo } from './NavantiaLogo'
 
 const emptyStatus: ProtectionStatusMap = {}
 const ZOOM_MIN = 0.25
@@ -50,8 +43,6 @@ const searchableEquipment = system690.equipment.filter(
 export function ScadaCanvas() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cascadeRef = useRef<CascadeViewHandle>(null)
-  const secondaryRef = useRef<SecondarySystemViewHandle>(null)
-  const [systemTab, setSystemTab] = useState<SystemTabId>('690')
   const [protectionStatus, setProtectionStatus] =
     useState<ProtectionStatusMap>(() =>
       toProtectionStatusMap(sampleProtectionStatus),
@@ -229,30 +220,18 @@ export function ScadaCanvas() {
     (s) => s === 'abierta',
   ).length
 
-  const activeTab = SYSTEM_TABS.find((t) => t.id === systemTab) ?? SYSTEM_TABS[0]
-
   const expandAll = () => {
     setFocus(null)
     setLocateEquipmentId(null)
     setSearchHint(null)
-    if (systemTab === '690') cascadeRef.current?.expandAll()
-    else secondaryRef.current?.expandAll()
+    cascadeRef.current?.expandAll()
   }
 
   const collapseAll = () => {
     setFocus(null)
     setLocateEquipmentId(null)
     setSearchHint(null)
-    if (systemTab === '690') cascadeRef.current?.collapseAll()
-    else secondaryRef.current?.collapseAll()
-  }
-
-  const switchTab = (id: SystemTabId) => {
-    setSystemTab(id)
-    setFocus(null)
-    setLocateEquipmentId(null)
-    setSearchHint(null)
-    setZoom(1)
+    cascadeRef.current?.collapseAll()
   }
 
   return (
@@ -260,10 +239,14 @@ export function ScadaCanvas() {
       <div className="app-shell__chrome">
         <header className="topbar">
           <div className="topbar__brand">
-            <span className="topbar__mark" aria-hidden />
-            <div>
-              <h1>{activeTab.title}</h1>
-              <p>{system690.vessel} · vista cascada tipo planta eléctrica</p>
+            <NavantiaLogo />
+            <div className="topbar__brand-meta">
+              <p className="topbar__brand-title">F110 - Distribution Power System</p>
+              <p>
+                {system690.sourceFile
+                  ? displaySourceFileName(system690.sourceFile)
+                  : system690.vessel}
+              </p>
             </div>
           </div>
 
@@ -408,12 +391,12 @@ export function ScadaCanvas() {
                     type="button"
                     className="btn"
                     onClick={() => {
-                      setLocateEquipmentId(null)
+                      cascadeRef.current?.goBack()
                       setLocateQuery('')
                       setSearchHint(null)
                     }}
                   >
-                    Limpiar
+                    Volver
                   </button>
                 )}
               </form>
@@ -475,19 +458,6 @@ export function ScadaCanvas() {
           </div>
         </header>
 
-        <nav className="sheet-tabs" aria-label="Sistema de tensión">
-          {SYSTEM_TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`sheet-tabs__btn${systemTab === t.id ? ' sheet-tabs__btn--active' : ''}`}
-              onClick={() => switchTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-
         {searchHint && <div className="banner">{searchHint}</div>}
         {lockTool !== 'none' && (
           <div className="banner banner--tool">
@@ -496,69 +466,47 @@ export function ScadaCanvas() {
               : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
           </div>
         )}
-        {lockTool === 'none' && !searchHint && systemTab === '690' && (
+        {lockTool === 'none' && !searchHint && (
           <div className="banner">
             {runningGenerators.size === 0
               ? 'Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
               : `Simulación: ${runningGenerators.size} generador${runningGenerators.size === 1 ? '' : 'es'} en marcha. Cierra QG* / salidas / QBT para ver el flujo (doble clic en cuadros o equipos para plegar/desplegar).`}
           </div>
         )}
-        {lockTool === 'none' && !searchHint && systemTab !== '690' && (
-          <div className="banner">
-            {systemTab === '115'
-              ? '115 V: cadenas TRF-4PWS → SSB-1PWS. Doble clic en el cuadro para plegar/desplegar salidas.'
-              : '400 Hz: cadenas SCV-4SFS → MSB-4SFS y salidas. Doble clic para plegar/desplegar.'}
-          </div>
-        )}
       </div>
 
       <main className="workspace workspace--cascade">
-        {systemTab === '690' ? (
-          <CascadeView
-            ref={cascadeRef}
-            protectionStatus={protectionStatus}
-            energizedCircuitIds={energizedCircuitIds}
-            energizedEquipmentIds={energizedEquipmentIds}
-            energizedBusHalves={energizedBusHalves}
-            runningGenerators={runningGenerators}
-            lockedCircuits={lockedCircuits}
-            lockTool={lockTool}
-            zoom={zoom}
-            onZoomChange={setZoom}
-            focus={focus}
-            locateEquipmentId={locateEquipmentId}
-            onToggleProtection={handleToggleProtection}
-            onLockCircuit={handleLockCircuit}
-            onUnlockCircuit={handleUnlockCircuit}
-            onToggleGenerator={toggleGenerator}
-            onClearFocus={() => {
-              setFocus(null)
-              setSearchHint(null)
-            }}
-            onClearLocate={() => {
-              setLocateEquipmentId(null)
-              setSearchHint(null)
-            }}
-          />
-        ) : (
-          <SecondarySystemView
-            ref={secondaryRef}
-            tab={systemTab}
-            protectionStatus={protectionStatus}
-            energizedCircuitIds={energizedCircuitIds}
-            energizedEquipmentIds={energizedEquipmentIds}
-            lockedCircuits={lockedCircuits}
-            zoom={zoom}
-            onZoomChange={setZoom}
-            locateEquipmentId={locateEquipmentId}
-            onToggleProtection={handleToggleProtection}
-          />
-        )}
+        <CascadeView
+          ref={cascadeRef}
+          protectionStatus={protectionStatus}
+          energizedCircuitIds={energizedCircuitIds}
+          energizedEquipmentIds={energizedEquipmentIds}
+          energizedBusHalves={energizedBusHalves}
+          runningGenerators={runningGenerators}
+          lockedCircuits={lockedCircuits}
+          lockTool={lockTool}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          focus={focus}
+          locateEquipmentId={locateEquipmentId}
+          onToggleProtection={handleToggleProtection}
+          onLockCircuit={handleLockCircuit}
+          onUnlockCircuit={handleUnlockCircuit}
+          onToggleGenerator={toggleGenerator}
+          onClearFocus={() => {
+            setFocus(null)
+            setSearchHint(null)
+          }}
+          onClearLocate={() => {
+            setLocateEquipmentId(null)
+            setSearchHint(null)
+          }}
+        />
       </main>
 
       <footer className="statusbar">
         <span>
-          Cascada {activeTab.label} · protecciones:{' '}
+          Cascada 690 V · protecciones:{' '}
           <span className="swatch swatch--cerrada" /> {closedCount} cerradas ·{' '}
           <span className="swatch swatch--abierta" /> {openCount} abiertas ·
           gens: {runningGenerators.size} en marcha · candados:{' '}
