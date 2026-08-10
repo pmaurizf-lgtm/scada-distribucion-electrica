@@ -4,6 +4,7 @@ import {
   boardFromOrigin,
   halfFromPanel,
   isAux24Feed,
+  isLinkOnlyOutgoingFeed,
 } from './cascadeModel'
 
 const QT_NAMES = new Set(['QT1B', 'QT2A'])
@@ -173,6 +174,13 @@ export function computeEnergyFlow(
           continue
         }
         // Otros virtuales: propagar destino
+        reachDestination(circuit.destinationId)
+        continue
+      }
+
+      // Cable sin interruptor (ABT→…, SBT→SCV): conduce si el origen está vivo
+      if (isLinkOnlyOutgoingFeed(circuit)) {
+        energizedCircuitIds.add(circuit.id)
         reachDestination(circuit.destinationId)
         continue
       }

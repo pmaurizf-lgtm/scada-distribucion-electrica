@@ -474,7 +474,7 @@ function LcsOutletDrop({
           </div>
         )}
         {linkOnly && aux24Feeds.length > 0 && (
-          <div className="hbus-drop__tops hbus-drop__tops--aux">
+          <div className="hbus-drop__tops hbus-drop__tops--link-aux">
             {aux24Feeds.map((aux) => (
               <Aux24Incoming
                 key={aux.id}
@@ -488,6 +488,15 @@ function LcsOutletDrop({
                 onHoverInfoEnd={onHoverInfoEnd}
               />
             ))}
+            <div
+              className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              data-circuit-id={circuit.id}
+              aria-hidden
+            >
+              <span
+                className={`hbus-drop__wire hbus-drop__wire--thru${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
+              />
+            </div>
           </div>
         )}
         <div className="hbus-drop__eq-row">

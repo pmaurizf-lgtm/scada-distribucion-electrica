@@ -225,20 +225,18 @@ body {
   padding: 2rem;
 }
 
-/* MSB-4SFS (400 Hz): chasis + dual barra 440 / 115 */
+/* MSB-4SFS (400 Hz): chasis + rack estilo planta MSB-6PWS */
 .equip-chassis--msb4sfs {
-  border-color: rgba(130, 120, 190, 0.55);
-  background: linear-gradient(
-    180deg,
-    rgba(28, 32, 52, 0.92) 0%,
-    rgba(14, 16, 28, 0.88) 100%
-  );
-  box-shadow: inset 0 0 0 1px rgba(130, 120, 190, 0.12);
+  border-color: rgba(120, 170, 210, 0.55);
+  background: rgba(18, 28, 36, 0.72);
+  box-shadow: none;
   margin-top: 0;
-  padding: 2.35rem 0.55rem 0.55rem;
+  padding: 2.1rem 0.55rem 0.55rem;
   overflow: visible;
   width: max-content;
   max-width: none;
+  border-style: dashed;
+  border-radius: 2px;
 }
 
 .equip-chassis--msb4sfs::before {
@@ -247,7 +245,7 @@ body {
   left: 50%;
   top: 0;
   width: 2px;
-  height: 2.35rem;
+  height: 2.1rem;
   transform: translateX(-50%);
   background: var(--line-normal);
   opacity: 0.9;
@@ -278,10 +276,16 @@ body {
   z-index: 4;
 }
 
-.hbus-drop--msb4sfs-open > .hbus-drop__tops .hbus-drop__wire--to-eq {
+.hbus-drop--msb4sfs-open > .hbus-drop__tops .hbus-drop__wire--to-eq,
+.hbus-drop--msb4sfs-open > .hbus-drop__tops .hbus-drop__wire--thru {
   flex: 0 0 1.35rem;
   min-height: 1.35rem;
   margin-bottom: -2px;
+}
+
+.hbus-drop--msb4sfs-open.hbus-drop--link-only > .hbus-drop__tops--link-aux .hbus-drop__wire--thru {
+  flex: 1 0 auto;
+  min-height: 3.6rem;
 }
 
 .hbus-drop--msb4sfs-open > .hbus-drop__eq-row {
@@ -299,179 +303,283 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.75rem;
+  gap: 1.1rem;
   width: max-content;
-  min-width: 10rem;
+  min-width: 18rem;
 }
 
-.msb4sfs-bus {
+/*
+ * Secciones 440 / 115 dentro del mismo chasis: sin recuadro propio
+ * (el MSB-4SFS es un único equipo).
+ */
+.msb4sfs-rack {
+  --msb4sfs-rail-h: 1.15rem;
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  min-width: 9rem;
-  padding: 0.35rem 0.45rem 0.5rem;
-  border: 1px solid rgba(120, 130, 170, 0.35);
-  border-radius: 4px;
-  background: rgba(10, 14, 24, 0.45);
+  min-width: 16rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
 }
 
-.msb4sfs-bus--440 {
-  border-color: rgba(150, 130, 210, 0.4);
+.msb4sfs-rack--live {
+  /* sin borde propio; el chasis ya delimita el equipo */
 }
 
-.msb4sfs-bus--115 {
-  border-color: rgba(100, 160, 190, 0.4);
+.msb4sfs-rack__inner-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 3.85rem;
+  /* Empalme visual con el eje de la barra */
+  margin-bottom: calc(-0.5 * var(--msb4sfs-rail-h) + 2px);
 }
 
-.msb4sfs-bus--live {
-  box-shadow: inset 0 0 0 1px rgba(230, 194, 0, 0.2);
+/* Empalma con el eje de la barra */
+.msb4sfs-rack__vwire--to-rail {
+  flex: 1 0 auto;
+  min-height: 0.85rem;
+  margin-bottom: 0;
+  /* 2 px dentro de la barra para unión visual */
+  padding-bottom: 2px;
+  box-sizing: content-box;
 }
 
-.msb4sfs-bus__tag {
-  align-self: flex-start;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #8a9bb0;
-  text-transform: uppercase;
-  margin-bottom: 0.2rem;
-}
-
-/* Retorno TRF → barra 115: misma idea que INS de SSB */
-.msb4sfs-bus__incoming {
+.msb4sfs-rack__bustie {
+  position: absolute;
+  top: 0.05rem;
+  /* Mismo borde que Q00; 2 px dentro de la barra */
+  bottom: -2px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 4.6rem;
+  z-index: 4;
+  pointer-events: none;
+  /* visible: cartel y flecha peer fuera del eje */
+  overflow: visible;
+}
+
+.msb4sfs-rack__in-row {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.msb4sfs-rack__in-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   gap: 0;
-  width: 100%;
-  margin: 0.1rem 0 0;
-  z-index: 3;
+  min-width: 3.6rem;
+  height: 100%;
 }
 
-.msb4sfs-bus__incoming-from {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  color: #9ab0c4;
-  margin-bottom: 0.15rem;
+.msb4sfs-rack__in-slot--empty {
+  min-height: 2.5rem;
 }
 
-.msb4sfs-bus__incoming-riser {
-  display: block;
+.msb4sfs-rack__vwire {
   width: 2px;
-  height: 0.55rem;
   background: var(--line-normal);
   flex-shrink: 0;
 }
 
-.msb4sfs-bus__incoming-riser--flow {
+.msb4sfs-rack__vwire--from-feed {
+  height: 0.45rem;
+}
+
+.msb4sfs-rack__vwire--flow,
+.msb4sfs-rack__in-slot--flow .msb4sfs-rack__vwire {
   background: #e6c200;
 }
 
-.msb4sfs-bus__rail {
-  height: 3px;
+/* Bus-tie Q01/Q51: acometida remota + bajante hasta la barra */
+.msb4sfs-rack__bustie .casc-brk,
+.msb4sfs-rack__bustie-peer {
+  pointer-events: auto;
+}
+
+.msb4sfs-rack__bustie--right {
+  right: 0.15rem;
+}
+
+.msb4sfs-rack__bustie--left {
+  left: 0.15rem;
+}
+
+.msb4sfs-rack__bustie-free {
+  position: relative;
+  display: block;
+  flex: 0 0 0.75rem;
+  width: 2px;
+  height: 0.75rem;
+  margin: 0 auto;
+  background: var(--line-normal);
+}
+
+.msb4sfs-rack__bustie-free::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 2px;
   border-radius: 1px;
-  background: #6a5a9a;
-  margin: 0.05rem 0 0.15rem;
+  background: var(--line-normal);
+}
+
+.msb4sfs-rack__bustie-free--flow,
+.msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-free,
+.msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-free::after {
+  background: #e6c200;
+}
+
+.msb4sfs-rack__bustie-mid {
+  display: block;
+  width: 2px;
+  flex: 0 0 0.55rem;
+  min-height: 0.55rem;
+  background: var(--line-normal);
+}
+
+.msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-mid {
+  background: #e6c200;
+}
+
+.msb4sfs-rack__bustie-tag {
+  position: absolute;
+  left: calc(50% + 8px);
+  top: 1.55rem;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--line-normal);
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: left;
+}
+
+.msb4sfs-rack__bustie-down {
+  position: relative;
+  flex: 1 1 auto;
+  width: 2px;
+  min-height: 0;
+  background: var(--line-normal);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-down {
+  background: #e6c200;
+}
+
+.msb4sfs-rack__bustie-peer {
+  position: absolute;
+  top: 0.55rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 0 0.15rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.msb4sfs-rack__bustie--right .msb4sfs-rack__bustie-peer {
+  right: calc(100% + 0.1rem);
+}
+
+.msb4sfs-rack__bustie--left .msb4sfs-rack__bustie-peer {
+  left: calc(100% + 0.1rem);
+}
+
+.msb4sfs-rack__bustie-peer:hover {
+  color: var(--line-normal);
+}
+
+.msb4sfs-rack__bus-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.45rem;
+  min-height: var(--msb4sfs-rail-h);
+  position: relative;
+  z-index: 1;
+}
+
+.msb4sfs-rack__rail-tag {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #e6c200;
+  min-width: 2.6rem;
+}
+
+.msb4sfs-rack--115 .msb4sfs-rack__rail-tag {
+  color: #7ec8e3;
+}
+
+.msb4sfs-rack__rail {
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: 1px;
+  background: #b24ec4;
   opacity: 0.85;
+  position: relative;
+  z-index: 0;
 }
 
-.msb4sfs-bus__rail--live {
-  background: #e6c200;
+.msb4sfs-rack__rail--live {
   opacity: 1;
-  box-shadow: 0 0 0 1px color-mix(in srgb, #e6c200 35%, transparent);
+  box-shadow: 0 0 8px rgba(178, 78, 196, 0.55);
 }
 
-.msb4sfs-bus--115 .msb4sfs-bus__rail {
-  background: #4a8aaa;
+.msb4sfs-rack--115 .msb4sfs-rack__rail {
+  background: #5a9eb8;
 }
 
-.msb4sfs-bus--115 .msb4sfs-bus__rail--live {
-  background: #e6c200;
+.msb4sfs-rack--115 .msb4sfs-rack__rail--live {
+  box-shadow: 0 0 8px rgba(90, 158, 184, 0.5);
 }
 
-.msb4sfs-bus__drops {
-  margin-top: 0.15rem;
+.msb4sfs-rack__drops {
+  margin-top: 0;
+  padding: 0 0.25rem 0.2rem;
+  position: relative;
+  z-index: 1;
 }
 
-.msb4sfs-bus__drops.hbus--ssb-section {
+/* Sin recuadro interno: el MSB-4SFS es un único chasis */
+.msb4sfs-rack__drops.hbus--nested {
+  margin-top: 0;
+  padding: 0 0.25rem 0.2rem;
+  border: 0;
+  background: transparent;
   width: max-content;
   max-width: none;
 }
 
-.msb4sfs-bus__drops .hbus__drops {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.45rem 0.65rem;
-  margin-top: 0;
+.msb4sfs-rack__drops.hbus--ssb-section {
+  width: max-content;
+  max-width: none;
 }
 
-/* Acoplo compacto bajo la barra */
-.msb4sfs-tie {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 3.6rem;
-  min-width: 3.6rem;
-}
-
-.msb4sfs-tie__wire {
-  display: block;
-  width: 2px;
-  height: 0.55rem;
-  background: var(--line-normal);
-  flex-shrink: 0;
-}
-
-.msb4sfs-tie__wire:first-child {
-  margin-top: -4px;
-  height: 1.05rem;
-}
-
-.msb4sfs-tie__wire--flow {
-  background: #e6c200;
-}
-
-.msb4sfs-tie__peer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  margin-top: 0.15rem;
-  padding: 0.2rem 0.25rem;
-  border: 1px dashed rgba(120, 130, 160, 0.45);
-  border-radius: 3px;
-  background: rgba(16, 22, 34, 0.75);
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  max-width: 5.5rem;
-}
-
-.msb4sfs-tie__peer:hover {
-  border-color: rgba(160, 170, 200, 0.65);
-}
-
-.msb4sfs-tie__peer--locate {
-  outline: 2px solid rgba(0, 220, 200, 0.65);
-  outline-offset: 2px;
-}
-
-.msb4sfs-tie__acople {
-  font-size: 0.5rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #7a8898;
-}
-
-.msb4sfs-tie__id {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  font-weight: 700;
-  color: #9ab8d0;
-  text-align: center;
-  line-height: 1.15;
-  word-break: break-all;
+.msb4sfs-rack__drops .hbus__drops {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
 }
 
 .statusbar__actions {
@@ -2515,6 +2623,51 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-bottom: -2px;
 }
 
+/*
+ * Cable sin interruptor + AUX: AUX a la izquierda, bajante NORM centrada
+ * (mismo eje que el recuadro / cable del padre).
+ */
+.hbus-drop__tops--link-aux {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.35rem;
+  width: max-content;
+  margin-bottom: -2px;
+  /* Centrar la pierna thru (NORM); AUX queda a su izquierda */
+  transform: translateX(calc(-0.5 * (4.2rem + 0.35rem)));
+}
+
+.hbus-drop__leg--thru {
+  width: 3.4rem;
+  min-width: 3.4rem;
+  justify-content: stretch;
+  align-self: stretch;
+}
+
+.hbus-drop__wire--thru {
+  flex: 1 0 auto;
+  min-height: 3.6rem;
+  width: 2px;
+  margin: 0 auto;
+  align-self: center;
+}
+
+.hbus-drop__leg--thru.hbus-drop__leg--norm .hbus-drop__wire--thru {
+  background: var(--line-normal);
+}
+
+.hbus-drop__leg--thru.hbus-drop__leg--alt .hbus-drop__wire--thru {
+  background: var(--line-alt);
+}
+
+.hbus-drop__leg--thru.hbus-drop__leg--flow .hbus-drop__wire--thru,
+.hbus-drop__leg--thru .hbus-drop__wire--thru.hbus-drop__wire--flow {
+  background: #e6c200;
+}
+
 /* AUX del MSB: encima del marco, en el lado opuesto al bus-tie (QT*),
  * para no solaparse con la interconexión. Absolute: no se intercala entre gens y caja. */
 .plant-msb__aux-tops {
@@ -4232,6 +4385,29 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-top: -4px !important;
   min-height: 1.15rem !important;
   flex: 0 0 1.15rem !important;
+  width: 2px;
+  position: relative;
+  z-index: 2;
+}
+
+/* MSB-4SFS: salidas unidas a la barra (después del stub corto SSB).
+ * La fila de barra es flat (tag | rail); solo hay que cruzar media altura. */
+.msb4sfs-rack__drops.hbus--ssb-section
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop
+  > .hbus-drop__tops
+  .hbus-drop__leg--local
+  .hbus-drop__wire--from-bus,
+.msb4sfs-rack__drops
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop
+  > .hbus-drop__tops
+  .hbus-drop__wire--from-bus {
+  margin-top: calc(-0.5 * var(--msb4sfs-rail-h) - 2px) !important;
+  min-height: calc(0.5 * var(--msb4sfs-rail-h) + 0.5rem) !important;
+  flex: 0 0 calc(0.5 * var(--msb4sfs-rail-h) + 0.5rem) !important;
   width: 2px;
   position: relative;
   z-index: 2;

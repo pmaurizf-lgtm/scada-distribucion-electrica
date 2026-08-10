@@ -318,6 +318,33 @@ export function isAbtOutgoingFeed(circuit: Circuit): boolean {
 }
 
 /**
+ * Salida dibujada solo como cable (sin chip de interruptor):
+ * ABT→… o SBT-6PWS→SCV-4SFS.
+ * (Energía: estos circuitos conducen sin estado de interruptor.)
+ */
+export function isLinkOnlyOutgoingFeed(circuit: Circuit): boolean {
+  if (isAbtOutgoingFeed(circuit)) return true
+  return (
+    !circuit.virtual &&
+    /^SBT-6PWS/i.test(circuit.originId) &&
+    /^SCV-4SFS/i.test(circuit.destinationId)
+  )
+}
+
+/**
+ * Sin chip en el cable del unifilar: enlaces reales + acometidas cuyo
+ * interruptor vive dentro del cuadro (SCV→MSB-4SFS / Q00).
+ */
+export function isUnifilarLinkOnlyFeed(circuit: Circuit): boolean {
+  if (isLinkOnlyOutgoingFeed(circuit)) return true
+  return (
+    !circuit.virtual &&
+    /^SCV-4SFS/i.test(circuit.originId) &&
+    /^MSB-4SFS/i.test(circuit.destinationId)
+  )
+}
+
+/**
  * QVS TRF→LCS: el chip vive en la barra VS bajo el LCS, no entre TRF y LCS.
  * En el árbol se pinta como enlace continuo (como ABT→TRF).
  */

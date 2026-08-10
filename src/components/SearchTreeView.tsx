@@ -12,7 +12,7 @@ import type { Circuit, Equipment, ProtectionState, ServiceClass } from '../types
 import {
   incomingFeeds,
   is24VCircuit,
-  isAbtOutgoingFeed,
+  isLinkOnlyOutgoingFeed,
   isAux24Feed,
   isLcsOutletFeed,
   isMsb24Equipment,
@@ -67,9 +67,9 @@ function isGeneratorSide(circuit: Circuit): boolean {
   return eqById(circuit.originId)?.kind === 'generador'
 }
 
-/** Enlace continuo sin chip (ABT→TRF o TRF→LCS vía QVS). */
+/** Enlace continuo sin chip (ABT→…, SBT→SCV o TRF→LCS vía QVS). */
 function isThruFeed(circuit: Circuit): boolean {
-  return isAbtOutgoingFeed(circuit) || isTrfToLcsQvsFeed(circuit)
+  return isLinkOnlyOutgoingFeed(circuit) || isTrfToLcsQvsFeed(circuit)
 }
 
 /**

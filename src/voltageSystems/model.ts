@@ -7,4 +7,9 @@ export {
   isMsb4Sfs,
   isMsb4SfsInterconnect,
   isHz400Circuit,
+  isScv4Sfs,
+  isSbt6Pws,
+  isSbtToScvDirectFeed,
+  isScvToMsb4SfsFeed,
+  msb4SfsTieSide,
 } from './hz400'

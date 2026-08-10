@@ -19,7 +19,7 @@ import {
   childFeeders,
   feedScopedChildFeeders,
   incomingFeeds,
-  isAbtOutgoingFeed,
+  isUnifilarLinkOnlyFeed,
   isAux24Feed,
   isPendingFeed,
   aux24FeedsForEquipment,
@@ -375,10 +375,12 @@ function BusDrop({
         : undefined,
     [equipment.id],
   )
-  /** Cadena ABT → TRF → LCS: enlace vertical directo (sin barra «salidas»). */
+  /** Cadena ABT → TRF → LCS / SBT → SCV: enlace vertical directo (sin barra «salidas»). */
   const directChain =
     equipment.id.startsWith('ABT-') ||
     equipment.id.startsWith('TRF-') ||
+    equipment.id.startsWith('SBT-') ||
+    equipment.id.startsWith('SCV-') ||
     isLcsEquipment(equipment.id)
 
   const localFeed = feeds.find((c) => c.id === circuit.id) ?? circuit
@@ -537,16 +539,19 @@ function BusDrop({
 
   if (msb4sfsOpen) {
     const located = locateEquipmentId === equipment.id
+    const linkOnly = isUnifilarLinkOnlyFeed(localFeed)
     return (
       <div
-        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--msb4sfs-open${located ? ' hbus-drop--locate' : ''}`}
+        className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--msb4sfs-open${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
         aria-label={`${equipment.id} · doble clic para plegar`}
         onDoubleClick={toggleExpand}
       >
-        <div className="hbus-drop__tops">
+        <div
+          className={`hbus-drop__tops${linkOnly && aux24Feeds.length > 0 ? ' hbus-drop__tops--link-aux' : ''}`}
+        >
           {aux24Feeds.length > 0 &&
             !isAux24Feed(localFeed) &&
             aux24Feeds.map((aux) => (
@@ -562,32 +567,44 @@ function BusDrop({
                 onHoverInfoEnd={onHoverInfoEnd}
               />
             ))}
-          <div
-            className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
-            data-circuit-id={localFeed.id}
-          >
-            <span
-              className="hbus-drop__wire hbus-drop__wire--from-bus"
+          {linkOnly ? (
+            <div
+              className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              data-circuit-id={localFeed.id}
               aria-hidden
-            />
-            <BreakerChip
-              name={localFeed.protectionName}
-              state={protectionStatus[localFeed.id]}
-              compact
-              circuitId={localFeed.id}
-              circuit={localFeed}
-              flowing={localFlowing}
-              locked={lockedCircuits.has(localFeed.id)}
-              onClick={(e) => onLocalBreaker(localFeed, e)}
-              onHoverInfo={onHoverInfo}
-              onHoverInfoEnd={onHoverInfoEnd}
-            />
-            <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
-            <span
-              className={`hbus-drop__wire hbus-drop__wire--to-eq${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
-              aria-hidden
-            />
-          </div>
+            >
+              <span
+                className={`hbus-drop__wire hbus-drop__wire--thru${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
+              />
+            </div>
+          ) : (
+            <div
+              className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              data-circuit-id={localFeed.id}
+            >
+              <span
+                className="hbus-drop__wire hbus-drop__wire--from-bus"
+                aria-hidden
+              />
+              <BreakerChip
+                name={localFeed.protectionName}
+                state={protectionStatus[localFeed.id]}
+                compact
+                circuitId={localFeed.id}
+                circuit={localFeed}
+                flowing={localFlowing}
+                locked={lockedCircuits.has(localFeed.id)}
+                onClick={(e) => onLocalBreaker(localFeed, e)}
+                onHoverInfo={onHoverInfo}
+                onHoverInfoEnd={onHoverInfoEnd}
+              />
+              <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
+              <span
+                className={`hbus-drop__wire hbus-drop__wire--to-eq${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
+                aria-hidden
+              />
+            </div>
+          )}
         </div>
         <div className="hbus-drop__eq-row">
           <div
@@ -637,7 +654,7 @@ function BusDrop({
 
   if (ssbOpen) {
     const located = locateEquipmentId === equipment.id
-    const linkOnly = isAbtOutgoingFeed(localFeed)
+    const linkOnly = isUnifilarLinkOnlyFeed(localFeed)
     return (
       <div
         className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--ssb-open${ssb2209 ? ' hbus-drop--ssb2209' : ''}${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
@@ -693,7 +710,7 @@ function BusDrop({
           </div>
         )}
         {linkOnly && aux24Feeds.length > 0 && !isAux24Feed(localFeed) && (
-          <div className="hbus-drop__tops hbus-drop__tops--aux">
+          <div className="hbus-drop__tops hbus-drop__tops--link-aux">
             {aux24Feeds.map((aux) => (
               <Aux24Incoming
                 key={aux.id}
@@ -707,6 +724,15 @@ function BusDrop({
                 onHoverInfoEnd={onHoverInfoEnd}
               />
             ))}
+            <div
+              className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              data-circuit-id={localFeed.id}
+              aria-hidden
+            >
+              <span
+                className={`hbus-drop__wire hbus-drop__wire--thru${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
+              />
+            </div>
           </div>
         )}
         <div className="hbus-drop__eq-row">
@@ -787,7 +813,7 @@ function BusDrop({
       equipFam={equipFam}
       bankNote={trfBankNote}
       located={locateEquipmentId === equipment.id}
-      linkOnlyFromParent={isAbtOutgoingFeed(localFeed)}
+      linkOnlyFromParent={isUnifilarLinkOnlyFeed(localFeed)}
       rootClassName={[
         expanded && isMsb4Sfs(equipment.id)
           ? 'hbus-drop--msb4sfs-open'

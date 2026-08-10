@@ -12,6 +12,39 @@ export function isScv4Sfs(id: string): boolean {
   return /^SCV-4SFS/i.test(id)
 }
 
+export function isSbt6Pws(id: string): boolean {
+  return /^SBT-6PWS/i.test(id)
+}
+
+/**
+ * SBT → SCV: cable directo sin interruptor en el unifilar
+ * (protección «—» en datos).
+ */
+export function isSbtToScvDirectFeed(circuit: Circuit): boolean {
+  return (
+    !circuit.virtual &&
+    isSbt6Pws(circuit.originId) &&
+    isScv4Sfs(circuit.destinationId)
+  )
+}
+
+/**
+ * SCV → MSB-4SFS: el cable del unifilar no lleva chip;
+ * Q00 se pinta dentro del cuadro (entrada a barra), como QG en MSB-6PWS.
+ */
+export function isScvToMsb4SfsFeed(circuit: Circuit): boolean {
+  return (
+    !circuit.virtual &&
+    isScv4Sfs(circuit.originId) &&
+    isMsb4Sfs(circuit.destinationId)
+  )
+}
+
+/** Lado del bus-tie Q01/Q51: 0001 mira a estribor (dcha), 0002 a babor (izq). */
+export function msb4SfsTieSide(msbId: string): 'left' | 'right' {
+  return /0001$/i.test(msbId) ? 'right' : 'left'
+}
+
 export function isSsb1SfsFamily(id: string): boolean {
   return /^SSB-[12]SFS/i.test(id)
 }

@@ -244,6 +244,8 @@ export function EquipmentBusDrop({
 
   const hasAuxTops = aux24Feeds.length > 0
   const showTops = !linkOnlyFromParent || hasAuxTops
+  const linkAuxBeside =
+    linkOnlyFromParent && hasAuxTops && !isAux24Feed(circuit)
 
   return (
     <div
@@ -261,7 +263,9 @@ export function EquipmentBusDrop({
       onDoubleClick={toggleExpand}
     >
       {showTops ? (
-        <div className="hbus-drop__tops">
+        <div
+          className={`hbus-drop__tops${linkAuxBeside ? ' hbus-drop__tops--link-aux' : ''}`}
+        >
           {aux24Feeds.map((aux) => (
             <Aux24Incoming
               key={aux.id}
@@ -275,6 +279,17 @@ export function EquipmentBusDrop({
               onHoverInfoEnd={onHoverInfoEnd}
             />
           ))}
+          {linkAuxBeside && (
+            <div
+              className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              data-circuit-id={localFeed.id}
+              aria-hidden
+            >
+              <span
+                className={`hbus-drop__wire hbus-drop__wire--thru${localFlowing ? ' hbus-drop__wire--flow' : ''}`}
+              />
+            </div>
+          )}
           {!linkOnlyFromParent && (
             <>
               {remoteFeeds.map((remote) => renderLeg(remote, 'remote'))}
