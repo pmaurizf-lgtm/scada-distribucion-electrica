@@ -11,6 +11,7 @@ import {
   type RefObject,
 } from 'react'
 import { system690 } from '../data/system690'
+import { useEquipBalloonGesture } from '../hooks/useEquipBalloonGesture'
 import type { Circuit, Equipment, ProtectionState } from '../types'
 import {
   boardFromOrigin,
@@ -385,18 +386,9 @@ function BusDrop({
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
   const eqWrapRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
+  const { showBalloon, dismissBalloon, balloonBind, expandHint, infoHint } =
+    useEquipBalloonGesture()
 
   const childItems = useMemo(() => {
     const all = children.map(({ circuit: c, equipment: eq }) => ({
@@ -430,6 +422,7 @@ function BusDrop({
     if (!canExpand) return
     e.preventDefault()
     e.stopPropagation()
+    dismissBalloon()
     onToggleEquip(equipment.id)
   }
 
@@ -470,7 +463,7 @@ function BusDrop({
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
-        aria-label={`${equipment.id} · doble clic para plegar`}
+        aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
         onDoubleClick={toggleExpand}
       >
         {aux24Feeds.length > 0 && (
@@ -493,17 +486,18 @@ function BusDrop({
         <div
           className={`equip-chassis equip-chassis--lcs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
           onDoubleClick={toggleExpand}
-          aria-label={`${equipment.id} · doble clic para plegar`}
+          aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
         >
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              {...balloonBind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
-              <span className="equip-chassis__hint">doble clic · plegar</span>
-              {showEqBalloon && (
+              <span className="equip-chassis__hint">
+                {expandHint} · plegar · {infoHint}
+              </span>
+              {showBalloon && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}
@@ -544,7 +538,7 @@ function BusDrop({
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
-        aria-label={`${equipment.id} · doble clic para plegar`}
+        aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
         onDoubleClick={toggleExpand}
       >
         <div
@@ -608,17 +602,18 @@ function BusDrop({
           <div
             className={`equip-chassis equip-chassis--msb4sfs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
             onDoubleClick={toggleExpand}
-            aria-label={`${equipment.id} · doble clic para plegar`}
+            aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
           >
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              {...balloonBind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
-              <span className="equip-chassis__hint">doble clic · plegar</span>
-              {showEqBalloon && (
+              <span className="equip-chassis__hint">
+                {expandHint} · plegar · {infoHint}
+              </span>
+              {showBalloon && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}
@@ -659,7 +654,7 @@ function BusDrop({
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
-        aria-label={`${equipment.id} · doble clic para plegar`}
+        aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
         onDoubleClick={toggleExpand}
       >
         {!linkOnly && (
@@ -737,7 +732,7 @@ function BusDrop({
           <div
             className={`equip-chassis equip-chassis--ssb${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
             onDoubleClick={toggleExpand}
-            aria-label={`${equipment.id} · doble clic para plegar`}
+            aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
           >
             {ssb2209 && (
               <span className="ssb2209-chassis-alt-riser" aria-hidden />
@@ -745,13 +740,14 @@ function BusDrop({
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              {...balloonBind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>
-              <span className="equip-chassis__hint">doble clic · plegar</span>
-              {showEqBalloon && (
+              <span className="equip-chassis__hint">
+                {expandHint} · plegar · {infoHint}
+              </span>
+              {showBalloon && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}

@@ -8,6 +8,7 @@ import {
   type RefObject,
 } from 'react'
 import { system690 } from '../data/system690'
+import { useEquipBalloonGesture } from '../hooks/useEquipBalloonGesture'
 import type { Circuit, Equipment, ProtectionState, ServiceClass } from '../types'
 import {
   buildLcsBoardModel,
@@ -364,11 +365,21 @@ function LcsOutletDrop({
   const isAltLocal = circuit.lineType === 'alternativa'
   const equipFam = equipFamOf(equipment)
   const located = locateEquipmentId === equipment.id
+  const eqWrapRef = useRef<HTMLDivElement>(null)
+  const { showBalloon, dismissBalloon, balloonBind, expandHint, infoHint } =
+    useEquipBalloonGesture()
   const nextAncestors = useMemo(() => {
     const s = new Set(ancestorIds ?? [])
     s.add(equipment.id)
     return s
   }, [ancestorIds, equipment.id])
+
+  const toggleExpand = (e: ReactMouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dismissBalloon()
+    onToggleEquip(equipment.id)
+  }
 
   if (ssbOpen) {
     const linkOnly = isAbtOutgoingFeed(circuit)
@@ -449,12 +460,8 @@ function LcsOutletDrop({
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={circuit.id}
-        aria-label={`${equipment.id} · doble clic para plegar`}
-        onDoubleClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          onToggleEquip(equipment.id)
-        }}
+        aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
+        onDoubleClick={toggleExpand}
       >
         {!linkOnly && (
           <div className="hbus-drop__tops">
@@ -505,19 +512,29 @@ function LcsOutletDrop({
         <div className="hbus-drop__eq-row">
           <div
             className={`equip-chassis equip-chassis--ssb${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
-            onDoubleClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onToggleEquip(equipment.id)
-            }}
+            onDoubleClick={toggleExpand}
+            aria-label={`${equipment.id} · ${expandHint} para plegar · ${infoHint}`}
           >
             {is2209 && (
               <span className="ssb2209-chassis-alt-riser" aria-hidden />
             )}
-            <div className="equip-chassis__label">
+            <div
+              ref={eqWrapRef}
+              className="equip-chassis__label"
+              {...balloonBind}
+            >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>
-              <span className="equip-chassis__hint">doble clic · plegar</span>
+              <span className="equip-chassis__hint">
+                {expandHint} · plegar · {infoHint}
+              </span>
+              {showBalloon && (
+                <EquipmentBalloon
+                  equipment={equipment}
+                  circuits={[circuit]}
+                  anchorRef={eqWrapRef}
+                />
+              )}
             </div>
             <div className="equip-chassis__body">
               <SsbBoardView
@@ -864,18 +881,8 @@ function ParallelFeedLeg({
 } & SharedProps) {
   const { circuit, equipment } = parallel
   const eqWrapRef = useRef<HTMLDivElement>(null)
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
+  const { showBalloon, balloonBind } = useEquipBalloonGesture()
   const secondary = labelSecondaryDenom(equipment)
-
-  useEffect(() => {
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
 
   return (
     <div
@@ -886,8 +893,7 @@ function ParallelFeedLeg({
         ref={eqWrapRef}
         className={`lcs440-rail__parallel-src hbus-drop__eq--fam-${equipFamOf(equipment)}${eqLive ? ' lcs440-rail__parallel-src--live' : ''}${flowing ? ' lcs440-rail__parallel-src--flow' : ''}`}
         data-equip={equipment.id}
-        onMouseEnter={() => setEqHover(true)}
-        onMouseLeave={() => setEqHover(false)}
+        {...balloonBind}
       >
         <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
         <span className="hbus-drop__id">{equipment.id}</span>
@@ -897,7 +903,7 @@ function ParallelFeedLeg({
           </span>
         )}
         <span className="hbus-drop__name">{equipment.name}</span>
-        {showEqBalloon && (
+        {showBalloon && (
           <EquipmentBalloon
             equipment={equipment}
             circuits={[circuit]}

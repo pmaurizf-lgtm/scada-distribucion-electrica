@@ -172,6 +172,16 @@
   gap: 0.35rem;
 }
 
+.app-shell--mobile .hbus-drop__eq-wrap,
+.app-shell--mobile .equip-chassis__label,
+.app-shell--mobile .hbus-drop__csb-src,
+.app-shell--mobile .lcs440-rail__parallel-src,
+.app-shell--mobile .stree-eq {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 @media (min-width: 901px) and (pointer: fine) {
   .pwa-install {
     display: none;

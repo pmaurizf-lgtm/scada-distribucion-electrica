@@ -1,12 +1,11 @@
 import {
-  useEffect,
   useMemo,
   useRef,
-  useState,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react'
 import { system690 } from '../data/system690'
+import { useEquipBalloonGesture } from '../hooks/useEquipBalloonGesture'
 import type { Circuit, Equipment, ProtectionState } from '../types'
 import {
   aux24FeedsForEquipment,
@@ -77,17 +76,7 @@ function FoldedParallelCsbLeg({
   const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
   const isAlt = feed.lineType === 'alternativa'
   const eqWrapRef = useRef<HTMLDivElement>(null)
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
-
-  useEffect(() => {
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
+  const { showBalloon, balloonBind } = useEquipBalloonGesture()
 
   if (!origin) return null
 
@@ -105,8 +94,7 @@ function FoldedParallelCsbLeg({
         ref={eqWrapRef}
         className={`hbus-drop__csb-src hbus-drop__eq--fam-${fam}${eqLive ? ' hbus-drop__csb-src--live' : ''}${flowing ? ' hbus-drop__csb-src--flow' : ''}`}
         data-equip={origin.id}
-        onMouseEnter={() => setEqHover(true)}
-        onMouseLeave={() => setEqHover(false)}
+        {...balloonBind}
       >
         <span className="hbus-drop__sym">{symbolFor(origin.kind)}</span>
         <span className="hbus-drop__id">{origin.id}</span>
@@ -116,7 +104,7 @@ function FoldedParallelCsbLeg({
           </span>
         )}
         <span className="hbus-drop__name">{origin.name}</span>
-        {showEqBalloon && (
+        {showBalloon && (
           <EquipmentBalloon
             equipment={origin}
             circuits={[feed]}
@@ -246,18 +234,9 @@ export function EquipmentBusDrop({
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
   const eqWrapRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
+  const { showBalloon, dismissBalloon, balloonBind, expandHint, infoHint } =
+    useEquipBalloonGesture()
 
   const displayFeeds = useMemo(
     () =>
@@ -287,6 +266,7 @@ export function EquipmentBusDrop({
     if (!canExpand || !onToggleExpand) return
     e.preventDefault()
     e.stopPropagation()
+    dismissBalloon()
     onToggleExpand()
   }
 
@@ -378,8 +358,8 @@ export function EquipmentBusDrop({
         spare
           ? `${localFeed.protectionName} · RESPETO (reserva)`
           : canExpand
-            ? `${equipment.id} · doble clic para ${expanded ? 'plegar' : 'desplegar'}`
-            : undefined
+            ? `${equipment.id} · ${expandHint} para ${expanded ? 'plegar' : 'desplegar'} · ${infoHint}`
+            : `${equipment.id} · ${infoHint}`
       }
       onDoubleClick={toggleExpand}
     >
@@ -445,8 +425,7 @@ export function EquipmentBusDrop({
         <div
           ref={eqWrapRef}
           className="hbus-drop__eq-wrap"
-          onMouseEnter={() => setEqHover(true)}
-          onMouseLeave={() => setEqHover(false)}
+          {...balloonBind}
         >
           <button
             type="button"
@@ -456,8 +435,8 @@ export function EquipmentBusDrop({
               spare
                 ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
                 : canExpand
-                  ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
-                  : undefined
+                  ? `${expandHint} para ${expanded ? 'plegar' : 'desplegar'} salidas · ${infoHint}`
+                  : infoHint
             }
             onClick={(e) => e.stopPropagation()}
             onDoubleClick={toggleExpand}
@@ -488,7 +467,7 @@ export function EquipmentBusDrop({
               </span>
             )}
           </button>
-          {showEqBalloon && (
+          {showBalloon && (
             <EquipmentBalloon
               equipment={equipment}
               feeds={feedSummaries}

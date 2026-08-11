@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { buildLcsBoardModel } from '../abtDownstream/model'
 import { system690 } from '../data/system690'
+import { useEquipBalloonGesture } from '../hooks/useEquipBalloonGesture'
 import type { Circuit, Equipment, ProtectionState, ServiceClass } from '../types'
 import {
   incomingFeeds,
@@ -204,9 +205,9 @@ function EquipCard({
   capExpanded?: boolean
   onToggleCapExpand?: () => void
 }) {
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const { showBalloon, dismissBalloon, balloonBind, expandHint, infoHint } =
+    useEquipBalloonGesture()
 
   const feeds = useMemo(
     () => incomingFeeds(system690, equipment.id),
@@ -222,15 +223,6 @@ function EquipCard({
     [feeds],
   )
 
-  useEffect(() => {
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => setShowEqBalloon(true), HOVER_DELAY_MS)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
-
   return (
     <div
       ref={wrapRef}
@@ -239,17 +231,16 @@ function EquipCard({
       aria-label={
         capExpandable
           ? capExpanded
-            ? 'Doble clic para plegar la rama ALT/AUX 24 V'
-            : 'Doble clic para expandir aguas arriba (ALT/AUX 24 V)'
-          : undefined
+            ? `${expandHint} para plegar la rama ALT/AUX 24 V · ${infoHint}`
+            : `${expandHint} para expandir aguas arriba (ALT/AUX 24 V) · ${infoHint}`
+          : infoHint
       }
-      onMouseEnter={() => setEqHover(true)}
-      onMouseLeave={() => setEqHover(false)}
+      {...balloonBind}
       onDoubleClick={(e) => {
         if (!capExpandable || !onToggleCapExpand) return
         e.preventDefault()
         e.stopPropagation()
-        setShowEqBalloon(false)
+        dismissBalloon()
         onToggleCapExpand()
       }}
     >
@@ -269,7 +260,7 @@ function EquipCard({
           {capExpanded ? '▴' : '▾'}
         </span>
       )}
-      {showEqBalloon && (
+      {showBalloon && (
         <EquipmentBalloon
           equipment={equipment}
           feeds={feedSummaries}
