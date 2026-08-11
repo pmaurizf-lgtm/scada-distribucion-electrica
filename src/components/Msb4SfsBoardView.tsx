@@ -10,6 +10,7 @@ import type { Circuit, Equipment, ProtectionState } from '../types'
 import { hasSsbBoardLayout } from '../abtDownstream/ssbBoard'
 import {
   isAux24Feed,
+  isUnifilarLinkOnlyFeed,
   nestableChildFeeders,
 } from '../utils/cascadeModel'
 import {
@@ -17,6 +18,7 @@ import {
   msb4SfsInterconnects,
   msb4SfsOutlets,
   msb4SfsTieSide,
+  msb4SfsTrfPrimaryFeed,
   msb4SfsTrfReturnFeed,
   type Msb4SfsBusVoltage,
 } from '../voltageSystems/hz400'
@@ -84,7 +86,7 @@ function OutletDrop({
     )
   } else if (expanded && kids.length > 0) {
     nested = (
-      <div className="hbus hbus--nested hbus--direct">
+      <div className="hbus hbus--nested hbus--direct hbus--chain-link">
         <div className="hbus__drops">
           {kids.map(({ circuit: kc, equipment: ke }) => (
             <div key={kc.id} className="hbus__slot">
@@ -100,6 +102,10 @@ function OutletDrop({
       </div>
     )
   }
+
+  const linkOnly = isUnifilarLinkOnlyFeed(circuit)
+  const chainOpen =
+    expanded && kids.length > 0 && !hasSsbBoardLayout(equipment)
 
   return (
     <EquipmentBusDrop
@@ -119,9 +125,103 @@ function OutletDrop({
       onToggleExpand={() => shared.onToggleEquip(equipment.id)}
       equipFam={equipFamOf(equipment)}
       located={shared.locateEquipmentId === equipment.id}
+      linkOnlyFromParent={linkOnly}
+      rootClassName={chainOpen ? 'hbus-drop--chain-open' : undefined}
     >
       {nested}
     </EquipmentBusDrop>
+  )
+}
+
+/** Rama 440→Q09→TRF→Q50→barra 115, colgando de la barra 440 como una salida. */
+function Trf115Branch({
+  primary,
+  trfReturn,
+  trf,
+  msbId,
+  interconnect115,
+  outlets115,
+  feedLive,
+  bus115Live,
+  tieSide,
+  ancestors,
+  shared,
+}: {
+  primary: Circuit
+  trfReturn: Circuit
+  trf: Equipment
+  msbId: string
+  interconnect115?: Circuit
+  outlets115: { circuit: Circuit; equipment: Equipment }[]
+  feedLive: boolean
+  bus115Live: boolean
+  tieSide: 'left' | 'right'
+  ancestors: Set<string>
+  shared: SharedProps
+}) {
+  const primaryFlow = shared.energizedCircuitIds.has(primary.id)
+  const returnFlow = shared.energizedCircuitIds.has(trfReturn.id)
+  const trfLive = shared.energizedEquipmentIds.has(trf.id)
+  const located = shared.locateEquipmentId === trf.id
+
+  return (
+    <div
+      className={`hbus__slot msb4sfs-trf115${primaryFlow || returnFlow ? ' msb4sfs-trf115--flow' : ''}${located ? ' msb4sfs-trf115--locate' : ''}`}
+      data-equip={trf.id}
+      data-locate={located ? '1' : undefined}
+      data-circuit-id={primary.id}
+    >
+      <div className="msb4sfs-trf115__stem">
+        <span
+          className={`msb4sfs-trf115__wire msb4sfs-trf115__wire--from-440${primaryFlow ? ' msb4sfs-trf115__wire--flow' : ''}`}
+          aria-hidden
+        />
+        <BreakerChip
+          name={primary.protectionName}
+          state={shared.protectionStatus[primary.id]}
+          compact
+          circuitId={primary.id}
+          circuit={primary}
+          flowing={primaryFlow}
+          locked={shared.lockedCircuits.has(primary.id)}
+          title={`${primary.protectionName} · ${primary.originId} → ${trf.id}`}
+          onClick={(e) => shared.onLocalBreaker(primary, e)}
+          onHoverInfo={shared.onHoverInfo}
+          onHoverInfoEnd={shared.onHoverInfoEnd}
+        />
+        <span
+          className={`msb4sfs-trf115__wire${primaryFlow ? ' msb4sfs-trf115__wire--flow' : ''}`}
+          aria-hidden
+        />
+        <div
+          className={`msb4sfs-trf115__eq${trfLive ? ' msb4sfs-trf115__eq--live' : ''}`}
+          title={`${trf.id} · ${trf.name}`}
+        >
+          <span className="msb4sfs-trf115__eq-id">{trf.id}</span>
+          <span className="msb4sfs-trf115__eq-name">{trf.name}</span>
+        </div>
+        <span
+          className={`msb4sfs-trf115__wire msb4sfs-trf115__wire--to-q50${returnFlow ? ' msb4sfs-trf115__wire--flow' : ''}`}
+          aria-hidden
+        />
+      </div>
+
+      <RackSection
+        bus="115"
+        tag="115 V"
+        msbId={msbId}
+        incoming={trfReturn}
+        incomingLabel={`desde ${trf.id}`}
+        interconnect={interconnect115}
+        outlets={outlets115}
+        feedLive={feedLive}
+        busLive={bus115Live}
+        tieSide={tieSide}
+        ancestors={ancestors}
+        shared={shared}
+        nestedUnderTrf
+      />
+    </div>
   )
 }
 
@@ -139,6 +239,8 @@ function RackSection({
   tieSide,
   ancestors,
   shared,
+  extraSlots,
+  nestedUnderTrf = false,
 }: {
   bus: Msb4SfsBusVoltage
   tag: string
@@ -152,6 +254,10 @@ function RackSection({
   tieSide: 'left' | 'right'
   ancestors: Set<string>
   shared: SharedProps
+  /** Huecos extra en la fila de salidas (p. ej. rama TRF→115 bajo 440). */
+  extraSlots?: ReactNode
+  /** 115 V colgando del TRF: sin stub superior suelto en Q50. */
+  nestedUnderTrf?: boolean
 }) {
   const inFlow = !!(incoming && shared.energizedCircuitIds.has(incoming.id))
   const tieFlow = !!(
@@ -165,17 +271,18 @@ function RackSection({
           e.id !== msbId,
       )
     : undefined
+  const hasDrops = outlets.length > 0 || extraSlots != null
 
   return (
     <div
-      className={`msb4sfs-rack msb4sfs-rack--${bus}${busLive ? ' msb4sfs-rack--live' : ''}`}
+      className={`msb4sfs-rack msb4sfs-rack--${bus}${busLive ? ' msb4sfs-rack--live' : ''}${nestedUnderTrf ? ' msb4sfs-rack--nested-trf' : ''}`}
       data-bus={bus}
     >
       <div className="msb4sfs-rack__inner-top">
         <div className="msb4sfs-rack__in-row">
           {incoming ? (
             <div
-              className={`msb4sfs-rack__in-slot${inFlow ? ' msb4sfs-rack__in-slot--flow' : ''}`}
+              className={`msb4sfs-rack__in-slot${inFlow ? ' msb4sfs-rack__in-slot--flow' : ''}${nestedUnderTrf ? ' msb4sfs-rack__in-slot--flush' : ''}`}
               data-circuit-id={incoming.id}
               title={
                 incomingLabel
@@ -183,10 +290,12 @@ function RackSection({
                   : `${incoming.protectionName} · acometida a barra ${tag}`
               }
             >
-              <span
-                className={`msb4sfs-rack__vwire msb4sfs-rack__vwire--from-feed${inFlow || feedLive ? ' msb4sfs-rack__vwire--flow' : ''}`}
-                aria-hidden
-              />
+              {!nestedUnderTrf && (
+                <span
+                  className={`msb4sfs-rack__vwire msb4sfs-rack__vwire--from-feed${inFlow || feedLive ? ' msb4sfs-rack__vwire--flow' : ''}`}
+                  aria-hidden
+                />
+              )}
               <BreakerChip
                 name={incoming.protectionName}
                 state={shared.protectionStatus[incoming.id]}
@@ -234,15 +343,9 @@ function RackSection({
             />
             <span className="msb4sfs-rack__bustie-mid" aria-hidden />
             <span className="msb4sfs-rack__bustie-tag">
-              INTERCONEXIÓN
-              <br />
-              el otro MSB-4SFS
-              {peerBoard ? (
-                <>
-                  <br />
-                  {peerBoard.id}
-                </>
-              ) : null}
+              {peerBoard
+                ? `INTERCONEXION con ${peerBoard.id}`
+                : 'INTERCONEXION'}
             </span>
             <div className="msb4sfs-rack__bustie-down" aria-hidden />
             {peerBoard && (
@@ -270,7 +373,7 @@ function RackSection({
         />
       </div>
 
-      {outlets.length > 0 && (
+      {hasDrops && (
         <div className="msb4sfs-rack__drops hbus hbus--nested hbus--ssb-section">
           <div className="hbus__drops">
             {outlets.map(({ circuit, equipment }) => (
@@ -283,6 +386,7 @@ function RackSection({
                 />
               </div>
             ))}
+            {extraSlots}
           </div>
         </div>
       )}
@@ -311,6 +415,10 @@ export function Msb4SfsBoardView({
   const tie440 = msb4SfsInterconnects(system690, msb.id, '440')[0]
   const tie115 = msb4SfsInterconnects(system690, msb.id, '115')[0]
   const trfReturn = msb4SfsTrfReturnFeed(system690, msb.id)
+  const trfPrimary = msb4SfsTrfPrimaryFeed(system690, msb.id)
+  const trfEq = trfPrimary
+    ? system690.equipment.find((e) => e.id === trfPrimary.destinationId)
+    : undefined
 
   const bus440Live = feedLive && boardLive
   const bus115Live =
@@ -336,23 +444,23 @@ export function Msb4SfsBoardView({
         tieSide={tieSide}
         ancestors={ancestors}
         shared={shared}
-      />
-
-      <RackSection
-        bus="115"
-        tag="115 V"
-        msbId={msb.id}
-        incoming={trfReturn}
-        incomingLabel={
-          trfReturn ? `retorno ${trfReturn.originId}` : undefined
+        extraSlots={
+          trfPrimary && trfReturn && trfEq ? (
+            <Trf115Branch
+              primary={trfPrimary}
+              trfReturn={trfReturn}
+              trf={trfEq}
+              msbId={msb.id}
+              interconnect115={tie115}
+              outlets115={outs115}
+              feedLive={feedLive}
+              bus115Live={bus115Live}
+              tieSide={tieSide}
+              ancestors={ancestors}
+              shared={shared}
+            />
+          ) : undefined
         }
-        interconnect={tie115}
-        outlets={outs115}
-        feedLive={feedLive}
-        busLive={bus115Live}
-        tieSide={tieSide}
-        ancestors={ancestors}
-        shared={shared}
       />
     </div>
   )

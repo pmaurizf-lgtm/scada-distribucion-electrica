@@ -118,7 +118,14 @@ function lineTypeOf(row) {
 
 function protectionFromRef(circuitRef, breakerId) {
   const brk = str(breakerId)
-  if (brk && brk !== '0' && brk !== '-') return brk
+  if (brk && brk !== '0' && brk !== '-') {
+    // Potencia Excel (3.2008…) no es Q: redondear como 8.4 / 60
+    if (/^\d+(\.\d+)?$/.test(brk)) {
+      const n = num(brk)
+      if (n != null) return String(Math.round(n * 10) / 10)
+    }
+    return brk
+  }
   const ref = String(circuitRef || '').trim()
   const m = ref.match(/(Q\d+(?:-\d+)*)$/i)
   if (m) return m[1]
@@ -176,19 +183,32 @@ function ensureEq(id, desc, voltage) {
 for (const [rn, row] of [...rows.entries()].sort((a, b) => a[0] - b[0])) {
   const circuitRef = str(row.D)
   const originId = str(row.E)
-  const destId = str(row.I)
-  if (!circuitRef || !isPuma(originId) || !isPuma(destId)) continue
+  let destId = str(row.I)
+  if (!circuitRef || !isPuma(originId)) continue
   if (circuitRef === 'Circuit') continue
 
-  const destDesc = str(row.L) || str(row.H)
+  const destDesc = str(row.L) || str(row.H) || ''
+  const respeto = isRespeto(destId, destDesc)
+  if (!respeto && !isPuma(destId)) continue
+  if (respeto) destId = `SPARE-${circuitRef}`
+
   const originDesc = str(row.H)
-  const vNom = voltageLabel(row.Q, row.R)
+  const protectionName = protectionFromRef(circuitRef, row.AD)
+  let vNom = voltageLabel(row.Q, row.R)
+  if (respeto && (vNom == null || vNom === '' || vNom === '440') && /^Q5\d/i.test(protectionName)) {
+    vNom = '115'
+  } else if (respeto && (row.Q == null || row.Q === '')) {
+    vNom = /^Q5\d/i.test(protectionName) ? '115' : '440'
+  }
   const freq = num(row.R)
 
   ensureEq(originId, originDesc, freq === 400 ? vNom : vNom)
-  ensureEq(destId, destDesc, vNom)
+  if (respeto) {
+    ensureEq(destId, 'RESPETO', vNom)
+  } else {
+    ensureEq(destId, destDesc, vNom)
+  }
 
-  const protectionName = protectionFromRef(circuitRef, row.AD)
   const pairKey = `${originId}>${destId}>${protectionName}`
   if (existingPair.has(pairKey)) {
     skippedDup++
@@ -203,7 +223,9 @@ for (const [rn, row] of [...rows.entries()].sort((a, b) => a[0] - b[0])) {
     id,
     excelRow: rn,
     circuitRef,
-    name: `${originId} → ${destId}`,
+    name: respeto
+      ? `${originId} → RESPETO (${protectionName})`
+      : `${originId} → ${destId}`,
     originId,
     destinationId: destId,
     lineType: lineTypeOf(row),
@@ -219,7 +241,7 @@ for (const [rn, row] of [...rows.entries()].sort((a, b) => a[0] - b[0])) {
     voltage: vNom,
     parallelCables: num(row.X) || 1,
     cableSection: str(row.Y),
-    spare: isRespeto(destId, destDesc),
+    spare: respeto,
     virtual: false,
     notes: NOTE,
   }

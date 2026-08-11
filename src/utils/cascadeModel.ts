@@ -319,16 +319,29 @@ export function isAbtOutgoingFeed(circuit: Circuit): boolean {
 
 /**
  * Salida dibujada solo como cable (sin chip de interruptor):
- * ABT→… o SBT-6PWS→SCV-4SFS.
- * (Energía: estos circuitos conducen sin estado de interruptor.)
+ * ABT→…, SBT-6PWS→SCV-4SFS, o aguas abajo de FIU-4SFS (Excel sin Q real).
  */
 export function isLinkOnlyOutgoingFeed(circuit: Circuit): boolean {
   if (isAbtOutgoingFeed(circuit)) return true
-  return (
+  if (
     !circuit.virtual &&
     /^SBT-6PWS/i.test(circuit.originId) &&
     /^SCV-4SFS/i.test(circuit.destinationId)
-  )
+  ) {
+    return true
+  }
+  // FIU-4SFS → TRF/carga: el «59/60/8.4» del Excel no es interruptor de unifilar
+  if (!circuit.virtual && /^FIU-4SFS/i.test(circuit.originId)) return true
+  // Continuación TRF-1/2/4SFS → carga/SSB (p. ej. XMT, SSB-2SFS), no retorno a MSB.
+  // Sin chip aunque el Excel traiga S01/NSX (unifilar = solo cable).
+  if (
+    !circuit.virtual &&
+    /^TRF-[124]SFS/i.test(circuit.originId) &&
+    !/^MSB-4SFS/i.test(circuit.destinationId)
+  ) {
+    return true
+  }
+  return false
 }
 
 /**

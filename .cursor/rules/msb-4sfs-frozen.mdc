@@ -1,0 +1,40 @@
+---
+description: Invariantes congelados del unifilar MSB-4SFS 400 Hz — no romper al pulir o extender
+alwaysApply: true
+---
+
+# MSB-4SFS 400 Hz — baseline congelado (`v0.2-msb-4sfs`)
+
+Tag de restauración: `git checkout v0.2-msb-4sfs` (o crear rama desde ese tag).
+
+Convive con el baseline 690 V (`v0.1-msb-690` / regla `msb-690-frozen.mdc`): no reabrir el layout MSB-6PWS.
+
+## Qué está congelado (no cambiar salvo petición explícita del usuario)
+
+1. **Montaje**: ambos `MSB-4SFS0001` / `0002` usan el mismo `Msb4SfsBoardView` (sin pestañas UI 115/400).
+2. **Chasis único**: barra **440 V** + rama **Q09 → TRF-1SFS → Q50 → barra 115 V** + salidas/RESPETO colgando; sin recuadro interno extra.
+3. **Bus-tie Q01 / Q51**: siempre a **estribor (derecha)**; cartel `INTERCONEXION con MSB-4SFSxxxx` fuera del chip; flecha peer para saltar al otro cuadro.
+4. **Acometida Q00**: chip **dentro** del rack (SCV→MSB es cable link-only en el unifilar). Q00/Q50 bajante hasta el **borde superior** del rail — sin hueco ni atravesar la barra.
+5. **Cadenas FIU**: FIU-4SFS → TRF/carga y TRF-1/2/4SFS → carga/SSB (no retorno a MSB) = **solo cable** (`isLinkOnlyOutgoingFeed`); bajante continuo `.hbus--chain-link` + thru centrado (sin offset AUX).
+6. **RESPETO 400 Hz**: solo filas fijas en `spareCircuits.ts` (0001: Q03,Q05–Q08,Q53,Q54,Q56; 0002: Q03,Q05–Q07,Q52–Q54,Q56) — no inventar huecos.
+7. **Datos**: topología 400 Hz en `abtDownstream.json` (`notes: hz400`) + merge en `system690.ts`; import `scripts/import-400hz-power.mjs`.
+8. **UX**: mismos patrones MSB (doble clic expandir, globos, flujo amarillo, localizar sin `::after` doble en chasis abierto).
+
+## Archivos núcleo 400 Hz (tocar solo con causa justificada)
+
+- `src/components/Msb4SfsBoardView.tsx`
+- `src/voltageSystems/hz400.ts`
+- `src/utils/cascadeModel.ts` — `isLinkOnlyOutgoingFeed` / `isUnifilarLinkOnlyFeed` (tramos FIU/TRF-*SFS)
+- `src/utils/spareCircuits.ts` — filas RESPETO hz400
+- `src/data/abtDownstream.json` — circuitos/equipos 400 Hz
+- `src/data/system690.ts` — merge + augment spares (orden: merge ABT → luego spares)
+- `src/App.css` — bloques `.msb4sfs-rack*`, `.msb4sfs-trf115*`, `.hbus--chain-link`, tops `--link-thru`
+- `scripts/import-400hz-power.mjs`
+
+Al editar: cambios mínimos; no espejar bus-tie a babor; no reintroducir chips 59/60/S01 en cadenas FIU→TRF→carga/SSB.
+
+## Extensión permitida
+
+- Aguas abajo de **SSB-1SFS / SSB-2SFS** (cuadros secundarios 400 Hz) con componentes propios.
+- Pulido visual puntual **solo** si el usuario lo pide; no “mejorar” layout Q01/Q51 ni longitudes de pata por iniciativa propia.
+- Seguir congelado el MSB 690 V (`msb-690-frozen.mdc`).

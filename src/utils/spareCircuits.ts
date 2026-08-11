@@ -1,8 +1,9 @@
 import type { Circuit, DistributionData, Equipment } from '../types'
 
 /**
- * Filas Excel (hoja «690V Power System») con columna L = «RESPETO».
- * Col. I no trae tag de equipo (valor numérico); se sintetiza destino SPARE.
+ * Filas Excel con destino RESPETO / SPARE (omitidas en el import).
+ * - 690 V: hoja «690V Power System», col. L = RESPETO (31 filas).
+ * - 400 Hz: hoja «400Hz Power System», col. I = RESPETO (MSB-4SFS).
  * Fuente: 2600723_F110-…lista_circuitos_Rev.D_trabajo.xlsm
  */
 const RESPETO_ROWS: {
@@ -13,6 +14,9 @@ const RESPETO_ROWS: {
   protectionModel: string
   protectionCurrentA: number
   service?: 'VM' | 'VS' | 'NV' | null
+  /** Tensión nominal (690 V por defecto; 440/115 en 400 Hz). */
+  voltage?: string
+  notes?: string
 }[] = [
   // MSB PROA
   { excelRow: 30, circuitRef: 'MSB-6PWS0001-Q1A08', originId: 'PNL-MSB1004A', protectionName: 'Q1A08', protectionModel: 'NSX 250 HB2 M5.2E', protectionCurrentA: 250 },
@@ -49,6 +53,26 @@ const RESPETO_ROWS: {
   { excelRow: 444, circuitRef: 'CCM-6PWS0008-15', originId: 'CCM-6PWS0008', protectionName: 'Q15', protectionModel: 'NSX 100 HB1 M2.2', protectionCurrentA: 40, service: 'VS' },
   { excelRow: 476, circuitRef: 'CCM-6PWS0009-15', originId: 'CCM-6PWS0009', protectionName: 'Q15', protectionModel: 'TESYS-U 12A', protectionCurrentA: 12, service: 'VS' },
   { excelRow: 477, circuitRef: 'CCM-6PWS0009-16', originId: 'CCM-6PWS0009', protectionName: 'Q16', protectionModel: 'NSX 100 HB1 M2.2', protectionCurrentA: 40, service: 'VS' },
+
+  // 400 Hz · MSB-4SFS0001 (hoja «400Hz Power System», col. I = RESPETO)
+  { excelRow: 26, circuitRef: 'MSB-4SFS0001-Q03', originId: 'MSB-4SFS0001', protectionName: 'Q03', protectionModel: 'NSX 160 F M2.2', protectionCurrentA: 160, voltage: '440', notes: 'hz400' },
+  { excelRow: 29, circuitRef: 'MSB-4SFS0001-Q05', originId: 'MSB-4SFS0001', protectionName: 'Q05', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '440', notes: 'hz400' },
+  { excelRow: 30, circuitRef: 'MSB-4SFS0001-Q06', originId: 'MSB-4SFS0001', protectionName: 'Q06', protectionModel: 'NSX 160 F M2.2', protectionCurrentA: 160, voltage: '440', notes: 'hz400' },
+  { excelRow: 31, circuitRef: 'MSB-4SFS0001-Q07', originId: 'MSB-4SFS0001', protectionName: 'Q07', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '440', notes: 'hz400' },
+  { excelRow: 32, circuitRef: 'MSB-4SFS0001-Q08', originId: 'MSB-4SFS0001', protectionName: 'Q08', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 40, voltage: '440', notes: 'hz400' },
+  { excelRow: 37, circuitRef: 'MSB-4SFS0001-Q53', originId: 'MSB-4SFS0001', protectionName: 'Q53', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '115', notes: 'hz400' },
+  { excelRow: 38, circuitRef: 'MSB-4SFS0001-Q54', originId: 'MSB-4SFS0001', protectionName: 'Q54', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '115', notes: 'hz400' },
+  { excelRow: 40, circuitRef: 'MSB-4SFS0001-Q56', originId: 'MSB-4SFS0001', protectionName: 'Q56', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '115', notes: 'hz400' },
+
+  // 400 Hz · MSB-4SFS0002
+  { excelRow: 111, circuitRef: 'MSB-4SFS0002-Q03', originId: 'MSB-4SFS0002', protectionName: 'Q03', protectionModel: 'NSX 160 F M2.2', protectionCurrentA: 160, voltage: '440', notes: 'hz400' },
+  { excelRow: 114, circuitRef: 'MSB-4SFS0002-Q05', originId: 'MSB-4SFS0002', protectionName: 'Q05', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '440', notes: 'hz400' },
+  { excelRow: 115, circuitRef: 'MSB-4SFS0002-Q06', originId: 'MSB-4SFS0002', protectionName: 'Q06', protectionModel: 'NSX 160 F M2.2', protectionCurrentA: 160, voltage: '440', notes: 'hz400' },
+  { excelRow: 116, circuitRef: 'MSB-4SFS0002-Q07', originId: 'MSB-4SFS0002', protectionName: 'Q07', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '440', notes: 'hz400' },
+  { excelRow: 122, circuitRef: 'MSB-4SFS0002-Q52', originId: 'MSB-4SFS0002', protectionName: 'Q52', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '115', notes: 'hz400' },
+  { excelRow: 123, circuitRef: 'MSB-4SFS0002-Q53', originId: 'MSB-4SFS0002', protectionName: 'Q53', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '115', notes: 'hz400' },
+  { excelRow: 124, circuitRef: 'MSB-4SFS0002-Q54', originId: 'MSB-4SFS0002', protectionName: 'Q54', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '115', notes: 'hz400' },
+  { excelRow: 126, circuitRef: 'MSB-4SFS0002-Q56', originId: 'MSB-4SFS0002', protectionName: 'Q56', protectionModel: 'NSX 100 F M2.2', protectionCurrentA: 100, voltage: '115', notes: 'hz400' },
 ]
 
 /**
@@ -93,9 +117,12 @@ export function augmentSpareCircuits(data: DistributionData): DistributionData {
       protectionCurrentA: row.protectionCurrentA,
       lineType: 'normal',
       service: row.service ?? 'NV',
-      voltage: '690 V',
+      voltage: row.voltage ?? '690 V',
       parallelCables: 1,
-      notes: 'RESPETO · interruptor de reserva (Excel col. L)',
+      notes:
+        row.notes === 'hz400'
+          ? 'hz400 · RESPETO · interruptor de reserva (Excel col. I)'
+          : 'RESPETO · interruptor de reserva (Excel col. L)',
       spare: true,
       excelRow: row.excelRow,
     })

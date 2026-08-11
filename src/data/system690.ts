@@ -100,9 +100,9 @@ const base: DistributionData = {
   ),
 }
 
-/** Datos 690 V + RESPETO + cadena ABT→TRF→LCS (440/230, módulo abtDownstream) */
-export const system690: DistributionData = mergeAbtDownstream(
-  augmentSpareCircuits(base),
+/** Datos 690 V + ABT→TRF→LCS/400 Hz + RESPETO (690 y MSB-4SFS) */
+export const system690: DistributionData = augmentSpareCircuits(
+  mergeAbtDownstream(base),
 )
 
 /** Denominación DCP-10 (Excel F/J) a partir del tag PUMA (E/I) */

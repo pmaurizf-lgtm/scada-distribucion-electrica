@@ -308,6 +308,113 @@ body {
   min-width: 18rem;
 }
 
+/* Rama 440 → Q09 → TRF → Q50 → 115, colgando de la barra 440 */
+.msb4sfs-trf115 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 9.5rem;
+  position: relative;
+  z-index: 3;
+}
+
+.msb4sfs-trf115__stem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.msb4sfs-trf115__wire {
+  display: block;
+  width: 2px;
+  flex: 0 0 0.55rem;
+  min-height: 0.55rem;
+  background: var(--line-normal);
+}
+
+/* Empalme con el eje de la barra 440 (mismo criterio que las otras salidas) */
+.msb4sfs-trf115__wire--from-440 {
+  margin-top: calc(-0.5 * var(--msb4sfs-rail-h, 1.15rem) - 2px);
+  flex: 0 0 calc(0.5 * var(--msb4sfs-rail-h, 1.15rem) + 0.5rem);
+  min-height: calc(0.5 * var(--msb4sfs-rail-h, 1.15rem) + 0.5rem);
+  position: relative;
+  z-index: 2;
+}
+
+.msb4sfs-trf115__wire--to-q50 {
+  flex-basis: 0.55rem;
+  min-height: 0.55rem;
+  /* Empalme con el borde superior del Q50 (sin spacer) */
+  margin-bottom: -2px;
+}
+
+.msb4sfs-trf115__wire--flow,
+.msb4sfs-trf115--flow .msb4sfs-trf115__wire {
+  background: #e6c200;
+}
+
+.msb4sfs-trf115__eq {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  margin: 0.12rem 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(120, 170, 210, 0.55);
+  border-radius: 2px;
+  background: rgba(18, 28, 36, 0.85);
+  max-width: 11rem;
+  text-align: center;
+}
+
+.msb4sfs-trf115__eq--live {
+  border-color: rgba(230, 194, 0, 0.65);
+}
+
+.msb4sfs-trf115--locate .msb4sfs-trf115__eq {
+  border-color: rgba(45, 212, 168, 0.85);
+  box-shadow: 0 0 0 2px rgba(45, 212, 168, 0.28);
+}
+
+.msb4sfs-trf115__eq-id {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #f0b429;
+}
+
+.msb4sfs-trf115__eq-name {
+  font-size: 0.55rem;
+  line-height: 1.2;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.msb4sfs-rack--nested-trf {
+  margin-top: 0;
+  min-width: 12rem;
+  align-self: stretch;
+}
+
+/*
+ * Q50 va flush (sin stub from-feed de Q00). Misma altura de cabecera
+ * que la sección 440 para que la pata Q51 = Q01.
+ */
+.msb4sfs-rack--nested-trf .msb4sfs-rack__inner-top {
+  height: 5rem;
+  min-height: 5rem;
+}
+
+.msb4sfs-rack--nested-trf .msb4sfs-rack__bustie-down {
+  min-height: 1rem;
+  flex: 1 0 1rem;
+}
+
+.msb4sfs-rack__in-slot--flush {
+  padding-top: 0;
+}
+
 /*
  * Secciones 440 / 115 dentro del mismo chasis: sin recuadro propio
  * (el MSB-4SFS es un único equipo).
@@ -333,17 +440,20 @@ body {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  min-height: 3.85rem;
+  /* Altura fija: Q00/Q50 y Q01/Q51 comparten el mismo bajante a barra */
+  height: 5rem;
+  min-height: 5rem;
+  box-sizing: border-box;
   /* Empalme visual con el eje de la barra */
   margin-bottom: calc(-0.5 * var(--msb4sfs-rail-h) + 2px);
 }
 
-/* Empalma con el eje de la barra */
+/* Baja hasta el borde de inner-top; el overlap con la barra lo da
+ * el margin-bottom de .msb4sfs-rack__inner-top (sin atravesar el rail). */
 .msb4sfs-rack__vwire--to-rail {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   min-height: 0.85rem;
   margin-bottom: 0;
-  /* 2 px dentro de la barra para unión visual */
   padding-bottom: 2px;
   box-sizing: content-box;
 }
@@ -364,10 +474,13 @@ body {
 }
 
 .msb4sfs-rack__in-row {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   justify-content: center;
   align-items: stretch;
+  height: 100%;
+  width: 100%;
 }
 
 .msb4sfs-rack__in-slot {
@@ -378,6 +491,8 @@ body {
   gap: 0;
   min-width: 3.6rem;
   height: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .msb4sfs-rack__in-slot--empty {
@@ -392,6 +507,12 @@ body {
 
 .msb4sfs-rack__vwire--from-feed {
   height: 0.45rem;
+}
+
+/* Reserva de altura bajo TRF→Q50: sin pintar cable (ya viene del stem). */
+.msb4sfs-rack__vwire--spacer {
+  background: transparent !important;
+  visibility: hidden;
 }
 
 .msb4sfs-rack__vwire--flow,
@@ -444,8 +565,8 @@ body {
 .msb4sfs-rack__bustie-mid {
   display: block;
   width: 2px;
-  flex: 0 0 0.55rem;
-  min-height: 0.55rem;
+  flex: 0 0 0.35rem;
+  min-height: 0.35rem;
   background: var(--line-normal);
 }
 
@@ -455,7 +576,6 @@ body {
 
 .msb4sfs-rack__bustie-tag {
   position: absolute;
-  left: calc(50% + 8px);
   top: 1.55rem;
   font-family: var(--mono);
   font-size: 0.52rem;
@@ -465,14 +585,27 @@ body {
   color: var(--line-normal);
   white-space: nowrap;
   pointer-events: none;
+  z-index: 2;
+}
+
+/* Fuera del chip: hacia el exterior del cuadro (no solapar Q01/Q51). */
+.msb4sfs-rack__bustie--right .msb4sfs-rack__bustie-tag {
+  left: calc(100% + 0.25rem);
+  right: auto;
   text-align: left;
+}
+
+.msb4sfs-rack__bustie--left .msb4sfs-rack__bustie-tag {
+  right: calc(100% + 0.25rem);
+  left: auto;
+  text-align: right;
 }
 
 .msb4sfs-rack__bustie-down {
   position: relative;
-  flex: 1 1 auto;
+  flex: 1 0 1rem;
   width: 2px;
-  min-height: 0;
+  min-height: 1rem;
   background: var(--line-normal);
   margin-top: 0;
   margin-bottom: 0;
@@ -1629,11 +1762,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
- * SSB-2PWS2209: un solo marco (el del chasis). El ::after del drop
- * envolvería todo el cuadro abierto → doble marco; se oculta.
- * El hilo ALT ya no usa ::after del chasis (ver .ssb2209-chassis-alt-riser).
+ * Cuadros abiertos (MSB-4SFS / LCS / SSB): un solo marco (el del chasis).
+ * El ::after del drop envolvería todo el equipo abierto → doble marco.
  */
-.hbus-drop--ssb-open:has(.ssb-board--2209).hbus-drop--locate::after,
+.hbus-drop--msb4sfs-open.hbus-drop--locate::after,
+.hbus-drop--lcs-open.hbus-drop--locate::after,
+.hbus-drop--ssb-open.hbus-drop--locate::after,
 .hbus-drop--ssb2209.hbus-drop--locate::after {
   content: none;
   display: none;
@@ -2666,6 +2800,107 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .hbus-drop__leg--thru.hbus-drop__leg--flow .hbus-drop__wire--thru,
 .hbus-drop__leg--thru .hbus-drop__wire--thru.hbus-drop__wire--flow {
   background: #e6c200;
+}
+
+/*
+ * Cable sin chip (solo thru): centrado en el eje del recuadro.
+ * No usar --link-aux (ese offset es solo cuando hay AUX a la izquierda).
+ */
+.hbus-drop__tops--link-thru {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: -2px;
+  transform: none;
+}
+
+.hbus-drop__tops--link-thru .hbus-drop__leg--thru {
+  align-self: stretch;
+}
+
+.hbus-drop__tops--link-thru .hbus-drop__wire--thru {
+  flex: 0 0 1.2rem;
+  min-height: 1.2rem;
+  width: 2px;
+  margin: 0 auto;
+  background: var(--line-normal);
+  opacity: 1;
+}
+
+.hbus-drop--flow > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
+.hbus-drop--live > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
+.hbus-drop__tops--link-thru .hbus-drop__wire--thru.hbus-drop__wire--flow {
+  background: #e6c200;
+}
+
+/*
+ * Cadena FIU→TRF→carga (MSB-4SFS): bajante sólido del padre hasta el hijo
+ * link-only (sin chip 59/60/8.4). El cable vive en .hbus--chain-link, no
+ * solo en el ::before del recuadro (más fiable / sin clipping).
+ */
+.msb4sfs-rack .hbus-drop--chain-open > .hbus--chain-link.hbus--direct,
+.msb4sfs-rack
+  .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only)
+  > .hbus--chain-link.hbus--direct {
+  position: relative;
+  margin-top: 0;
+  padding-top: 1.35rem;
+}
+
+.msb4sfs-rack .hbus-drop--chain-open > .hbus--chain-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 1.35rem;
+  background: var(--line-normal);
+  opacity: 1;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.msb4sfs-rack .hbus-drop--chain-open.hbus-drop--flow > .hbus--chain-link::before,
+.msb4sfs-rack .hbus-drop--chain-open.hbus-drop--live > .hbus--chain-link::before {
+  background: #e6c200;
+}
+
+/* Evitar doble trazo tenue a través del texto del padre en esta cadena */
+.msb4sfs-rack
+  .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before {
+  content: '';
+  top: 100%;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  opacity: 0;
+  background: transparent;
+}
+
+.msb4sfs-rack
+  .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::after {
+  display: none;
+}
+
+.msb4sfs-rack
+  .hbus-drop--chain-open
+  > .hbus--chain-link
+  .hbus-drop--link-only
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru {
+  flex: 0 0 0.85rem;
+  min-height: 0.85rem;
 }
 
 /* AUX del MSB: encima del marco, en el lado opuesto al bus-tie (QT*),

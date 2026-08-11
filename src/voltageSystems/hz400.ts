@@ -40,9 +40,12 @@ export function isScvToMsb4SfsFeed(circuit: Circuit): boolean {
   )
 }
 
-/** Lado del bus-tie Q01/Q51: 0001 mira a estribor (dcha), 0002 a babor (izq). */
-export function msb4SfsTieSide(msbId: string): 'left' | 'right' {
-  return /0001$/i.test(msbId) ? 'right' : 'left'
+/**
+ * Lado del bus-tie Q01/Q51: siempre a estribor (derecha), igual que
+ * MSB-4SFS0001 — el cartel INTERCONEXION queda fuera del rack.
+ */
+export function msb4SfsTieSide(_msbId: string): 'left' | 'right' {
+  return 'right'
 }
 
 export function isSsb1SfsFamily(id: string): boolean {
@@ -81,6 +84,29 @@ export function isMsb4SfsTrfReturn(c: Circuit): boolean {
   )
 }
 
+/**
+ * Salida de barra 440 al TRF que devuelve 115 al mismo MSB (Q09…).
+ * No se pinta como drop colgante: va en el puente 440→TRF→Q50→115.
+ */
+export function isMsb4SfsTrfPrimaryOutlet(
+  c: Circuit,
+  data: DistributionData,
+): boolean {
+  if (
+    c.virtual ||
+    !isMsb4Sfs(c.originId) ||
+    !/^TRF-[124]SFS/i.test(c.destinationId)
+  ) {
+    return false
+  }
+  return data.circuits.some(
+    (r) =>
+      isMsb4SfsTrfReturn(r) &&
+      r.originId === c.destinationId &&
+      r.destinationId === c.originId,
+  )
+}
+
 export type Msb4SfsBusVoltage = '440' | '115'
 
 export function msb4SfsOutletVoltage(c: Circuit): Msb4SfsBusVoltage {
@@ -98,11 +124,11 @@ export function msb4SfsOutlets(
     .filter(
       (c) =>
         !c.virtual &&
-        !c.spare &&
         c.originId === msbId &&
         !c.destinationId.startsWith('BUS-') &&
         !isMsb4SfsInterconnect(c) &&
         !isMsb4SfsTrfReturn(c) &&
+        !isMsb4SfsTrfPrimaryOutlet(c, data) &&
         msb4SfsOutletVoltage(c) === bus,
     )
     .map((c) => ({
@@ -139,5 +165,20 @@ export function msb4SfsTrfReturnFeed(
 ): Circuit | undefined {
   return data.circuits.find(
     (c) => isMsb4SfsTrfReturn(c) && c.destinationId === msbId,
+  )
+}
+
+/** Salida 440 V del MSB hacia el TRF que retorna a 115 (Q09…). */
+export function msb4SfsTrfPrimaryFeed(
+  data: DistributionData,
+  msbId: string,
+): Circuit | undefined {
+  const ret = msb4SfsTrfReturnFeed(data, msbId)
+  if (!ret) return undefined
+  return data.circuits.find(
+    (c) =>
+      !c.virtual &&
+      c.originId === msbId &&
+      c.destinationId === ret.originId,
   )
 }

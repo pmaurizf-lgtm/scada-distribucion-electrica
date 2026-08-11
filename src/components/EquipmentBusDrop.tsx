@@ -243,9 +243,11 @@ export function EquipmentBusDrop({
   }
 
   const hasAuxTops = aux24Feeds.length > 0
-  const showTops = !linkOnlyFromParent || hasAuxTops
+  /** Enlace sin chip: pierna «thru» para ver el cable al equipo. */
+  const linkThruOnly = linkOnlyFromParent && !hasAuxTops
   const linkAuxBeside =
     linkOnlyFromParent && hasAuxTops && !isAux24Feed(circuit)
+  const showTops = !linkOnlyFromParent || hasAuxTops || linkThruOnly
 
   return (
     <div
@@ -264,7 +266,13 @@ export function EquipmentBusDrop({
     >
       {showTops ? (
         <div
-          className={`hbus-drop__tops${linkAuxBeside ? ' hbus-drop__tops--link-aux' : ''}`}
+          className={`hbus-drop__tops${
+            linkAuxBeside
+              ? ' hbus-drop__tops--link-aux'
+              : linkThruOnly
+                ? ' hbus-drop__tops--link-thru'
+                : ''
+          }`}
         >
           {aux24Feeds.map((aux) => (
             <Aux24Incoming
@@ -279,7 +287,7 @@ export function EquipmentBusDrop({
               onHoverInfoEnd={onHoverInfoEnd}
             />
           ))}
-          {linkAuxBeside && (
+          {(linkAuxBeside || linkThruOnly) && (
             <div
               className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
               data-circuit-id={localFeed.id}
