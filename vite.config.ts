@@ -48,6 +48,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,svg,webp,woff2,json}'],
         navigateFallback: 'index.html',
+        // Activa el SW nuevo en cuanto hay deploy; la página recarga sola
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'document',
