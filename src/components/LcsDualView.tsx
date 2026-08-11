@@ -1,9 +1,7 @@
 import {
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
   type MouseEvent as ReactMouseEvent,
   type RefObject,
 } from 'react'
