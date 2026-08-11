@@ -12,15 +12,20 @@ import type {
 } from '../types'
 import raw from '../data/abtDownstream.json'
 import dcp10Map from '../data/dcp10Map.json'
+import nme674Map from '../data/nme674Map.json'
 
 const dcp10ByPuma = dcp10Map as Record<string, string>
+const nme674ByPuma = nme674Map as Record<string, string>
 
 interface RawEq {
   id: string
   name: string
   kind: EquipmentKind
   local?: string | null
+  /** Denominación del local (Lista de Compartimentos). */
+  localName?: string | null
   dcp10Id?: string | null
+  nme674Id?: string | null
   voltage?: string | null
   spare?: boolean
   virtual?: boolean
@@ -84,10 +89,13 @@ function cleanEq(e: RawEq): Equipment {
     kind: e.kind,
   }
   if (e.local) out.local = e.local
+  if (e.localName) out.localName = e.localName
   // Misma regla que system690.ts: mapa DCP-10 o, si no hay, el PUMA.
   // RESPETO no muestra DCP en la tarjeta (el UI omite dcp si spare).
   if (!e.spare) {
     out.dcp10Id = e.dcp10Id || dcp10ByPuma[e.id] || e.id
+    const nme = e.nme674Id || nme674ByPuma[e.id]
+    if (nme) out.nme674Id = nme
   }
   if (e.voltage) out.voltage = e.voltage.includes('V') ? e.voltage : `${e.voltage} V`
   if (e.spare) out.spare = true
@@ -135,15 +143,25 @@ function isTrfWindingLink(c: RawCircuit): boolean {
   )
 }
 
+function logicalBreakerKey(c: Pick<RawCircuit, 'originId' | 'destinationId' | 'protectionName'>): string {
+  return `${c.originId}>${c.destinationId}>${c.protectionName}`
+}
+
 /**
  * Añade equipos/circuitos 440-230 de ABT→TRF→LCS al dataset 690 V.
  * No modifica MSB ni filas ya existentes.
+ * Omite clones lógicos de interruptor (mismo origen/destino/nombre).
  */
 export function mergeAbtDownstream(base: DistributionData): DistributionData {
   const haveEq = new Set(base.equipment.map((e) => e.id))
   const haveCirc = new Set(base.circuits.map((c) => c.id))
   const haveRef = new Set(
     base.circuits.map((c) => c.circuitRef).filter(Boolean) as string[],
+  )
+  const haveLogical = new Set(
+    base.circuits
+      .filter((c) => !c.virtual)
+      .map((c) => logicalBreakerKey(c)),
   )
 
   const equipment = [
@@ -159,6 +177,13 @@ export function mergeAbtDownstream(base: DistributionData): DistributionData {
       .filter((c) => !isTrfWindingLink(c))
       .filter((c) => !haveCirc.has(c.id))
       .filter((c) => !c.circuitRef || !haveRef.has(c.circuitRef))
+      .filter((c) => {
+        if (c.virtual) return true
+        const k = logicalBreakerKey(c)
+        if (haveLogical.has(k)) return false
+        haveLogical.add(k)
+        return true
+      })
       .map(cleanCircuit),
   ]
 

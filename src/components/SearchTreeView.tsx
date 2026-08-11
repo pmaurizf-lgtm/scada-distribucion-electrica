@@ -27,6 +27,7 @@ import {
   filterFeedsByBusVoltage,
   normalizeLcsBusVoltage,
 } from '../utils/upstream'
+import { labelSecondaryDenom } from '../utils/equipmentLabels'
 import { LockBadge, MotorizedBreakerSymbol } from './BreakerSymbols'
 import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
@@ -254,9 +255,14 @@ function EquipCard({
     >
       <span className="stree-eq__sym">{symbolFor(equipment.kind)}</span>
       <strong className="stree-eq__id">{equipment.id}</strong>
-      {equipment.dcp10Id && (
-        <span className="stree-eq__dcp">{equipment.dcp10Id}</span>
-      )}
+      {(() => {
+        const secondary = labelSecondaryDenom(equipment)
+        return secondary ? (
+          <span className="stree-eq__dcp" title={secondary.title}>
+            {secondary.value}
+          </span>
+        ) : null
+      })()}
       {!compact && <span className="stree-eq__name">{equipment.name}</span>}
       {capExpandable && (
         <span className="stree-eq__cap-hint" aria-hidden>

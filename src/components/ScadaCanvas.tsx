@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -20,6 +21,12 @@ import {
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
 import { allSectionCouplers, isPendingFeed } from '../utils/cascadeModel'
 import {
+  clearPersistedSim,
+  loadPersistedSim,
+  savePersistedSim,
+} from '../utils/simPersistence'
+import { useIsMobileUi } from '../hooks/useIsMobileUi'
+import {
   CascadeView,
   type CascadeFocus,
   type CascadeViewHandle,
@@ -31,6 +38,7 @@ const emptyStatus: ProtectionStatusMap = {}
 const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
 const ZOOM_STEP = 0.15
+const PWA_HINT_KEY = 'scada-f110-pwa-hint-dismissed'
 
 const searchableEquipment = system690.equipment.filter(
   (e) =>
@@ -40,22 +48,45 @@ const searchableEquipment = system690.equipment.filter(
     e.id !== 'ORIGEN-PENDIENTE',
 )
 
+function initialProtectionStatus(): ProtectionStatusMap {
+  const saved = loadPersistedSim()
+  if (saved?.protectionStatus) return saved.protectionStatus
+  return toProtectionStatusMap(sampleProtectionStatus)
+}
+
+function initialLocked(): Set<string> {
+  const saved = loadPersistedSim()
+  return new Set(saved?.lockedCircuits ?? [])
+}
+
+function initialGens(): Set<string> {
+  const saved = loadPersistedSim()
+  return new Set(saved?.runningGenerators ?? [])
+}
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
 export function ScadaCanvas() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cascadeRef = useRef<CascadeViewHandle>(null)
+  const isMobile = useIsMobileUi()
+  const [chromeCollapsed, setChromeCollapsed] = useState(false)
   const [protectionStatus, setProtectionStatus] =
-    useState<ProtectionStatusMap>(() =>
-      toProtectionStatusMap(sampleProtectionStatus),
-    )
-  const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(
-    () => new Set(),
-  )
-  const [runningGenerators, setRunningGenerators] = useState<Set<string>>(
-    () => new Set(),
-  )
+    useState<ProtectionStatusMap>(initialProtectionStatus)
+  const [lockedCircuits, setLockedCircuits] =
+    useState<Set<string>>(initialLocked)
+  const [runningGenerators, setRunningGenerators] =
+    useState<Set<string>>(initialGens)
   const [lockTool, setLockTool] = useState<LockTool>('none')
   const [zoom, setZoom] = useState(1)
-  const [statusSource, setStatusSource] = useState('todos abiertos · gens parados')
+  const [statusSource, setStatusSource] = useState(() =>
+    loadPersistedSim()
+      ? 'estado restaurado (local / offline)'
+      : 'todos abiertos · gens parados',
+  )
   const [locateQuery, setLocateQuery] = useState('')
   const [feedsQuery, setFeedsQuery] = useState('')
   const [searchHint, setSearchHint] = useState<string | null>(null)
@@ -63,6 +94,36 @@ export function ScadaCanvas() {
   const [locateEquipmentId, setLocateEquipmentId] = useState<string | null>(
     null,
   )
+  const [installPrompt, setInstallPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null)
+  const [showPwaHint, setShowPwaHint] = useState(() => {
+    try {
+      return localStorage.getItem(PWA_HINT_KEY) !== '1'
+    } catch {
+      return true
+    }
+  })
+
+  useEffect(() => {
+    if (isMobile) setChromeCollapsed(true)
+  }, [isMobile])
+
+  useEffect(() => {
+    const onBip = (e: Event) => {
+      e.preventDefault()
+      setInstallPrompt(e as BeforeInstallPromptEvent)
+    }
+    window.addEventListener('beforeinstallprompt', onBip)
+    return () => window.removeEventListener('beforeinstallprompt', onBip)
+  }, [])
+
+  useEffect(() => {
+    savePersistedSim({
+      protectionStatus,
+      lockedCircuits,
+      runningGenerators,
+    })
+  }, [protectionStatus, lockedCircuits, runningGenerators])
 
   const { energizedCircuitIds, energizedEquipmentIds, energizedBusHalves } =
     useMemo(
@@ -70,6 +131,23 @@ export function ScadaCanvas() {
         computeEnergyFlow(system690, protectionStatus, runningGenerators),
       [protectionStatus, runningGenerators],
     )
+
+  const dismissPwaHint = () => {
+    setShowPwaHint(false)
+    try {
+      localStorage.setItem(PWA_HINT_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return
+    await installPrompt.prompt()
+    await installPrompt.userChoice
+    setInstallPrompt(null)
+    dismissPwaHint()
+  }
 
   const toggleGenerator = useCallback((genId: string) => {
     setRunningGenerators((prev) => {
@@ -119,7 +197,9 @@ export function ScadaCanvas() {
         )
         return false
       }
-      setProtectionStatus((prev) => toggleProtectionState(prev, circuitId))
+      setProtectionStatus((prev) =>
+        toggleProtectionState(prev, circuitId, system690),
+      )
       setStatusSource('simulación manual')
       return true
     },
@@ -143,6 +223,7 @@ export function ScadaCanvas() {
 
   const handleClearStatus = useCallback(() => {
     setProtectionStatus(emptyStatus)
+    clearPersistedSim()
     setStatusSource('sin estado de protecciones')
   }, [])
 
@@ -188,10 +269,12 @@ export function ScadaCanvas() {
     }
     setFocus(null)
     setLocateEquipmentId(found.id)
+    if (isMobile) setChromeCollapsed(true)
     const dcp =
       found.dcp10Id && found.dcp10Id !== found.id ? ` / ${found.dcp10Id}` : ''
+    const nme = found.nme674Id ? ` / NME ${found.nme674Id}` : ''
     setSearchHint(
-      `${found.id}${dcp} · ${found.name} — localizado en el unifilar.`,
+      `${found.id}${dcp}${nme} · ${found.name} — localizado en el unifilar.`,
     )
   }
 
@@ -206,6 +289,7 @@ export function ScadaCanvas() {
     const trace = getUpstreamTrace(found.id, system690.circuits)
     setLocateEquipmentId(null)
     setFocus({ equipmentId: found.id, trace })
+    if (isMobile) setChromeCollapsed(true)
     const dcp =
       found.dcp10Id && found.dcp10Id !== found.id ? ` / ${found.dcp10Id}` : ''
     setSearchHint(
@@ -234,14 +318,29 @@ export function ScadaCanvas() {
     cascadeRef.current?.collapseAll()
   }
 
+  const isIos =
+    typeof navigator !== 'undefined' &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+  const shellClass = [
+    'app-shell',
+    'app-shell--cascade',
+    isMobile ? 'app-shell--mobile' : '',
+    isMobile && chromeCollapsed ? 'app-shell--chrome-collapsed' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className="app-shell app-shell--cascade">
+    <div className={shellClass}>
       <div className="app-shell__chrome">
         <header className="topbar">
           <div className="topbar__brand">
             <NavantiaLogo />
             <div className="topbar__brand-meta">
-              <p className="topbar__brand-title">F110 - Distribution Power System</p>
+              <p className="topbar__brand-title">
+                F110 - Distribution Power System
+              </p>
               <p>
                 {system690.sourceFile
                   ? displaySourceFileName(system690.sourceFile)
@@ -250,63 +349,109 @@ export function ScadaCanvas() {
             </div>
           </div>
 
+          {isMobile && (
+            <button
+              type="button"
+              className="btn topbar__chrome-toggle"
+              aria-expanded={!chromeCollapsed}
+              onClick={() => setChromeCollapsed((c) => !c)}
+              title={
+                chromeCollapsed
+                  ? 'Mostrar herramientas y búsqueda'
+                  : 'Ocultar barra y ganar espacio'
+              }
+            >
+              {chromeCollapsed ? 'Menú ▾' : 'Menú ▴'}
+            </button>
+          )}
+
           <div className="topbar__main">
             <div className="topbar__row topbar__row--tools">
-              <div className="topbar__actions">
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={expandAll}
-                  title="Desplegar todos los cuadros y equipos del unifilar"
+              <div
+                className="topbar__console"
+                role="group"
+                aria-label="Herramientas"
+              >
+                <div
+                  className="topbar__actions topbar__actions--view"
+                  role="group"
+                  aria-label="Vista"
                 >
-                  Desplegar todo
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={collapseAll}
-                  title="Plegar todos los cuadros y equipos del unifilar"
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={expandAll}
+                    title="Desplegar todos los cuadros y equipos del unifilar"
+                  >
+                    Desplegar todo
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={collapseAll}
+                    title="Plegar todos los cuadros y equipos del unifilar"
+                  >
+                    Plegar todo
+                  </button>
+                </div>
+                <div
+                  className="topbar__actions topbar__actions--sim"
+                  role="group"
+                  aria-label="Simulación"
                 >
-                  Plegar todo
-                </button>
-                <button type="button" className="btn" onClick={handleSimulateToggle}>
-                  Simular estado
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
-                  onClick={() =>
-                    setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
-                  }
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={handleSimulateToggle}
+                  >
+                    Simular estado
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
+                    onClick={() =>
+                      setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
+                    }
+                  >
+                    Poner candado
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
+                    onClick={() =>
+                      setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
+                    }
+                  >
+                    Quitar candado
+                  </button>
+                </div>
+                <div
+                  className="topbar__actions topbar__actions--data"
+                  role="group"
+                  aria-label="Datos"
                 >
-                  Poner candado
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
-                  onClick={() =>
-                    setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
-                  }
-                >
-                  Quitar candado
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Cargar JSON
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/json,.json"
-                  hidden
-                  onChange={handleFileChange}
-                />
-                <button type="button" className="btn" onClick={handleClearStatus}>
-                  Limpiar estados
-                </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Cargar JSON
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    hidden
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={handleClearStatus}
+                  >
+                    Limpiar estados
+                  </button>
+                </div>
               </div>
               <div className="zoom-controls" role="group" aria-label="Zoom">
                 <button
@@ -365,6 +510,7 @@ export function ScadaCanvas() {
                       setSearchHint(null)
                     }}
                     list="equipment-suggestions-locate"
+                    enterKeyHint="search"
                   />
                 </label>
                 <datalist id="equipment-suggestions-locate">
@@ -401,7 +547,10 @@ export function ScadaCanvas() {
                 )}
               </form>
 
-              <form className="search search--feeds" onSubmit={handleFeedsSearch}>
+              <form
+                className="search search--feeds"
+                onSubmit={handleFeedsSearch}
+              >
                 <span
                   className="search__label"
                   title="Árbol de alimentaciones (busca por PUMA o DCP-10)"
@@ -419,6 +568,7 @@ export function ScadaCanvas() {
                       setSearchHint(null)
                     }}
                     list="equipment-suggestions-feeds"
+                    enterKeyHint="search"
                   />
                 </label>
                 <datalist id="equipment-suggestions-feeds">
@@ -458,6 +608,33 @@ export function ScadaCanvas() {
           </div>
         </header>
 
+        {isMobile && showPwaHint && (
+          <div className="pwa-install" role="status">
+            <p className="pwa-install__text">
+              <strong>Instalar en el móvil</strong>
+              {installPrompt
+                ? ' — añade F110 DPS a la pantalla de inicio para usarla sin conexión.'
+                : isIos
+                  ? ' — en Safari: Compartir → «Añadir a pantalla de inicio».'
+                  : ' — en el menú del navegador: «Instalar aplicación» / «Añadir a pantalla de inicio».'}
+            </p>
+            <div className="pwa-install__actions">
+              {installPrompt && (
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => void handleInstallClick()}
+                >
+                  Instalar
+                </button>
+              )}
+              <button type="button" className="btn" onClick={dismissPwaHint}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        )}
+
         {searchHint && <div className="banner">{searchHint}</div>}
         {lockTool !== 'none' && (
           <div className="banner banner--tool">
@@ -469,7 +646,9 @@ export function ScadaCanvas() {
         {lockTool === 'none' && !searchHint && (
           <div className="banner">
             {runningGenerators.size === 0
-              ? 'Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
+              ? isMobile
+                ? 'Simulación: toca un generador (G) para arrancarlo, cierra QG* y salidas. Pellizca para zoom; arrastra para desplazar. Doble toque en cuadros para plegar/desplegar.'
+                : 'Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
               : `Simulación: ${runningGenerators.size} generador${runningGenerators.size === 1 ? '' : 'es'} en marcha. Cierra QG* / salidas / QBT para ver el flujo (doble clic en cuadros o equipos para plegar/desplegar).`}
           </div>
         )}
@@ -512,6 +691,7 @@ export function ScadaCanvas() {
           gens: {runningGenerators.size} en marcha · candados:{' '}
           {lockedCircuits.size} · flujo: {energizedCircuitIds.size} circ. · zoom{' '}
           {Math.round(zoom * 100)}% · {statusSource}
+          {isMobile ? ' · PWA' : ''}
         </span>
       </footer>
     </div>

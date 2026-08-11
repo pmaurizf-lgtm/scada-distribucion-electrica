@@ -20,6 +20,11 @@ export interface Equipment {
   kind: EquipmentKind
   /** Local / compartimento (cols G / K) */
   local?: string
+  /**
+   * Denominación del local (Lista de Compartimentos col. B),
+   * cruzada por código de `local` (col. A).
+   */
+  localName?: string
   voltage?: string
   description?: string
   /** Nodo sintético (p. ej. barra de cuadro principal) */
@@ -31,6 +36,11 @@ export interface Equipment {
    * `id` es la denominación PUMA (cols I / E).
    */
   dcp10Id?: string
+  /**
+   * Denominación NME-674 (Relación de SSB, col. E).
+   * En letreros SSB sustituye a DCP-10 (PUMA ≡ DCP-10).
+   */
+  nme674Id?: string
   /**
    * Interruptor de entrada del cuadro (Excel «Incoming Power Switch», p. ej. INS 160).
    * Típico en SSB 440 V aguas abajo del LCS.

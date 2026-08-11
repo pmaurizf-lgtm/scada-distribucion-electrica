@@ -102,7 +102,7 @@ export function getUpstreamTrace(
       let nextId = circuit.originId
       if (feedIsAux) {
         nextId = msb24SourceForAuxOrigin(
-          { circuits, equipment: [] } as DistributionData,
+          { circuits, equipment: [] } as unknown as DistributionData,
           circuit.originId,
         )
       }

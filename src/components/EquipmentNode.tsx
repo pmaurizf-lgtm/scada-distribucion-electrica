@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import type { EquipmentKind } from '../types'
 import type { EquipmentNodeData } from '../utils/graphBuilder'
+import { labelSecondaryDenom } from '../utils/equipmentLabels'
 
 const KIND_LABEL: Record<EquipmentKind, string> = {
   generador: 'Generador',
@@ -18,6 +19,7 @@ function EquipmentNodeComponent({ data, selected }: NodeProps<EqNode>) {
   const highlightClass = highlight ? ` eq-node--${highlight}` : ''
   const isBus =
     !!equipment.virtual || equipment.id.startsWith('MSB-6PWS')
+  const secondary = labelSecondaryDenom(equipment)
   return (
     <div
       className={`eq-node eq-node--${equipment.kind}${isBus ? ' eq-node--bus' : ''}${selected ? ' eq-node--selected' : ''}${highlightClass}`}
@@ -42,10 +44,12 @@ function EquipmentNodeComponent({ data, selected }: NodeProps<EqNode>) {
       <strong className="eq-node__name">{equipment.name}</strong>
       <span className="eq-node__meta">
         {equipment.id}
-        {equipment.dcp10Id ? (
+        {secondary ? (
           <>
             <br />
-            <em className="denom-dcp">{equipment.dcp10Id}</em>
+            <em className="denom-dcp" title={secondary.title}>
+              {secondary.value}
+            </em>
           </>
         ) : null}
         {equipment.local ? ` · ${equipment.local}` : ''}

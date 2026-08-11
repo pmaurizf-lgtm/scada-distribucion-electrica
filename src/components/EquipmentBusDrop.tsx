@@ -13,11 +13,13 @@ import {
   foldedLcsQvsLegs,
   incomingFeeds,
   isAux24Feed,
+  isParallelLcsTopFeed,
   isPendingFeed,
   lineBadge,
   pairedRemoteFeeds,
 } from '../utils/cascadeModel'
 import { isSpareEquipment } from '../utils/spareCircuits'
+import { labelSecondaryDenom } from '../utils/equipmentLabels'
 import { Aux24Incoming } from './Aux24Incoming'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBalloon } from './EquipmentBalloon'
@@ -43,9 +45,111 @@ export function equipFamOf(equipment: Equipment, isLcs?: boolean): EquipFam {
   if (equipment.id.startsWith('ABT-')) return 'abt'
   if (equipment.id.startsWith('TRF-')) return 'trf'
   if (isLcs || equipment.id.startsWith('LCS-')) return 'lcs'
+  if (equipment.id.startsWith('CSB-')) return 'sec'
   if (equipment.kind === 'cuadro_secundario') return 'sec'
   if (equipment.kind === 'conversion') return 'trf'
   return 'eq'
+}
+
+/** LCS plegado: CSB + QS* (misma idea que ParallelFeedLeg con LCS abierto). */
+function FoldedParallelCsbLeg({
+  feed,
+  protectionStatus,
+  energizedCircuitIds,
+  energizedEquipmentIds,
+  lockedCircuits,
+  onLocalBreaker,
+  onHoverInfo,
+  onHoverInfoEnd,
+}: {
+  feed: Circuit
+  protectionStatus: Record<string, ProtectionState>
+  energizedCircuitIds: Set<string>
+  energizedEquipmentIds: Set<string>
+  lockedCircuits: Set<string>
+  onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
+}) {
+  const origin = system690.equipment.find((e) => e.id === feed.originId)
+  const flowing = energizedCircuitIds.has(feed.id)
+  const eqLive = energizedEquipmentIds.has(feed.originId)
+  const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
+  const isAlt = feed.lineType === 'alternativa'
+  const eqWrapRef = useRef<HTMLDivElement>(null)
+  const [eqHover, setEqHover] = useState(false)
+  const [showEqBalloon, setShowEqBalloon] = useState(false)
+
+  useEffect(() => {
+    if (!eqHover) {
+      setShowEqBalloon(false)
+      return
+    }
+    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
+    return () => window.clearTimeout(t)
+  }, [eqHover])
+
+  if (!origin) return null
+
+  const fam = equipFamOf(origin)
+  const secondary = labelSecondaryDenom(origin)
+
+  return (
+    <div
+      className={`hbus-drop__leg hbus-drop__leg--parallel-csb${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}${breakerOpen && !flowing ? ' hbus-drop__leg--open' : ''}${eqLive && !flowing ? ' hbus-drop__leg--from-live' : ''}`}
+      data-circuit-id={feed.id}
+      data-equip={origin.id}
+      title={`${origin.id} → ${feed.protectionName} → ${feed.destinationId}`}
+    >
+      <div
+        ref={eqWrapRef}
+        className={`hbus-drop__csb-src hbus-drop__eq--fam-${fam}${eqLive ? ' hbus-drop__csb-src--live' : ''}${flowing ? ' hbus-drop__csb-src--flow' : ''}`}
+        data-equip={origin.id}
+        onMouseEnter={() => setEqHover(true)}
+        onMouseLeave={() => setEqHover(false)}
+      >
+        <span className="hbus-drop__sym">{symbolFor(origin.kind)}</span>
+        <span className="hbus-drop__id">{origin.id}</span>
+        {secondary && (
+          <span className="hbus-drop__dcp" title={secondary.title}>
+            {secondary.value}
+          </span>
+        )}
+        <span className="hbus-drop__name">{origin.name}</span>
+        {showEqBalloon && (
+          <EquipmentBalloon
+            equipment={origin}
+            circuits={[feed]}
+            anchorRef={eqWrapRef}
+          />
+        )}
+      </div>
+      <span
+        className="hbus-drop__wire hbus-drop__wire--csb-drop"
+        aria-hidden
+      />
+      <BreakerChip
+        name={feed.protectionName}
+        state={protectionStatus[feed.id]}
+        compact
+        circuitId={feed.id}
+        circuit={feed}
+        flowing={flowing}
+        locked={lockedCircuits.has(feed.id)}
+        title={`${feed.protectionName} · entrada ${origin.id} → ${feed.destinationId}`}
+        onHoverInfo={onHoverInfo}
+        onHoverInfoEnd={onHoverInfoEnd}
+        onClick={(e) => {
+          e.stopPropagation()
+          onLocalBreaker(feed, e)
+        }}
+      />
+      <span
+        className={`hbus-drop__wire hbus-drop__wire--to-eq${flowing ? ' hbus-drop__wire--flow' : ''}`}
+        aria-hidden
+      />
+    </div>
+  )
 }
 
 export interface EquipmentBusDropProps {
@@ -129,7 +233,16 @@ export function EquipmentBusDrop({
     () => foldedLcsQvsLegs(feeds, localFeed),
     [feeds, localFeed],
   )
-  const dual = remoteFeeds.length > 0 || (qvsLegs != null && qvsLegs.length > 1)
+  /** LCS plegado: acometida CSB→QS* (misma barra VS; en abierto va en ParallelFeedLeg). */
+  const parallelLegs = useMemo(
+    () =>
+      qvsLegs != null ? feeds.filter((c) => isParallelLcsTopFeed(c)) : [],
+    [feeds, qvsLegs],
+  )
+  const dual =
+    remoteFeeds.length > 0 ||
+    (qvsLegs != null && qvsLegs.length > 1) ||
+    parallelLegs.length > 0
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
@@ -147,8 +260,11 @@ export function EquipmentBusDrop({
   }, [eqHover])
 
   const displayFeeds = useMemo(
-    () => (qvsLegs != null ? [...qvsLegs, ...remoteFeeds] : [localFeed, ...remoteFeeds]),
-    [localFeed, remoteFeeds, qvsLegs],
+    () =>
+      qvsLegs != null
+        ? [...qvsLegs, ...parallelLegs, ...remoteFeeds]
+        : [localFeed, ...remoteFeeds],
+    [localFeed, remoteFeeds, qvsLegs, parallelLegs],
   )
 
   const feedSummaries = useMemo(() => {
@@ -178,10 +294,12 @@ export function EquipmentBusDrop({
     const isAlt = feed.lineType === 'alternativa'
     const flowing = energizedCircuitIds.has(feed.id)
     const pending = isPendingFeed(feed)
+    const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
+    const originLive = energizedEquipmentIds.has(feed.originId)
     return (
       <div
         key={feed.id}
-        className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}`}
+        className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}${breakerOpen && !flowing ? ' hbus-drop__leg--open' : ''}${originLive && !flowing ? ' hbus-drop__leg--from-live' : ''}`}
         data-circuit-id={kind === 'local' ? feed.id : undefined}
         data-remote-circuit={kind === 'remote' ? feed.id : undefined}
         title={
@@ -248,6 +366,7 @@ export function EquipmentBusDrop({
   const linkAuxBeside =
     linkOnlyFromParent && hasAuxTops && !isAux24Feed(circuit)
   const showTops = !linkOnlyFromParent || hasAuxTops || linkThruOnly
+  const secondaryDenom = spare ? null : labelSecondaryDenom(equipment)
 
   return (
     <div
@@ -304,6 +423,19 @@ export function EquipmentBusDrop({
               {qvsLegs != null
                 ? qvsLegs.map((qvs) => renderLeg(qvs, 'local'))
                 : renderLeg(localFeed, 'local')}
+              {parallelLegs.map((pf) => (
+                <FoldedParallelCsbLeg
+                  key={pf.id}
+                  feed={pf}
+                  protectionStatus={protectionStatus}
+                  energizedCircuitIds={energizedCircuitIds}
+                  energizedEquipmentIds={energizedEquipmentIds}
+                  lockedCircuits={lockedCircuits}
+                  onLocalBreaker={onLocalBreaker}
+                  onHoverInfo={onHoverInfo}
+                  onHoverInfoEnd={onHoverInfoEnd}
+                />
+              ))}
             </>
           )}
         </div>
@@ -337,9 +469,9 @@ export function EquipmentBusDrop({
             <span className="hbus-drop__id">
               {spare ? localFeed.protectionName : equipment.id}
             </span>
-            {!spare && equipment.dcp10Id && (
-              <span className="hbus-drop__dcp" title="Denominación DCP-10">
-                {equipment.dcp10Id}
+            {secondaryDenom && (
+              <span className="hbus-drop__dcp" title={secondaryDenom.title}>
+                {secondaryDenom.value}
               </span>
             )}
             <span className="hbus-drop__name">
