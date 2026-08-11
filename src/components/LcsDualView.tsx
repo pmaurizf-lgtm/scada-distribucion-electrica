@@ -39,6 +39,7 @@ import { BreakerChip } from './BreakerChip'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { EquipmentBusDrop, equipFamOf, symbolFor } from './EquipmentBusDrop'
 import { SsbBoardView } from './SsbBoardView'
+import { labelSecondaryDenom } from '../utils/equipmentLabels'
 
 type FeedSyncVars = {
   feedCol: number
@@ -376,10 +377,12 @@ function LcsOutletDrop({
       const isAlt = feed.lineType === 'alternativa'
       const flowing = energizedCircuitIds.has(feed.id)
       const pending = isPendingFeed(feed)
+      const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
+      const originLive = energizedEquipmentIds.has(feed.originId)
       return (
         <div
           key={feed.id}
-          className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}`}
+          className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}${breakerOpen && !flowing ? ' hbus-drop__leg--open' : ''}${originLive && !flowing ? ' hbus-drop__leg--from-live' : ''}`}
           data-circuit-id={kind === 'local' ? feed.id : undefined}
           data-remote-circuit={kind === 'remote' ? feed.id : undefined}
           title={
@@ -679,10 +682,14 @@ export function LcsVoltageBoard({
     onToggleEquip,
   }
 
+  const qvsOpen = !!(feed && protectionStatus[feed.id] !== 'cerrada')
+  const qvsFromLive = !!(
+    feed && energizedEquipmentIds.has(feed.originId) && !inFlow
+  )
   const qvsLeg = feed ? (
     <div
       ref={qvsLegRef}
-      className={`lcs440-rail__qvs-leg${inFlow ? ' lcs440-rail__qvs-leg--flow' : ''}`}
+      className={`lcs440-rail__qvs-leg${inFlow ? ' lcs440-rail__qvs-leg--flow' : ''}${qvsOpen && !inFlow ? ' lcs440-rail__qvs-leg--open' : ''}${qvsFromLive ? ' lcs440-rail__qvs-leg--from-live' : ''}`}
       data-qvs={bus.voltage}
     >
       <span className="lcs440-rail__qvs-leg__wire lcs440-rail__qvs-leg__wire--from" aria-hidden />
@@ -859,6 +866,7 @@ function ParallelFeedLeg({
   const eqWrapRef = useRef<HTMLDivElement>(null)
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
+  const secondary = labelSecondaryDenom(equipment)
 
   useEffect(() => {
     if (!eqHover) {
@@ -871,7 +879,7 @@ function ParallelFeedLeg({
 
   return (
     <div
-      className={`lcs440-rail__qs-leg${flowing ? ' lcs440-rail__qs-leg--flow' : ''}`}
+      className={`lcs440-rail__qs-leg${flowing ? ' lcs440-rail__qs-leg--flow' : ''}${protectionStatus[circuit.id] !== 'cerrada' && !flowing ? ' lcs440-rail__qs-leg--open' : ''}${eqLive && !flowing ? ' lcs440-rail__qs-leg--from-live' : ''}`}
       data-qs={circuit.protectionName}
     >
       <div
@@ -883,9 +891,9 @@ function ParallelFeedLeg({
       >
         <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
         <span className="hbus-drop__id">{equipment.id}</span>
-        {equipment.dcp10Id && (
-          <span className="hbus-drop__dcp" title="Denominación DCP-10">
-            {equipment.dcp10Id}
+        {secondary && (
+          <span className="hbus-drop__dcp" title={secondary.title}>
+            {secondary.value}
           </span>
         )}
         <span className="hbus-drop__name">{equipment.name}</span>

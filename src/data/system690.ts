@@ -8,6 +8,7 @@ import type {
 } from '../types'
 import raw from './system690.json'
 import dcp10Map from './dcp10Map.json'
+import nme674Map from './nme674Map.json'
 import { augmentSpareCircuits } from '../utils/spareCircuits'
 import { mergeAbtDownstream } from '../abtDownstream/merge'
 
@@ -15,6 +16,7 @@ interface RawEquipment {
   id: string
   name: string
   local?: string | null
+  localName?: string | null
   kind: EquipmentKind
   virtual?: boolean
 }
@@ -51,6 +53,7 @@ interface RawSystem {
 
 const system = raw as RawSystem
 const dcp10ByPuma = dcp10Map as Record<string, string>
+const nme674ByPuma = nme674Map as Record<string, string>
 
 /** Nombre de archivo Excel sin sufijo «_trabajo» ni extensión. */
 export function displaySourceFileName(fileName: string): string {
@@ -70,9 +73,11 @@ const base: DistributionData = {
       name: eq.name,
       kind: eq.kind,
       local: eq.local || undefined,
+      localName: eq.localName || undefined,
       voltage: '690 V',
       virtual: eq.virtual,
       dcp10Id: dcp10ByPuma[eq.id] ?? eq.id,
+      nme674Id: nme674ByPuma[eq.id],
     }),
   ),
   circuits: system.circuits.map(

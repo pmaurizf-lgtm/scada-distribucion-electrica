@@ -1,5 +1,6 @@
 import type { Circuit, Equipment, ProtectionState, Selection } from '../types'
 import { dcp10Of } from '../data/system690'
+import { labelSecondaryDenom } from '../utils/equipmentLabels'
 
 interface DetailPanelProps {
   selection: Selection
@@ -132,15 +133,16 @@ function EquipmentDetails({
 }
 
 function EquipmentKv({ equipment }: { equipment: Equipment }) {
+  const secondary = labelSecondaryDenom(equipment)
   return (
     <dl className="kv">
       <dt>PUMA</dt>
       <dd>{equipment.id}</dd>
-      {equipment.dcp10Id && (
+      {secondary && (
         <>
-          <dt>DCP-10</dt>
+          <dt>{secondary.kind === 'nme674' ? 'NME-674' : 'DCP-10'}</dt>
           <dd>
-            <em className="denom-dcp">{equipment.dcp10Id}</em>
+            <em className="denom-dcp">{secondary.value}</em>
           </dd>
         </>
       )}

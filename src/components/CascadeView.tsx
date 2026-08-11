@@ -16,14 +16,12 @@ import {
   boardFromOrigin,
   buildBoardModels,
   busTieCircuits,
-  childFeeders,
   feedScopedChildFeeders,
   incomingFeeds,
   isUnifilarLinkOnlyFeed,
   isAux24Feed,
   isPendingFeed,
   aux24FeedsForEquipment,
-  aux24JumpRevealId,
   nestableChildFeeders,
   type BoardId,
   type BoardModel,
@@ -579,7 +577,7 @@ function BusDrop({
             </div>
           ) : (
             <div
-              className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}${protectionStatus[localFeed.id] !== 'cerrada' && !localFlowing ? ' hbus-drop__leg--open' : ''}${energizedEquipmentIds.has(localFeed.originId) && !localFlowing ? ' hbus-drop__leg--from-live' : ''}`}
               data-circuit-id={localFeed.id}
             >
               <span
@@ -682,7 +680,7 @@ function BusDrop({
                 />
               ))}
             <div
-              className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}${protectionStatus[localFeed.id] !== 'cerrada' && !localFlowing ? ' hbus-drop__leg--open' : ''}${energizedEquipmentIds.has(localFeed.originId) && !localFlowing ? ' hbus-drop__leg--from-live' : ''}`}
               data-circuit-id={localFeed.id}
             >
               <span
@@ -1171,7 +1169,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     }
   }, [locateEquipmentId, onZoomChange])
 
-  /** Desplazamiento arrastrando con el ratón (en vez de barra de scroll) */
+  /** Desplazamiento arrastrando + pellizco (móvil) / rueda (desktop) */
   useEffect(() => {
     const el = panRef.current
     if (!el) return
@@ -1182,12 +1180,50 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     let startY = 0
     let originLeft = 0
     let originTop = 0
+    let pinchStartDist = 0
+    let pinchStartZoom = 1
+    let pinching = false
 
     const isInteractive = (t: EventTarget | null) =>
       t instanceof Element &&
       !!t.closest(
         'button, a, input, select, textarea, label, .casc-brk, .casc-gen, .circuit-balloon, .equip-balloon, .hbus-drop__eq',
       )
+
+    const applyZoomAt = (
+      next: number,
+      clientX: number,
+      clientY: number,
+    ) => {
+      const current = zoomRef.current
+      if (next === current) return
+      fitZoomPending.current = false
+      const rect = el.getBoundingClientRect()
+      const offsetX = clientX - rect.left
+      const offsetY = clientY - rect.top
+      const plant = plantRef.current
+      const space = plant?.parentElement
+      const oldPadX = space
+        ? Number.parseFloat(getComputedStyle(space).paddingLeft) || 0
+        : 0
+      const oldPadY = space
+        ? Number.parseFloat(getComputedStyle(space).paddingTop) || 0
+        : 0
+      const plantX = (el.scrollLeft + offsetX - oldPadX) / current
+      const plantY = (el.scrollTop + offsetY - oldPadY) / current
+      const cw = (plant?.offsetWidth ?? 0) * next
+      const ch = (plant?.offsetHeight ?? 0) * next
+      const padX = Math.max(24, (el.clientWidth - cw) / 2)
+      const padY = Math.max(24, (el.clientHeight - ch) / 2)
+      pendingZoomScroll.current = {
+        left: padX + plantX * next - offsetX,
+        top: padY + plantY * next - offsetY,
+        padX,
+        padY,
+      }
+      centerPending.current = false
+      onZoomChange(next)
+    }
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || isInteractive(e.target)) return
@@ -1201,11 +1237,14 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     }
 
     const onMove = (e: PointerEvent) => {
+      if (pinching) return
       if (!dragging) return
       const dx = e.clientX - startX
       const dy = e.clientY - startY
+      // Umbral un poco mayor en táctil para no romper doble toque
+      const thresh = e.pointerType === 'touch' ? 8 : 3
       if (!moved) {
-        if (Math.abs(dx) + Math.abs(dy) <= 3) return
+        if (Math.abs(dx) + Math.abs(dy) <= thresh) return
         moved = true
         el.classList.add('is-panning')
         try {
@@ -1234,47 +1273,55 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       moved = false
     }
 
+    const touchDist = (a: Touch, b: Touch) => {
+      const dx = a.clientX - b.clientX
+      const dy = a.clientY - b.clientY
+      return Math.hypot(dx, dy)
+    }
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        pinching = true
+        dragging = false
+        moved = false
+        el.classList.remove('is-panning')
+        pinchStartDist = touchDist(e.touches[0], e.touches[1])
+        pinchStartZoom = zoomRef.current
+      }
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!pinching || e.touches.length < 2) return
+      e.preventDefault()
+      const dist = touchDist(e.touches[0], e.touches[1])
+      if (pinchStartDist < 8) return
+      const factor = dist / pinchStartDist
+      const next = Math.min(
+        2.5,
+        Math.max(0.25, Math.round(pinchStartZoom * factor * 100) / 100),
+      )
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+      applyZoomAt(next, midX, midY)
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        pinching = false
+        pinchStartDist = 0
+      }
+    }
+
     const onWheel = (e: WheelEvent) => {
       // Zoom con la rueda hacia el puntero (planta y árbol de alimentaciones)
       e.preventDefault()
-      fitZoomPending.current = false
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
       const current = zoomRef.current
       const next = Math.min(
         2.5,
         Math.max(0.25, Math.round(current * factor * 100) / 100),
       )
-      if (next === current) return
-
-      const rect = el.getBoundingClientRect()
-      const offsetX = e.clientX - rect.left
-      const offsetY = e.clientY - rect.top
-
-      const plant = plantRef.current
-      const space = plant?.parentElement
-      const oldPadX = space
-        ? Number.parseFloat(getComputedStyle(space).paddingLeft) || 0
-        : 0
-      const oldPadY = space
-        ? Number.parseFloat(getComputedStyle(space).paddingTop) || 0
-        : 0
-      // Coordenadas en el unifilar sin scale (antes del padding del zoom-space)
-      const plantX = (el.scrollLeft + offsetX - oldPadX) / current
-      const plantY = (el.scrollTop + offsetY - oldPadY) / current
-
-      const cw = (plant?.offsetWidth ?? 0) * next
-      const ch = (plant?.offsetHeight ?? 0) * next
-      const padX = Math.max(24, (el.clientWidth - cw) / 2)
-      const padY = Math.max(24, (el.clientHeight - ch) / 2)
-
-      pendingZoomScroll.current = {
-        left: padX + plantX * next - offsetX,
-        top: padY + plantY * next - offsetY,
-        padX,
-        padY,
-      }
-      centerPending.current = false
-      onZoomChange(next)
+      applyZoomAt(next, e.clientX, e.clientY)
     }
 
     el.addEventListener('pointerdown', onDown)
@@ -1282,12 +1329,20 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     el.addEventListener('pointerup', onUp)
     el.addEventListener('pointercancel', onUp)
     el.addEventListener('wheel', onWheel, { passive: false })
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('touchcancel', onTouchEnd)
     return () => {
       el.removeEventListener('pointerdown', onDown)
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerup', onUp)
       el.removeEventListener('pointercancel', onUp)
       el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchEnd)
     }
   }, [onZoomChange])
 
@@ -2043,9 +2098,13 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         {focus ? (
           <div
             className="plant-zoom-space plant-zoom-space--focus"
+            data-zoom-band={
+              zoom < 0.55 ? 'far' : zoom > 1.15 ? 'near' : 'mid'
+            }
             style={{
               width: plantSize.w ? plantSize.w * zoom : undefined,
               height: plantSize.h ? plantSize.h * zoom : undefined,
+              ['--zoom' as string]: String(zoom),
             }}
           >
             <div
@@ -2070,9 +2129,13 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         ) : (
         <div
           className="plant-zoom-space"
+          data-zoom-band={
+            zoom < 0.55 ? 'far' : zoom > 1.15 ? 'near' : 'mid'
+          }
           style={{
             width: plantSize.w ? plantSize.w * zoom : undefined,
             height: plantSize.h ? plantSize.h * zoom : undefined,
+            ['--zoom' as string]: String(zoom),
           }}
         >
           <div

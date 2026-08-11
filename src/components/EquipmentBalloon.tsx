@@ -2,6 +2,7 @@ import { useLayoutEffect, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import type { Circuit, Equipment } from '../types'
 import { originLabel } from '../utils/cascadeModel'
+import { labelSecondaryDenom } from '../utils/equipmentLabels'
 
 const KIND_LABEL: Record<Equipment['kind'], string> = {
   generador: 'Generador',
@@ -31,7 +32,11 @@ export function EquipmentBalloon({
   circuits,
   anchorRef,
 }: EquipmentBalloonProps) {
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+  const [pos, setPos] = useState<{
+    left: number
+    top: number
+    place: 'above' | 'below'
+  } | null>(null)
   const primary = circuits?.[0]
 
   useLayoutEffect(() => {
@@ -39,10 +44,20 @@ export function EquipmentBalloon({
       const el = anchorRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
-      setPos({
-        left: r.left + r.width / 2,
-        top: r.top - 10,
-      })
+      const margin = 12
+      const halfW = 140
+      const preferAboveH = 200
+      let place: 'above' | 'below' = 'above'
+      let top = r.top - 10
+      if (r.top < preferAboveH + margin) {
+        place = 'below'
+        top = r.bottom + 10
+      }
+      const left = Math.min(
+        Math.max(r.left + r.width / 2, margin + halfW),
+        window.innerWidth - margin - halfW,
+      )
+      setPos({ left, top, place })
     }
 
     update()
@@ -68,10 +83,11 @@ export function EquipmentBalloon({
     primary?.protectionCurrentA != null
       ? `${primary.protectionCurrentA} A`
       : null
+  const secondary = labelSecondaryDenom(equipment)
 
   return createPortal(
     <div
-      className="equip-balloon equip-balloon--portal"
+      className={`equip-balloon equip-balloon--portal equip-balloon--${pos.place}`}
       style={{ left: pos.left, top: pos.top }}
       role="tooltip"
       aria-label={`Equipo ${equipment.id}`}
@@ -79,17 +95,17 @@ export function EquipmentBalloon({
       <header className="equip-balloon__header">
         <span className="equip-balloon__kicker">Equipo</span>
         <strong className="equip-balloon__title">{equipment.id}</strong>
-        {equipment.dcp10Id && (
-          <span className="equip-balloon__dcp">{equipment.dcp10Id}</span>
+        {secondary && (
+          <span className="equip-balloon__dcp">{secondary.value}</span>
         )}
       </header>
       <dl className="equip-balloon__kv">
         <dt>PUMA</dt>
         <dd>{equipment.id}</dd>
-        {equipment.dcp10Id && (
+        {secondary && (
           <>
-            <dt>DCP-10</dt>
-            <dd className="equip-balloon__dcp-dd">{equipment.dcp10Id}</dd>
+            <dt>{secondary.kind === 'nme674' ? 'NME-674' : 'DCP-10'}</dt>
+            <dd className="equip-balloon__dcp-dd">{secondary.value}</dd>
           </>
         )}
         <dt>Nombre</dt>
@@ -97,7 +113,21 @@ export function EquipmentBalloon({
         <dt>Tipo</dt>
         <dd>{KIND_LABEL[equipment.kind] ?? equipment.kind}</dd>
         <dt>Local</dt>
-        <dd>{equipment.local?.trim() ? equipment.local : '—'}</dd>
+        <dd>
+          {equipment.local?.trim() ? (
+            <>
+              {equipment.local}
+              {equipment.localName?.trim() ? (
+                <span className="equip-balloon__local-name">
+                  {' '}
+                  · {equipment.localName}
+                </span>
+              ) : null}
+            </>
+          ) : (
+            '—'
+          )}
+        </dd>
         {equipment.voltage && (
           <>
             <dt>Tensión</dt>

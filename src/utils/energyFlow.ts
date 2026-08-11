@@ -1,4 +1,5 @@
 import type { Circuit, DistributionData, ProtectionStatusMap } from '../types'
+import { isSsbIncomingCircuit } from '../abtDownstream/ssbBoard'
 import {
   allSectionCouplers,
   boardFromOrigin,
@@ -115,6 +116,37 @@ export function computeEnergyFlow(
     enqueue(destId)
   }
 
+  const isClosed = (circuitId: string) =>
+    protectionStatus[circuitId] === 'cerrada'
+
+  /**
+   * Clones del mismo interruptor lógico (mismo origen/destino/nombre).
+   * Importaciones repetidas dejaron varios INS idénticos por SSB.
+   */
+  const logicalBreakerGroup = (circuit: Circuit): Circuit[] => {
+    const list = byOrigin.get(circuit.originId) ?? []
+    const group = list.filter(
+      (c) =>
+        !c.virtual &&
+        c.destinationId === circuit.destinationId &&
+        c.protectionName === circuit.protectionName,
+    )
+    return group.length > 0 ? group : [circuit]
+  }
+
+  const groupFullyClosed = (circuit: Circuit) =>
+    logicalBreakerGroup(circuit).every((c) => isClosed(c.id))
+
+  const ssbIncomingList = (ssbId: string) =>
+    (byOrigin.get(ssbId) ?? []).filter(isSsbIncomingCircuit)
+
+  /** Cabecera SSB cerrada solo si todos los INS/NSX de entrada lo están. */
+  const ssbIncomingFullyClosed = (ssbId: string) => {
+    const list = ssbIncomingList(ssbId)
+    if (list.length === 0) return true
+    return list.every((c) => isClosed(c.id))
+  }
+
   while (queue.length > 0) {
     const node = queue.shift()!
     inQueue.delete(node)
@@ -185,12 +217,14 @@ export function computeEnergyFlow(
         continue
       }
 
-      // Circuito real (QG, salidas, etc.): solo si el interruptor está cerrado
-      if (protectionStatus[circuit.id] !== 'cerrada') continue
+      // Circuito real: interruptor cerrado (y todos sus clones lógicos)
+      if (!groupFullyClosed(circuit)) continue
 
       // AUX 24 V (maniobra LCS / panel 0 MSB): fluye el circuito, no la barra.
       if (isAux24Feed(circuit)) {
-        energizedCircuitIds.add(circuit.id)
+        for (const c of logicalBreakerGroup(circuit)) {
+          energizedCircuitIds.add(c.id)
+        }
         continue
       }
 
@@ -206,32 +240,29 @@ export function computeEnergyFlow(
         const coupler = (byOrigin.get(circuit.originId) ?? []).find(
           (c) => c.protectionName === needName,
         )
-        if (coupler && protectionStatus[coupler.id] !== 'cerrada') continue
+        if (coupler && !isClosed(coupler.id)) continue
       }
 
-      // SSB: salidas requieren interruptor de entrada cerrado (INS / NSX cabecera).
-      // Excepción: acometida ALT propia (p. ej. QA en SSB-2PWS2209) no depende de QN.
+      // SSB: salidas / INS requieren cabecera (todos los INS) cerrada.
+      // Excepción: acometida ALT propia (QA en SSB-2PWS2209) no depende de QN.
       if (
         circuit.originId.startsWith('SSB-') &&
-        circuit.notes !== 'ssb-incoming' &&
-        circuit.notes !== 'ssb-2209-qa' &&
-        !/^INS\s*\d/i.test(circuit.protectionName) &&
-        !(
-          circuit.destinationId.startsWith('BUS-') &&
-          /^NSX\b/i.test(circuit.protectionName)
-        )
+        circuit.notes !== 'ssb-2209-qa'
       ) {
-        const ins = (byOrigin.get(circuit.originId) ?? []).find(
-          (c) =>
-            c.notes === 'ssb-incoming' ||
-            (c.destinationId.startsWith('BUS-') &&
-              (/^INS\s*\d{2,3}$/i.test(c.protectionName) ||
-                /^NSX\b/i.test(c.protectionName))),
-        )
-        if (ins && protectionStatus[ins.id] !== 'cerrada') continue
+        if (isSsbIncomingCircuit(circuit)) {
+          if (!ssbIncomingFullyClosed(circuit.originId)) continue
+          for (const ins of ssbIncomingList(circuit.originId)) {
+            energizedCircuitIds.add(ins.id)
+          }
+          reachDestination(circuit.destinationId)
+          continue
+        }
+        if (!ssbIncomingFullyClosed(circuit.originId)) continue
       }
 
-      energizedCircuitIds.add(circuit.id)
+      for (const c of logicalBreakerGroup(circuit)) {
+        energizedCircuitIds.add(c.id)
+      }
       if (/^PNL-MSB/.test(circuit.destinationId)) {
         markPanelHalf(circuit.destinationId)
       }
@@ -262,13 +293,47 @@ export function invertProtectionStatus(
   return next
 }
 
+/**
+ * Conmuta un interruptor. Si `data` incluye clones lógicos (mismo origen,
+ * destino y nombre — p. ej. INS duplicados de SSB), los conmuta todos a la
+ * vez para que el unifilar y el flujo de energía no diverjan.
+ */
 export function toggleProtectionState(
   status: ProtectionStatusMap,
   circuitId: string,
+  data?: DistributionData,
 ): ProtectionStatusMap {
   const cur = status[circuitId] ?? 'abierta'
-  return {
-    ...status,
-    [circuitId]: cur === 'abierta' ? 'cerrada' : 'abierta',
+  const nextState = cur === 'abierta' ? 'cerrada' : 'abierta'
+  const next: ProtectionStatusMap = { ...status, [circuitId]: nextState }
+
+  if (!data) return next
+
+  const seed = data.circuits.find((c) => c.id === circuitId)
+  if (!seed || seed.virtual) return next
+
+  const siblings = data.circuits.filter(
+    (c) =>
+      !c.virtual &&
+      c.id !== circuitId &&
+      c.originId === seed.originId &&
+      c.destinationId === seed.destinationId &&
+      c.protectionName === seed.protectionName,
+  )
+  // Cabecera SSB: cualquier INS/NSX de entrada del mismo cuadro
+  const incomingSiblings =
+    isSsbIncomingCircuit(seed)
+      ? data.circuits.filter(
+          (c) =>
+            !c.virtual &&
+            c.id !== circuitId &&
+            c.originId === seed.originId &&
+            isSsbIncomingCircuit(c),
+        )
+      : []
+
+  for (const c of [...siblings, ...incomingSiblings]) {
+    next[c.id] = nextState
   }
+  return next
 }
