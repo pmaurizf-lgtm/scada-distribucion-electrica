@@ -866,9 +866,8 @@ body {
 
 .plant-zoom-space {
   position: relative;
-  /* El padding de centrado lo aplica JS al plegar/desplegar */
-  min-width: 100%;
-  min-height: 100%;
+  /* Ancho/alto y padding de centrado los aplica JS (zoom a punto / fit).
+     Sin min 100%: si no, al reducir zoom el scroll no puede anclar el gesto. */
   box-sizing: content-box;
   padding: 1.5rem;
 }
@@ -1287,13 +1286,55 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   z-index: 10050;
   transform: translate(-50%, -100%);
   margin: 0;
+  pointer-events: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   animation: equip-balloon-in 0.16s ease-out;
 }
 
 .equip-balloon__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin-bottom: 0.55rem;
   padding-bottom: 0.45rem;
   border-bottom: 1px solid var(--border);
+}
+
+.equip-balloon__header-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.equip-balloon__close {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.equip-balloon__close:hover,
+.equip-balloon__close:active {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.equip-balloon--closable .equip-balloon__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #121c19;
+  padding-top: 0.15rem;
 }
 
 .equip-balloon__kicker {

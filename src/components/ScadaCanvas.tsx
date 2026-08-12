@@ -331,22 +331,27 @@ export function ScadaCanvas() {
     .filter(Boolean)
     .join(' ')
 
+  /** Móvil con menú plegado: priorizar unifilar (sin banners de ayuda / PWA). */
+  const chromeMinimal = isMobile && chromeCollapsed
+
   return (
     <div className={shellClass}>
       <div className="app-shell__chrome">
         <header className="topbar">
           <div className="topbar__brand">
             <NavantiaLogo />
-            <div className="topbar__brand-meta">
-              <p className="topbar__brand-title">
-                F110 - Distribution Power System
-              </p>
-              <p>
-                {system690.sourceFile
-                  ? displaySourceFileName(system690.sourceFile)
-                  : system690.vessel}
-              </p>
-            </div>
+            {!chromeMinimal && (
+              <div className="topbar__brand-meta">
+                <p className="topbar__brand-title">
+                  F110 - Distribution Power System
+                </p>
+                <p>
+                  {system690.sourceFile
+                    ? displaySourceFileName(system690.sourceFile)
+                    : system690.vessel}
+                </p>
+              </div>
+            )}
           </div>
 
           {isMobile && (
@@ -361,7 +366,7 @@ export function ScadaCanvas() {
                   : 'Ocultar barra y ganar espacio'
               }
             >
-              {chromeCollapsed ? 'Menú ▾' : 'Menú ▴'}
+              {chromeCollapsed ? '☰' : '✕'}
             </button>
           )}
 
@@ -608,7 +613,7 @@ export function ScadaCanvas() {
           </div>
         </header>
 
-        {isMobile && showPwaHint && (
+        {isMobile && showPwaHint && !chromeMinimal && (
           <div className="pwa-install" role="status">
             <p className="pwa-install__text">
               <strong>Instalar en el móvil</strong>
@@ -635,21 +640,26 @@ export function ScadaCanvas() {
           </div>
         )}
 
-        {searchHint && <div className="banner">{searchHint}</div>}
-        {lockTool !== 'none' && (
+        {!chromeMinimal && searchHint && (
+          <div className="banner">{searchHint}</div>
+        )}
+        {!chromeMinimal && lockTool !== 'none' && (
           <div className="banner banner--tool">
             {lockTool === 'lock'
               ? 'Modo poner candado activo: pulsa un interruptor para abrirlo y bloquearlo.'
               : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
           </div>
         )}
-        {lockTool === 'none' && !searchHint && (
+        {!isMobile && lockTool === 'none' && !searchHint && (
           <div className="banner">
             {runningGenerators.size === 0
-              ? isMobile
-                ? 'Simulación: toca un generador (G) para arrancarlo, cierra QG* y salidas. Pellizca para zoom; arrastra para desplazar. Doble toque en cuadros para plegar/desplegar.'
-                : 'Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
+              ? 'Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
               : `Simulación: ${runningGenerators.size} generador${runningGenerators.size === 1 ? '' : 'es'} en marcha. Cierra QG* / salidas / QBT para ver el flujo (doble clic en cuadros o equipos para plegar/desplegar).`}
+          </div>
+        )}
+        {isMobile && !chromeMinimal && lockTool === 'none' && !searchHint && (
+          <div className="banner banner--compact">
+            Mantén pulsado un equipo · info · doble pulsación · plegar/desplegar
           </div>
         )}
       </div>
@@ -681,19 +691,49 @@ export function ScadaCanvas() {
             setSearchHint(null)
           }}
         />
+        {chromeMinimal && (
+          <div className="mobile-fab" aria-label="Zoom rápido">
+            <button
+              type="button"
+              className="btn btn--zoom mobile-fab__btn"
+              onClick={zoomOut}
+              title="Alejar"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="btn btn--zoom btn--zoom-label mobile-fab__btn"
+              onClick={zoomReset}
+              title="100 %"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              className="btn btn--zoom mobile-fab__btn"
+              onClick={zoomIn}
+              title="Acercar"
+            >
+              +
+            </button>
+          </div>
+        )}
       </main>
 
-      <footer className="statusbar">
-        <span>
-          Cascada 690 V · protecciones:{' '}
-          <span className="swatch swatch--cerrada" /> {closedCount} cerradas ·{' '}
-          <span className="swatch swatch--abierta" /> {openCount} abiertas ·
-          gens: {runningGenerators.size} en marcha · candados:{' '}
-          {lockedCircuits.size} · flujo: {energizedCircuitIds.size} circ. · zoom{' '}
-          {Math.round(zoom * 100)}% · {statusSource}
-          {isMobile ? ' · PWA' : ''}
-        </span>
-      </footer>
+      {!chromeMinimal && (
+        <footer className="statusbar">
+          <span>
+            Cascada 690 V · protecciones:{' '}
+            <span className="swatch swatch--cerrada" /> {closedCount} cerradas ·{' '}
+            <span className="swatch swatch--abierta" /> {openCount} abiertas ·
+            gens: {runningGenerators.size} en marcha · candados:{' '}
+            {lockedCircuits.size} · flujo: {energizedCircuitIds.size} circ. ·
+            zoom {Math.round(zoom * 100)}% · {statusSource}
+            {isMobile ? ' · PWA' : ''}
+          </span>
+        </footer>
+      )}
     </div>
   )
 }

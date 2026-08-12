@@ -76,7 +76,7 @@ function FoldedParallelCsbLeg({
   const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
   const isAlt = feed.lineType === 'alternativa'
   const eqWrapRef = useRef<HTMLDivElement>(null)
-  const { showBalloon, balloonBind } = useEquipBalloonGesture()
+  const { showBalloon, dismissBalloon, balloonBind } = useEquipBalloonGesture()
 
   if (!origin) return null
 
@@ -109,6 +109,7 @@ function FoldedParallelCsbLeg({
             equipment={origin}
             circuits={[feed]}
             anchorRef={eqWrapRef}
+            onClose={dismissBalloon}
           />
         )}
       </div>
@@ -473,6 +474,7 @@ export function EquipmentBusDrop({
               feeds={feedSummaries}
               circuits={displayFeeds}
               anchorRef={eqWrapRef}
+              onClose={dismissBalloon}
             />
           )}
         </div>

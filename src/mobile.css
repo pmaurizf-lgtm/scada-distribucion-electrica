@@ -13,6 +13,37 @@
   --touch-min: 2.75rem;
 }
 
+/* Vista máxima del unifilar: chrome mínimo */
+.app-shell--mobile.app-shell--chrome-collapsed {
+  grid-template-rows: auto 1fr;
+}
+
+.app-shell--mobile.app-shell--chrome-collapsed .topbar {
+  padding: 0.15rem 0.4rem;
+  padding-top: max(0.15rem, env(safe-area-inset-top, 0px));
+  gap: 0.35rem;
+  align-items: center;
+  min-height: 0;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.app-shell--mobile.app-shell--chrome-collapsed .topbar__brand {
+  flex: 0 1 auto;
+  gap: 0;
+}
+
+.app-shell--mobile.app-shell--chrome-collapsed .navantia-logo {
+  height: 0.95rem;
+}
+
+.app-shell--mobile.app-shell--chrome-collapsed .topbar__chrome-toggle {
+  min-height: 2.1rem;
+  min-width: 2.1rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 1rem;
+  margin-left: auto;
+}
+
 .app-shell--mobile .topbar {
   padding: 0.5rem 0.75rem;
   padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
@@ -180,6 +211,46 @@
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+.app-shell--mobile .equip-balloon--portal {
+  width: min(22rem, calc(100vw - 1.25rem));
+  min-width: 0;
+  max-width: calc(100vw - 1.25rem);
+}
+
+.app-shell--mobile .banner--compact {
+  font-size: 0.68rem;
+  padding: 0.3rem 0.65rem;
+  line-height: 1.3;
+}
+
+/* Zoom flotante con menú plegado */
+.mobile-fab {
+  position: absolute;
+  right: max(0.55rem, env(safe-area-inset-right, 0px));
+  bottom: max(0.55rem, env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  padding: 0.28rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(14, 22, 20, 0.88);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.mobile-fab__btn {
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.85rem;
+}
+
+.workspace--cascade {
+  position: relative;
 }
 
 @media (min-width: 901px) and (pointer: fine) {

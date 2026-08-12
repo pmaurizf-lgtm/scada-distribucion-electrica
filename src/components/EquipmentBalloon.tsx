@@ -1,5 +1,11 @@
-import { useLayoutEffect, useState, type RefObject } from 'react'
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import { createPortal } from 'react-dom'
+import { useIsMobileUi } from '../hooks/useIsMobileUi'
 import type { Circuit, Equipment } from '../types'
 import { originLabel } from '../utils/cascadeModel'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
@@ -24,6 +30,8 @@ interface EquipmentBalloonProps {
   circuits?: Circuit[]
   /** Ancla del hover (botón/caja del equipo) */
   anchorRef: RefObject<HTMLElement | null>
+  /** Móvil: cierre explícito (botón ×). */
+  onClose?: () => void
 }
 
 export function EquipmentBalloon({
@@ -31,46 +39,149 @@ export function EquipmentBalloon({
   feeds,
   circuits,
   anchorRef,
+  onClose,
 }: EquipmentBalloonProps) {
+  const isMobile = useIsMobileUi()
+  const balloonRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{
     left: number
     top: number
     place: 'above' | 'below'
+    maxHeight: number
   } | null>(null)
   const primary = circuits?.[0]
+  const showClose = isMobile && !!onClose
 
   useLayoutEffect(() => {
-    const update = () => {
+    const margin = 10
+    /** En móvil fijamos la posición al abrir para poder panear sin perder el globo. */
+    let locked: {
+      left: number
+      top: number
+      place: 'above' | 'below'
+      maxHeight: number
+    } | null = null
+
+    const placeFromAnchor = () => {
       const el = anchorRef.current
-      if (!el) return
+      if (!el) return null
       const r = el.getBoundingClientRect()
-      const margin = 12
-      const halfW = 140
-      const preferAboveH = 200
-      let place: 'above' | 'below' = 'above'
-      let top = r.top - 10
-      if (r.top < preferAboveH + margin) {
-        place = 'below'
-        top = r.bottom + 10
-      }
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const balloon = balloonRef.current
+      const bw = balloon?.offsetWidth || Math.min(320, vw - margin * 2)
+      const bh = balloon?.offsetHeight || 220
+
+      const spaceAbove = r.top - margin
+      const spaceBelow = vh - r.bottom - margin
+      let place: 'above' | 'below' =
+        spaceAbove >= Math.min(bh, spaceBelow) && spaceAbove >= 120
+          ? 'above'
+          : spaceBelow >= spaceAbove
+            ? 'below'
+            : 'above'
+
+      const halfW = bw / 2
       const left = Math.min(
         Math.max(r.left + r.width / 2, margin + halfW),
-        window.innerWidth - margin - halfW,
+        vw - margin - halfW,
       )
-      setPos({ left, top, place })
+
+      let top: number
+      let maxHeight: number
+      if (place === 'above') {
+        top = r.top - 8
+        maxHeight = Math.max(140, top - margin)
+        if (maxHeight < 140 && spaceBelow > spaceAbove) {
+          place = 'below'
+          top = r.bottom + 8
+          maxHeight = Math.max(140, vh - top - margin)
+        }
+      } else {
+        top = r.bottom + 8
+        maxHeight = Math.max(140, vh - top - margin)
+        if (maxHeight < 140 && spaceAbove > spaceBelow) {
+          place = 'above'
+          top = r.top - 8
+          maxHeight = Math.max(140, top - margin)
+        }
+      }
+
+      maxHeight = Math.min(maxHeight, vh - margin * 2)
+      return { left, top, place, maxHeight }
     }
 
-    update()
-    const stage = anchorRef.current?.closest('.casc__stage--pan')
-    stage?.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    window.addEventListener('scroll', update, true)
-    return () => {
-      stage?.removeEventListener('scroll', update)
-      window.removeEventListener('resize', update)
-      window.removeEventListener('scroll', update, true)
+    const update = (fromScroll = false) => {
+      if (isMobile && locked && fromScroll) return
+      if (isMobile && locked && !fromScroll) {
+        setPos(locked)
+        return
+      }
+      const next = placeFromAnchor()
+      if (!next) return
+      if (isMobile && !locked) locked = next
+      setPos(next)
     }
-  }, [anchorRef, equipment.id])
+
+    update(false)
+    const raf = window.requestAnimationFrame(() => {
+      if (isMobile && locked) {
+        const el = anchorRef.current
+        const balloon = balloonRef.current
+        if (!el || !balloon) return
+        const r = el.getBoundingClientRect()
+        const vw = window.innerWidth
+        const vh = window.innerHeight
+        const bw = balloon.offsetWidth
+        const bh = balloon.offsetHeight
+        const halfW = bw / 2
+        const left = Math.min(
+          Math.max(r.left + r.width / 2, margin + halfW),
+          vw - margin - halfW,
+        )
+        let { top, place, maxHeight } = locked
+        if (place === 'above') {
+          maxHeight = Math.max(140, Math.min(top - margin, vh - margin * 2))
+          if (top - Math.min(bh, maxHeight) < margin) {
+            place = 'below'
+            top = Math.min(r.bottom + 8, vh - margin - 140)
+            maxHeight = Math.max(140, vh - top - margin)
+          }
+        } else {
+          maxHeight = Math.max(
+            140,
+            Math.min(vh - top - margin, vh - margin * 2),
+          )
+          if (top + Math.min(bh, maxHeight) > vh - margin) {
+            top = Math.max(margin, vh - margin - Math.min(bh, maxHeight))
+            maxHeight = Math.max(140, vh - top - margin)
+          }
+        }
+        locked = { left, top, place, maxHeight }
+        setPos(locked)
+        return
+      }
+      update(false)
+    })
+
+    const stage = anchorRef.current?.closest('.casc__stage--pan')
+    const onScroll = () => update(true)
+    const onResize = () => {
+      locked = null
+      update(false)
+    }
+    if (!isMobile) {
+      stage?.addEventListener('scroll', onScroll, { passive: true })
+      window.addEventListener('scroll', onScroll, true)
+    }
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.cancelAnimationFrame(raf)
+      stage?.removeEventListener('scroll', onScroll)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onResize)
+    }
+  }, [anchorRef, equipment.id, isMobile])
 
   if (!pos || typeof document === 'undefined') return null
 
@@ -87,16 +198,39 @@ export function EquipmentBalloon({
 
   return createPortal(
     <div
-      className={`equip-balloon equip-balloon--portal equip-balloon--${pos.place}`}
-      style={{ left: pos.left, top: pos.top }}
-      role="tooltip"
+      ref={balloonRef}
+      className={`equip-balloon equip-balloon--portal equip-balloon--${pos.place}${showClose ? ' equip-balloon--closable' : ''}`}
+      style={{
+        left: pos.left,
+        top: pos.top,
+        maxHeight: pos.maxHeight,
+      }}
+      role="dialog"
       aria-label={`Equipo ${equipment.id}`}
+      aria-modal={showClose || undefined}
     >
       <header className="equip-balloon__header">
-        <span className="equip-balloon__kicker">Equipo</span>
-        <strong className="equip-balloon__title">{equipment.id}</strong>
-        {secondary && (
-          <span className="equip-balloon__dcp">{secondary.value}</span>
+        <div className="equip-balloon__header-text">
+          <span className="equip-balloon__kicker">Equipo</span>
+          <strong className="equip-balloon__title">{equipment.id}</strong>
+          {secondary && (
+            <span className="equip-balloon__dcp">{secondary.value}</span>
+          )}
+        </div>
+        {showClose && (
+          <button
+            type="button"
+            className="equip-balloon__close"
+            aria-label="Cerrar información"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onClose?.()
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            ×
+          </button>
         )}
       </header>
       <dl className="equip-balloon__kv">

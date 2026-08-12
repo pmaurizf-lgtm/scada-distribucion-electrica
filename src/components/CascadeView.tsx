@@ -503,6 +503,7 @@ function BusDrop({
                   feeds={feedSummaries}
                   circuits={feeds}
                   anchorRef={eqWrapRef}
+                  onClose={dismissBalloon}
                 />
               )}
             </div>
@@ -619,6 +620,7 @@ function BusDrop({
                   feeds={feedSummaries}
                   circuits={feeds}
                   anchorRef={eqWrapRef}
+                  onClose={dismissBalloon}
                 />
               )}
             </div>
@@ -753,6 +755,7 @@ function BusDrop({
                   feeds={feedSummaries}
                   circuits={feeds}
                   anchorRef={eqWrapRef}
+                  onClose={dismissBalloon}
                 />
               )}
             </div>
@@ -1034,7 +1037,11 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const panRef = useRef<HTMLDivElement>(null)
   const plantRef = useRef<HTMLDivElement>(null)
   const zoomRef = useRef(zoom)
-  zoomRef.current = zoom
+  /** True durante pellizco: no pisar zoomRef con un render React atrasado. */
+  const pinchingRef = useRef(false)
+  if (!pinchingRef.current) {
+    zoomRef.current = zoom
+  }
   const focusRef = useRef(focus)
   focusRef.current = focus
   const locateRef = useRef(locateEquipmentId)
@@ -1180,6 +1187,11 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     let pinchStartZoom = 1
     let pinching = false
 
+    const setPinching = (v: boolean) => {
+      pinching = v
+      pinchingRef.current = v
+    }
+
     const isInteractive = (t: EventTarget | null) =>
       t instanceof Element &&
       !!t.closest(
@@ -1198,31 +1210,67 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       const offsetX = clientX - rect.left
       const offsetY = clientY - rect.top
       const plant = plantRef.current
-      const space = plant?.parentElement
-      const oldPadX = space
-        ? Number.parseFloat(getComputedStyle(space).paddingLeft) || 0
-        : 0
-      const oldPadY = space
-        ? Number.parseFloat(getComputedStyle(space).paddingTop) || 0
-        : 0
+      const space = plant?.parentElement as HTMLElement | null
+      if (!plant || !space) return
+
+      const oldPadX =
+        Number.parseFloat(getComputedStyle(space).paddingLeft) || 0
+      const oldPadY =
+        Number.parseFloat(getComputedStyle(space).paddingTop) || 0
       const plantX = (el.scrollLeft + offsetX - oldPadX) / current
       const plantY = (el.scrollTop + offsetY - oldPadY) / current
-      const cw = (plant?.offsetWidth ?? 0) * next
-      const ch = (plant?.offsetHeight ?? 0) * next
-      const padX = Math.max(24, (el.clientWidth - cw) / 2)
-      const padY = Math.max(24, (el.clientHeight - ch) / 2)
-      pendingZoomScroll.current = {
-        left: padX + plantX * next - offsetX,
-        top: padY + plantY * next - offsetY,
-        padX,
-        padY,
-      }
+
+      const pw = plant.offsetWidth
+      const ph = plant.offsetHeight
+      if (pw < 1 || ph < 1) return
+      const cw = pw * next
+      const ch = ph * next
+
+      /**
+       * Padding ≥ viewport: al reducir zoom el contenido cabe en pantalla y,
+       * con padding mínimo, maxScroll=0 y la vista salta al centro.
+       * Con padding de un viewport se puede mantener el punto del gesto.
+       */
+      const padX = Math.max(
+        el.clientWidth,
+        (el.clientWidth - cw) / 2,
+        24,
+      )
+      const padY = Math.max(
+        el.clientHeight,
+        (el.clientHeight - ch) / 2,
+        24,
+      )
+
+      let left = padX + plantX * next - offsetX
+      let top = padY + plantY * next - offsetY
+      const maxLeft = Math.max(0, padX * 2 + cw - el.clientWidth)
+      const maxTop = Math.max(0, padY * 2 + ch - el.clientHeight)
+      left = Math.min(Math.max(0, left), maxLeft)
+      top = Math.min(Math.max(0, top), maxTop)
+
+      // Aplicar en el mismo frame (el layout effect refuerza tras React)
+      space.style.width = `${cw}px`
+      space.style.height = `${ch}px`
+      space.style.paddingLeft = `${padX}px`
+      space.style.paddingRight = `${padX}px`
+      space.style.paddingTop = `${padY}px`
+      space.style.paddingBottom = `${padY}px`
+      plant.style.transform = `scale(${next})`
+      plant.style.transformOrigin = 'top left'
+      el.scrollLeft = left
+      el.scrollTop = top
+
+      pendingZoomScroll.current = { left, top, padX, padY }
       centerPending.current = false
+      lastCenteredZoom.current = next
+      zoomRef.current = next
       onZoomChange(next)
     }
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || isInteractive(e.target)) return
+      if (pinching || pinchingRef.current) return
       // Armar pan sin capturar aún: si no, el 2º clic del doble-clic no llega al MSB
       dragging = true
       moved = false
@@ -1233,7 +1281,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     }
 
     const onMove = (e: PointerEvent) => {
-      if (pinching) return
+      if (pinching || pinchingRef.current) return
       if (!dragging) return
       const dx = e.clientX - startX
       const dy = e.clientY - startY
@@ -1277,7 +1325,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        pinching = true
+        setPinching(true)
         dragging = false
         moved = false
         el.classList.remove('is-panning')
@@ -1302,8 +1350,13 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     }
 
     const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length >= 2) return
+      if (pinching && e.touches.length === 1) {
+        dragging = false
+        moved = false
+      }
       if (e.touches.length < 2) {
-        pinching = false
+        setPinching(false)
         pinchStartDist = 0
       }
     }
@@ -1330,6 +1383,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     el.addEventListener('touchend', onTouchEnd)
     el.addEventListener('touchcancel', onTouchEnd)
     return () => {
+      pinchingRef.current = false
       el.removeEventListener('pointerdown', onDown)
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerup', onUp)

@@ -531,6 +531,7 @@ function LcsOutletDrop({
                   equipment={equipment}
                   circuits={[circuit]}
                   anchorRef={eqWrapRef}
+                  onClose={dismissBalloon}
                 />
               )}
             </div>
@@ -879,7 +880,7 @@ function ParallelFeedLeg({
 } & SharedProps) {
   const { circuit, equipment } = parallel
   const eqWrapRef = useRef<HTMLDivElement>(null)
-  const { showBalloon, balloonBind } = useEquipBalloonGesture()
+  const { showBalloon, dismissBalloon, balloonBind } = useEquipBalloonGesture()
   const secondary = labelSecondaryDenom(equipment)
 
   return (
@@ -906,6 +907,7 @@ function ParallelFeedLeg({
             equipment={equipment}
             circuits={[circuit]}
             anchorRef={eqWrapRef}
+            onClose={dismissBalloon}
           />
         )}
       </div>

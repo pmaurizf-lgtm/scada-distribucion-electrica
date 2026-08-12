@@ -60,22 +60,6 @@ export function useEquipBalloonGesture() {
     return () => window.clearTimeout(t)
   }, [hoverArmed, isMobile])
 
-  useEffect(() => {
-    if (!isMobile || !showBalloon) return
-    const onPointerDown = (e: PointerEvent) => {
-      const t = e.target
-      if (
-        t instanceof Element &&
-        t.closest('.equip-balloon, [data-equip-balloon-anchor]')
-      ) {
-        return
-      }
-      setShowBalloon(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown, true)
-    return () => document.removeEventListener('pointerdown', onPointerDown, true)
-  }, [isMobile, showBalloon])
-
   useEffect(() => () => clearPress(), [clearPress])
 
   const balloonBind: EquipBalloonBind = isMobile

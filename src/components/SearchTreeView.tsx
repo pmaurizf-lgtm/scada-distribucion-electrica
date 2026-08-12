@@ -266,6 +266,7 @@ function EquipCard({
           feeds={feedSummaries}
           circuits={feeds}
           anchorRef={wrapRef}
+          onClose={dismissBalloon}
         />
       )}
     </div>
