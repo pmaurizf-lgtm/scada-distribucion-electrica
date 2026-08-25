@@ -1237,39 +1237,18 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     }
   }, [locateEquipmentId, onZoomChange])
 
-  /** Desplazamiento arrastrando + pellizco (móvil) / rueda (desktop) */
-  useEffect(() => {
-    const el = panRef.current
-    if (!el) return
-
-    let dragging = false
-    let moved = false
-    let startX = 0
-    let startY = 0
-    let originLeft = 0
-    let originTop = 0
-    let pinchStartDist = 0
-    let pinchStartZoom = 1
-    let pinching = false
-
-    const setPinching = (v: boolean) => {
-      pinching = v
-      pinchingRef.current = v
-    }
-
-    const isInteractive = (t: EventTarget | null) =>
-      t instanceof Element &&
-      !!t.closest(
-        'button, a, input, select, textarea, label, .casc-brk, .casc-gen, .circuit-balloon, .equip-balloon, .hbus-drop__eq',
-      )
-
-    const applyZoomAt = (
+  /** Zoom anclado a un punto de pantalla (pellizco, rueda, botones +/-). */
+  const applyZoomAt = useCallback(
+    (
       next: number,
       clientX: number,
       clientY: number,
+      opts?: { commit?: boolean },
     ) => {
+      const el = panRef.current
+      if (!el) return
       const current = zoomRef.current
-      if (next === current) return
+      if (Math.abs(next - current) < 0.001) return
       fitZoomPending.current = false
       const rect = el.getBoundingClientRect()
       const offsetX = clientX - rect.left
@@ -1291,11 +1270,6 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       const cw = pw * next
       const ch = ph * next
 
-      /**
-       * Padding ≥ viewport: al reducir zoom el contenido cabe en pantalla y,
-       * con padding mínimo, maxScroll=0 y la vista salta (parece que “se plegó”).
-       * Con padding de un viewport se mantiene el punto del gesto (p. ej. SSB).
-       */
       const padX = Math.max(el.clientWidth, (el.clientWidth - cw) / 2, 24)
       const padY = Math.max(el.clientHeight, (el.clientHeight - ch) / 2, 24)
 
@@ -1306,7 +1280,6 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       left = Math.min(Math.max(0, left), maxLeft)
       top = Math.min(Math.max(0, top), maxTop)
 
-      // Mismo frame: evita salto antes del layout effect de React
       space.style.width = `${cw}px`
       space.style.height = `${ch}px`
       space.style.paddingLeft = `${padX}px`
@@ -1322,7 +1295,49 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       centerPending.current = false
       lastCenteredZoom.current = next
       zoomRef.current = next
-      onZoomChange(next)
+
+      if (opts?.commit !== false) {
+        onZoomChange(next)
+      }
+    },
+    [onZoomChange],
+  )
+
+  /** Desplazamiento arrastrando + pellizco (móvil) / rueda (desktop) */
+  useEffect(() => {
+    const el = panRef.current
+    if (!el) return
+
+    let dragging = false
+    let moved = false
+    let startX = 0
+    let startY = 0
+    let originLeft = 0
+    let originTop = 0
+    let pinchStartDist = 0
+    let pinchStartZoom = 1
+    let pinching = false
+    let pinchDirty = false
+
+    const setPinching = (v: boolean) => {
+      pinching = v
+      pinchingRef.current = v
+    }
+
+    const isInteractive = (t: EventTarget | null) =>
+      t instanceof Element &&
+      !!t.closest(
+        'button, a, input, select, textarea, label, .casc-brk, .casc-gen, .circuit-balloon, .equip-balloon, .hbus-drop__eq',
+      )
+
+    const commitPinchZoom = () => {
+      if (!pinchDirty) return
+      pinchDirty = false
+      const plant = plantRef.current
+      if (plant) {
+        setPlantSize({ w: plant.offsetWidth, h: plant.offsetHeight })
+      }
+      onZoomChange(zoomRef.current)
     }
 
     const onDown = (e: PointerEvent) => {
@@ -1383,6 +1398,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         setPinching(true)
+        pinchDirty = false
         dragging = false
         moved = false
         el.classList.remove('is-panning')
@@ -1403,25 +1419,26 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       )
       const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
       const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
-      applyZoomAt(next, midX, midY)
+      applyZoomAt(next, midX, midY, { commit: false })
+      pinchDirty = true
     }
 
     const onTouchEnd = (e: TouchEvent) => {
       if (e.touches.length >= 2) return
-      if (pinching && e.touches.length <= 1) {
+      const wasPinching = pinching
+      if (wasPinching && e.touches.length <= 1) {
         dragging = false
         moved = false
-        // Evitar que el fin del pellizco dispare doble toque → plegar LCS/SSB
         suppressExpandUntilRef.current = performance.now() + 450
       }
       if (e.touches.length < 2) {
         setPinching(false)
         pinchStartDist = 0
+        if (wasPinching) commitPinchZoom()
       }
     }
 
     const onWheel = (e: WheelEvent) => {
-      // Zoom con la rueda hacia el puntero (planta y árbol de alimentaciones)
       e.preventDefault()
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
       const current = zoomRef.current
@@ -1453,7 +1470,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       el.removeEventListener('touchend', onTouchEnd)
       el.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [onZoomChange])
+  }, [applyZoomAt, onZoomChange])
 
   useEffect(() => {
     const el = plantRef.current
@@ -1462,7 +1479,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     // (provoca parpadeo al cambiar zoom/padding).
     if (focusRef.current) return
     const ro = new ResizeObserver(() => {
-      if (focusRef.current || locateRef.current) return
+      if (pinchingRef.current || focusRef.current || locateRef.current) return
       const w = el.offsetWidth
       const h = el.offsetHeight
       setPlantSize((prev) =>
@@ -1649,6 +1666,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       centerPending.current = false
       return
     }
+    if (pinchingRef.current) return
 
     const applyCenter = () => {
       const z = zoom
@@ -1676,6 +1694,13 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     const pending = pendingZoomScroll.current
     if (pending) {
       pendingZoomScroll.current = null
+      const z = zoomRef.current
+      const cw = plant.offsetWidth * z
+      const ch = plant.offsetHeight * z
+      if (cw >= 8 && ch >= 8) {
+        space.style.width = `${cw}px`
+        space.style.height = `${ch}px`
+      }
       if (pending.padX != null && pending.padY != null) {
         space.style.paddingLeft = `${pending.padX}px`
         space.style.paddingRight = `${pending.padX}px`
@@ -2078,60 +2103,19 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const zoomAtCenter = useCallback(
     (nextZoom: number) => {
       const el = panRef.current
-      const plant = plantRef.current
-      const space = plant?.parentElement as HTMLElement | null
-      if (!el || !plant || !space) {
+      if (!el) {
         onZoomChange(nextZoom)
         return
       }
       const next = Math.min(2.5, Math.max(0.25, nextZoom))
-      const current = zoomRef.current
-      if (next === current) return
-      fitZoomPending.current = false
-
-      const offsetX = el.clientWidth / 2
-      const offsetY = el.clientHeight / 2
-      const oldPadX =
-        Number.parseFloat(getComputedStyle(space).paddingLeft) || 0
-      const oldPadY =
-        Number.parseFloat(getComputedStyle(space).paddingTop) || 0
-      const plantX = (el.scrollLeft + offsetX - oldPadX) / current
-      const plantY = (el.scrollTop + offsetY - oldPadY) / current
-      const pw = plant.offsetWidth
-      const ph = plant.offsetHeight
-      if (pw < 1 || ph < 1) {
-        onZoomChange(next)
-        return
-      }
-      const cw = pw * next
-      const ch = ph * next
-      const padX = Math.max(el.clientWidth, (el.clientWidth - cw) / 2, 24)
-      const padY = Math.max(el.clientHeight, (el.clientHeight - ch) / 2, 24)
-      let left = padX + plantX * next - offsetX
-      let top = padY + plantY * next - offsetY
-      const maxLeft = Math.max(0, padX * 2 + cw - el.clientWidth)
-      const maxTop = Math.max(0, padY * 2 + ch - el.clientHeight)
-      left = Math.min(Math.max(0, left), maxLeft)
-      top = Math.min(Math.max(0, top), maxTop)
-
-      space.style.width = `${cw}px`
-      space.style.height = `${ch}px`
-      space.style.paddingLeft = `${padX}px`
-      space.style.paddingRight = `${padX}px`
-      space.style.paddingTop = `${padY}px`
-      space.style.paddingBottom = `${padY}px`
-      plant.style.transform = `scale(${next})`
-      plant.style.transformOrigin = 'top left'
-      el.scrollLeft = left
-      el.scrollTop = top
-
-      pendingZoomScroll.current = { left, top, padX, padY }
-      centerPending.current = false
-      lastCenteredZoom.current = next
-      zoomRef.current = next
-      onZoomChange(next)
+      const rect = el.getBoundingClientRect()
+      applyZoomAt(
+        next,
+        rect.left + el.clientWidth / 2,
+        rect.top + el.clientHeight / 2,
+      )
     },
-    [onZoomChange],
+    [applyZoomAt, onZoomChange],
   )
 
   useImperativeHandle(

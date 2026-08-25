@@ -33,6 +33,7 @@ import {
 } from './CascadeView'
 import { NavantiaLogo } from './NavantiaLogo'
 import { StartupFeedsPanel } from './StartupFeedsPanel'
+import { PwaUpdateToast } from './PwaUpdateToast'
 
 const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
@@ -812,6 +813,7 @@ export function ScadaCanvas() {
           {isMobile ? ' · PWA' : ''}
         </span>
       </footer>
+      <PwaUpdateToast enabled={isMobile} />
         </>
       )}
     </div>

@@ -177,3 +177,42 @@
     display: none;
   }
 }
+
+/* Toast breve tras actualización automática de la PWA (solo móvil) */
+.pwa-update-toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(1.1rem, calc(env(safe-area-inset-bottom, 0px) + 0.85rem));
+  z-index: 80;
+  transform: translateX(-50%);
+  max-width: min(18rem, calc(100vw - 2rem));
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent, #3d9b8f) 45%, var(--border));
+  background: color-mix(in srgb, var(--panel, #121c1a) 92%, #000);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  animation: pwa-update-toast-in 0.28s ease-out, pwa-update-toast-out 0.35s ease-in 2.45s forwards;
+}
+
+@keyframes pwa-update-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.55rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes pwa-update-toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.35rem);
+  }
+}
