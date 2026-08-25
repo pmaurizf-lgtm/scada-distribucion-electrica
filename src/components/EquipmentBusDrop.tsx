@@ -15,11 +15,21 @@ import {
   isAux24Feed,
   isParallelLcsTopFeed,
   isPendingFeed,
+  isTrfInternalConversionFeed,
   lineBadge,
   pairedRemoteFeeds,
 } from '../utils/cascadeModel'
 import { isSpareEquipment } from '../utils/spareCircuits'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
+import {
+  dataFlowVoltageForBoardFeed,
+  dataFlowVoltageForConversionLink,
+  dataFlowVoltageFromCircuit,
+  dataFlowVoltageProps,
+  dataFlowVoltageAlum,
+  isLightingBoard,
+  isLightingBoardId,
+} from '../utils/flowVoltage'
 import { Aux24Incoming } from './Aux24Incoming'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBalloon } from './EquipmentBalloon'
@@ -97,6 +107,7 @@ function FoldedParallelCsbLeg({
   return (
     <div
       className={`hbus-drop__leg hbus-drop__leg--parallel-csb${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}${breakerOpen && !flowing ? ' hbus-drop__leg--open' : ''}${eqLive && !flowing ? ' hbus-drop__leg--from-live' : ''}`}
+      {...dataFlowVoltageFromCircuit(feed)}
       data-circuit-id={feed.id}
       data-equip={origin.id}
       title={`${origin.id} → ${feed.protectionName} → ${feed.destinationId}`}
@@ -172,6 +183,10 @@ export interface EquipmentBusDropProps {
   bankNote?: string
   /** Clases extra en el contenedor `.hbus-drop`. */
   rootClassName?: string
+  /** Cartel de conversión de tensión (p. ej. 690→400 Hz en SCV). */
+  conversionNote?: string
+  /** Flujo en bajantes TRF→LCS dual (230 / 440). */
+  trfStubFlow?: { v230?: boolean; v440?: boolean }
   /**
    * Sin interruptor de acometida: solo cable vertical desde el padre
    * (p. ej. ABT → TRF en cadena directa).
@@ -204,6 +219,8 @@ export function EquipmentBusDrop({
   equipFam = 'eq',
   bankNote,
   rootClassName,
+  conversionNote,
+  trfStubFlow,
   linkOnlyFromParent = false,
   located = false,
   children,
@@ -300,6 +317,7 @@ export function EquipmentBusDrop({
       <div
         key={feed.id}
         className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}${breakerOpen && !flowing ? ' hbus-drop__leg--open' : ''}${originLive && !flowing ? ' hbus-drop__leg--from-live' : ''}`}
+        {...dataFlowVoltageFromCircuit(feed)}
         data-circuit-id={kind === 'local' ? feed.id : undefined}
         data-remote-circuit={kind === 'remote' ? feed.id : undefined}
         title={
@@ -368,9 +386,28 @@ export function EquipmentBusDrop({
   const showTops = !linkOnlyFromParent || hasAuxTops || linkThruOnly
   const secondaryDenom = spare ? null : labelSecondaryDenom(equipment)
 
+  const trfInternalFeeds = useMemo(() => {
+    if (equipFam !== 'trf') return []
+    return system690.circuits.filter(
+      (c) => isTrfInternalConversionFeed(c) && c.originId === equipment.id,
+    )
+  }, [equipFam, equipment.id])
+
+  const thruVoltageProps = linkOnlyFromParent
+    ? isLightingBoard(equipment) && !isLightingBoardId(localFeed.originId)
+      ? dataFlowVoltageForBoardFeed(localFeed, equipment)
+      : dataFlowVoltageForConversionLink(localFeed)
+    : dataFlowVoltageFromCircuit(localFeed)
+
+  /* Origen alumbrado → blanco; acometida a cuadro de alumbrado desde LCS/TRF → 230 */
+  const rootVoltageProps = isLightingBoardId(localFeed.originId)
+    ? dataFlowVoltageAlum()
+    : dataFlowVoltageProps(equipment.id)
+
   return (
     <div
       className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual || hasAuxTops ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${linkOnlyFromParent ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}${rootClassName ? ` ${rootClassName}` : ''}`}
+      {...rootVoltageProps}
       data-equip={equipment.id}
       data-locate={located ? '1' : undefined}
       data-circuit-id={localFeed.id}
@@ -409,6 +446,7 @@ export function EquipmentBusDrop({
           {(linkAuxBeside || linkThruOnly) && (
             <div
               className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              {...thruVoltageProps}
               data-circuit-id={localFeed.id}
               aria-hidden
             >
@@ -482,6 +520,51 @@ export function EquipmentBusDrop({
                 690/440-230
               </span>
             )}
+            {conversionNote && (
+              <span className="hbus-drop__bank hbus-drop__bank--convert" title={conversionNote}>
+                {conversionNote}
+              </span>
+            )}
+            {equipFam === 'trf' && (
+              <>
+                <span
+                  className={`hbus-drop__trf-stub hbus-drop__trf-stub--230${trfStubFlow?.v230 ? ' hbus-drop__wire--flow' : ''}`}
+                  aria-hidden
+                />
+                <span
+                  className={`hbus-drop__trf-stub hbus-drop__trf-stub--440${trfStubFlow?.v440 ? ' hbus-drop__wire--flow' : ''}`}
+                  aria-hidden
+                />
+              </>
+            )}
+            {trfInternalFeeds.map((tf) => {
+              const tfFlow = energizedCircuitIds.has(tf.id)
+              return (
+                <span
+                  key={tf.id}
+                  className="hbus-drop__trf-inbrk"
+                  onClick={(e) => e.stopPropagation()}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
+                  <BreakerChip
+                    name={tf.protectionName}
+                    state={protectionStatus[tf.id]}
+                    compact
+                    circuitId={tf.id}
+                    circuit={tf}
+                    flowing={tfFlow}
+                    locked={lockedCircuits.has(tf.id)}
+                    title={`${tf.protectionName} · ${tf.voltage} V → ${tf.destinationId}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onLocalBreaker(tf, e)
+                    }}
+                    onHoverInfo={onHoverInfo}
+                    onHoverInfoEnd={onHoverInfoEnd}
+                  />
+                </span>
+              )
+            })}
             {canExpand && (
               <span className="hbus-drop__more">
                 {expandLabel ?? `${expanded ? '▴' : '▾'}`}

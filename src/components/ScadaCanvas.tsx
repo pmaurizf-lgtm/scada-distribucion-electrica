@@ -12,19 +12,18 @@ import {
   sampleProtectionStatus,
   toProtectionStatusMap,
 } from '../data/sampleProtectionStatus'
-import type { ProtectionStatusEntry, ProtectionStatusMap } from '../types'
-import {
-  computeEnergyFlow,
-  invertProtectionStatus,
-  toggleProtectionState,
-} from '../utils/energyFlow'
+import type { ProtectionStatusMap } from '../types'
+import { computeEnergyFlow, toggleProtectionState } from '../utils/energyFlow'
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
-import { allSectionCouplers, isPendingFeed } from '../utils/cascadeModel'
+import { isPendingFeed } from '../utils/cascadeModel'
 import {
-  clearPersistedSim,
   loadPersistedSim,
   savePersistedSim,
 } from '../utils/simPersistence'
+import {
+  parseLockTargetsFromWorkbook,
+  resolveLockCircuitIds,
+} from '../utils/parseLocksExcel'
 import { useIsMobileUi } from '../hooks/useIsMobileUi'
 import {
   CascadeView,
@@ -33,8 +32,8 @@ import {
   type LockTool,
 } from './CascadeView'
 import { NavantiaLogo } from './NavantiaLogo'
+import { StartupFeedsPanel } from './StartupFeedsPanel'
 
-const emptyStatus: ProtectionStatusMap = {}
 const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
 const ZOOM_STEP = 0.15
@@ -71,6 +70,7 @@ type BeforeInstallPromptEvent = Event & {
 
 export function ScadaCanvas() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const candadosDetailsRef = useRef<HTMLDetailsElement>(null)
   const cascadeRef = useRef<CascadeViewHandle>(null)
   const isMobile = useIsMobileUi()
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
@@ -103,9 +103,16 @@ export function ScadaCanvas() {
       return true
     }
   })
+  const [startupMode, setStartupMode] = useState(false)
+  const [simulationActive, setSimulationActive] = useState(false)
 
   useEffect(() => {
-    if (isMobile) setChromeCollapsed(true)
+    if (isMobile) {
+      setChromeCollapsed(true)
+      setSimulationActive(false)
+      setLockTool('none')
+      setStartupMode(false)
+    }
   }, [isMobile])
 
   useEffect(() => {
@@ -149,41 +156,52 @@ export function ScadaCanvas() {
     dismissPwaHint()
   }
 
-  const toggleGenerator = useCallback((genId: string) => {
-    setRunningGenerators((prev) => {
-      const next = new Set(prev)
-      if (next.has(genId)) next.delete(genId)
-      else next.add(genId)
-      return next
-    })
-    setStatusSource('simulación · generador conmutado')
-  }, [])
-
-  const applyStatusEntries = useCallback(
-    (entries: ProtectionStatusEntry[], source: string) => {
-      setProtectionStatus(toProtectionStatusMap(entries))
-      setStatusSource(source)
+  const toggleGenerator = useCallback(
+    (genId: string) => {
+      if (!simulationActive) {
+        setSearchHint(
+          'Pulsa «Simular estado» para operar generadores e interruptores.',
+        )
+        return
+      }
+      setRunningGenerators((prev) => {
+        const next = new Set(prev)
+        if (next.has(genId)) next.delete(genId)
+        else next.add(genId)
+        return next
+      })
+      setStatusSource('simulación · generador conmutado')
     },
-    [],
+    [simulationActive],
   )
 
+  const resetToRestState = useCallback(() => {
+    setProtectionStatus(toProtectionStatusMap(sampleProtectionStatus))
+    setRunningGenerators(new Set())
+    setLockedCircuits(new Set())
+    setLockTool('none')
+    setStatusSource('reposo · todos abiertos · gens parados')
+  }, [])
+
   const handleSimulateToggle = useCallback(() => {
-    setProtectionStatus((prev) => {
-      const ids = [
-        ...system690.circuits.map((c) => c.id),
-        ...allSectionCouplers().map((c) => c.id),
-      ].filter(
-        (id) =>
-          !lockedCircuits.has(id) &&
-          !system690.circuits.some((c) => c.id === id && isPendingFeed(c)),
-      )
-      return invertProtectionStatus(prev, ids)
+    setSimulationActive((active) => {
+      if (active) {
+        resetToRestState()
+        return false
+      }
+      setStatusSource('simulación activa · puede operar interruptores')
+      return true
     })
-    setStatusSource('simulación · estados invertidos (excepto bloqueados)')
-  }, [lockedCircuits])
+  }, [resetToRestState])
 
   const handleToggleProtection = useCallback(
     (circuitId: string) => {
+      if (!simulationActive) {
+        setSearchHint(
+          'Pulsa «Simular estado» para abrir o cerrar interruptores.',
+        )
+        return false
+      }
       const circuit = system690.circuits.find((c) => c.id === circuitId)
       if (circuit && isPendingFeed(circuit)) {
         setSearchHint(
@@ -203,29 +221,35 @@ export function ScadaCanvas() {
       setStatusSource('simulación manual')
       return true
     },
-    [lockedCircuits],
+    [lockedCircuits, simulationActive],
   )
 
   const handleLockCircuit = useCallback((circuitId: string) => {
+    if (!simulationActive) {
+      setSearchHint(
+        'Pulsa «Simular estado» para operar interruptores (candados incluidos).',
+      )
+      return
+    }
     setLockedCircuits((prev) => new Set(prev).add(circuitId))
     setProtectionStatus((prev) => ({ ...prev, [circuitId]: 'abierta' }))
     setStatusSource('candado aplicado · interruptor abierto y bloqueado')
-  }, [])
+  }, [simulationActive])
 
   const handleUnlockCircuit = useCallback((circuitId: string) => {
+    if (!simulationActive) {
+      setSearchHint(
+        'Pulsa «Simular estado» para operar interruptores (candados incluidos).',
+      )
+      return
+    }
     setLockedCircuits((prev) => {
       const next = new Set(prev)
       next.delete(circuitId)
       return next
     })
     setStatusSource('candado retirado · interruptor manipulable')
-  }, [])
-
-  const handleClearStatus = useCallback(() => {
-    setProtectionStatus(emptyStatus)
-    clearPersistedSim()
-    setStatusSource('sin estado de protecciones')
-  }, [])
+  }, [simulationActive])
 
   const zoomIn = () =>
     setZoom((z) => Math.min(ZOOM_MAX, Math.round((z + ZOOM_STEP) * 100) / 100))
@@ -233,30 +257,61 @@ export function ScadaCanvas() {
     setZoom((z) => Math.max(ZOOM_MIN, Math.round((z - ZOOM_STEP) * 100) / 100))
   const zoomReset = () => setZoom(1)
 
-  const handleFileChange = useCallback(
+  const closeCandadosMenu = useCallback(() => {
+    const el = candadosDetailsRef.current
+    if (el) el.open = false
+  }, [])
+
+  const handleLockExcelChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
       if (!file) return
       try {
-        const text = await file.text()
-        const parsed = JSON.parse(text) as ProtectionStatusEntry[]
-        if (!Array.isArray(parsed)) throw new Error('array')
-        const valid = parsed.filter(
-          (row) =>
-            row &&
-            typeof row.circuitId === 'string' &&
-            (row.state === 'cerrada' || row.state === 'abierta'),
+        const buf = await file.arrayBuffer()
+        const targets = parseLockTargetsFromWorkbook(buf)
+        if (!targets.length) {
+          setSearchHint(
+            'El Excel no contiene IDs de equipo (PUMA/DCP-10) ni circuitos reconocibles.',
+          )
+          return
+        }
+        const { circuitIds, unresolved } = resolveLockCircuitIds(
+          system690,
+          targets,
+          searchableEquipment,
         )
-        if (!valid.length) throw new Error('empty')
-        applyStatusEntries(valid, `archivo: ${file.name}`)
+        if (!circuitIds.length) {
+          setSearchHint(
+            `Ningún candado aplicable (${unresolved.slice(0, 3).join(', ') || 'sin coincidencias'}).`,
+          )
+          return
+        }
+        setLockedCircuits(new Set(circuitIds))
+        setProtectionStatus((prev) => {
+          const next = { ...prev }
+          for (const id of circuitIds) next[id] = 'abierta'
+          return next
+        })
+        setLockTool('none')
+        const extra =
+          unresolved.length > 0
+            ? ` · ${unresolved.length} no resueltos`
+            : ''
+        setStatusSource(
+          `candados Excel: ${file.name} · ${circuitIds.length} interruptores${extra}`,
+        )
+        setSearchHint(
+          `Candados cargados: ${circuitIds.length} interruptores abiertos y bloqueados${extra}.`,
+        )
+        closeCandadosMenu()
       } catch {
         setSearchHint(
-          'No se pudo leer el JSON de protecciones [{ circuitId, state }].',
+          'No se pudo leer el Excel de candados (columna con PUMA / DCP-10 o id de circuito).',
         )
       }
       e.target.value = ''
     },
-    [applyStatusEntries],
+    [closeCandadosMenu],
   )
 
   const handleLocate = (e: FormEvent) => {
@@ -304,13 +359,6 @@ export function ScadaCanvas() {
     (s) => s === 'abierta',
   ).length
 
-  const expandAll = () => {
-    setFocus(null)
-    setLocateEquipmentId(null)
-    setSearchHint(null)
-    cascadeRef.current?.expandAll()
-  }
-
   const collapseAll = () => {
     setFocus(null)
     setLocateEquipmentId(null)
@@ -333,6 +381,16 @@ export function ScadaCanvas() {
 
   return (
     <div className={shellClass}>
+      {startupMode ? (
+        <StartupFeedsPanel
+          onClose={() => setStartupMode(false)}
+          protectionStatus={protectionStatus}
+          lockedCircuits={lockedCircuits}
+          energizedCircuitIds={energizedCircuitIds}
+          energizedEquipmentIds={energizedEquipmentIds}
+        />
+      ) : (
+        <>
       <div className="app-shell__chrome">
         <header className="topbar">
           <div className="topbar__brand">
@@ -380,78 +438,107 @@ export function ScadaCanvas() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={expandAll}
-                    title="Desplegar todos los cuadros y equipos del unifilar"
-                  >
-                    Desplegar todo
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
                     onClick={collapseAll}
                     title="Plegar todos los cuadros y equipos del unifilar"
                   >
                     Plegar todo
                   </button>
+                  {!isMobile && (
+                    <button
+                      type="button"
+                      className={`btn${startupMode ? ' btn--active' : ''}`}
+                      onClick={() => setStartupMode(true)}
+                      title="Informe de alimentaciones para puesta en marcha de sistemas"
+                    >
+                      Puesta en marcha
+                    </button>
+                  )}
                 </div>
-                <div
-                  className="topbar__actions topbar__actions--sim"
-                  role="group"
-                  aria-label="Simulación"
-                >
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={handleSimulateToggle}
+                {!isMobile && (
+                  <div
+                    className="topbar__actions topbar__actions--sim"
+                    role="group"
+                    aria-label="Simulación"
                   >
-                    Simular estado
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn--lock${lockTool === 'lock' ? ' btn--active' : ''}`}
-                    onClick={() =>
-                      setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
-                    }
-                  >
-                    Poner candado
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn--lock${lockTool === 'unlock' ? ' btn--active' : ''}`}
-                    onClick={() =>
-                      setLockTool((t) => (t === 'unlock' ? 'none' : 'unlock'))
-                    }
-                  >
-                    Quitar candado
-                  </button>
-                </div>
-                <div
-                  className="topbar__actions topbar__actions--data"
-                  role="group"
-                  aria-label="Datos"
-                >
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Cargar JSON
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="application/json,.json"
-                    hidden
-                    onChange={handleFileChange}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={handleClearStatus}
-                  >
-                    Limpiar estados
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      className={`btn${simulationActive ? ' btn--active' : ''}`}
+                      onClick={handleSimulateToggle}
+                      title={
+                        simulationActive
+                          ? 'Desactivar simulación (interruptores no operables)'
+                          : 'Activar simulación para operar interruptores y generadores'
+                      }
+                    >
+                      {simulationActive ? 'Dejar de simular' : 'Simular estado'}
+                    </button>
+                    <details
+                      ref={candadosDetailsRef}
+                      className={`candados-menu${lockTool !== 'none' ? ' candados-menu--active' : ''}`}
+                    >
+                      <summary
+                        className={`btn btn--lock${lockTool !== 'none' ? ' btn--active' : ''}`}
+                        title="Poner / quitar candado o cargar lista desde Excel"
+                      >
+                        Candados
+                      </summary>
+                      <div className="candados-menu__panel" role="menu">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className={`candados-menu__item${lockTool === 'lock' ? ' candados-menu__item--on' : ''}`}
+                          disabled={!simulationActive}
+                          title={
+                            simulationActive
+                              ? 'Modo: pulsa un interruptor para abrirlo y bloquearlo'
+                              : 'Activa «Simular estado» primero'
+                          }
+                          onClick={() => {
+                            setLockTool((t) => (t === 'lock' ? 'none' : 'lock'))
+                            closeCandadosMenu()
+                          }}
+                        >
+                          Poner candado
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className={`candados-menu__item${lockTool === 'unlock' ? ' candados-menu__item--on' : ''}`}
+                          disabled={!simulationActive}
+                          title={
+                            simulationActive
+                              ? 'Modo: pulsa un interruptor bloqueado para liberarlo'
+                              : 'Activa «Simular estado» primero'
+                          }
+                          onClick={() => {
+                            setLockTool((t) =>
+                              t === 'unlock' ? 'none' : 'unlock',
+                            )
+                            closeCandadosMenu()
+                          }}
+                        >
+                          Quitar candado
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="candados-menu__item"
+                          title="Excel con IDs PUMA / DCP-10 (o circuitos) a bloquear"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          Cargar Excel…
+                        </button>
+                      </div>
+                    </details>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                      hidden
+                      onChange={handleLockExcelChange}
+                    />
+                  </div>
+                )}
               </div>
               <div className="zoom-controls" role="group" aria-label="Zoom">
                 <button
@@ -479,14 +566,34 @@ export function ScadaCanvas() {
                   +
                 </button>
               </div>
-              <div className="topbar__legend" aria-label="Leyenda de líneas">
+              <div className="topbar__legend" aria-label="Leyenda de tensiones">
                 <span className="toggle">
-                  <span className="legend-line legend-line--normal" />
-                  Normal
+                  <span className="legend-line legend-line--v690" />
+                  690 V
                 </span>
                 <span className="toggle">
-                  <span className="legend-line legend-line--alt" />
-                  Alternativa
+                  <span className="legend-line legend-line--v440" />
+                  440 V
+                </span>
+                <span className="toggle">
+                  <span className="legend-line legend-line--v230" />
+                  230 V
+                </span>
+                <span className="toggle">
+                  <span className="legend-line legend-line--v115" />
+                  115 V
+                </span>
+                <span className="toggle">
+                  <span className="legend-line legend-line--v24" />
+                  24 V
+                </span>
+                <span className="toggle">
+                  <span className="legend-line legend-line--v400hz" />
+                  400 Hz
+                </span>
+                <span className="toggle">
+                  <span className="legend-line legend-line--alum" />
+                  Alumbrado
                 </span>
               </div>
             </div>
@@ -636,20 +743,31 @@ export function ScadaCanvas() {
         )}
 
         {searchHint && <div className="banner">{searchHint}</div>}
-        {lockTool !== 'none' && (
+        {!isMobile && lockTool !== 'none' && (
           <div className="banner banner--tool">
             {lockTool === 'lock'
               ? 'Modo poner candado activo: pulsa un interruptor para abrirlo y bloquearlo.'
               : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
           </div>
         )}
-        {lockTool === 'none' && !searchHint && (
+        {isMobile && lockTool === 'none' && !searchHint && (
+          <div className="banner">
+            Modo consulta: Localizar o Ver árbol. Doble toque para plegar/desplegar;
+            pellizca para zoom y arrastra para desplazar.
+          </div>
+        )}
+        {!isMobile && lockTool === 'none' && !searchHint && !simulationActive && (
+          <div className="banner">
+            Pulsa «Simular estado» para poder abrir o cerrar interruptores y
+            arrancar generadores. Doble clic en cuadros o equipos para
+            plegar/desplegar.
+          </div>
+        )}
+        {!isMobile && lockTool === 'none' && !searchHint && simulationActive && (
           <div className="banner">
             {runningGenerators.size === 0
-              ? isMobile
-                ? 'Simulación: toca un generador (G) para arrancarlo, cierra QG* y salidas. Pellizca para zoom; arrastra para desplazar. Doble toque en cuadros para plegar/desplegar.'
-                : 'Simulación: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
-              : `Simulación: ${runningGenerators.size} generador${runningGenerators.size === 1 ? '' : 'es'} en marcha. Cierra QG* / salidas / QBT para ver el flujo (doble clic en cuadros o equipos para plegar/desplegar).`}
+              ? 'Simulación activa: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'
+              : `Simulación activa: ${runningGenerators.size} generador${runningGenerators.size === 1 ? '' : 'es'} en marcha. Cierra QG* / salidas / QBT para ver el flujo.`}
           </div>
         )}
       </div>
@@ -694,6 +812,8 @@ export function ScadaCanvas() {
           {isMobile ? ' · PWA' : ''}
         </span>
       </footer>
+        </>
+      )}
     </div>
   )
 }

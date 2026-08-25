@@ -22,6 +22,7 @@ import {
   lineBadge,
   msb24SourceForAuxOrigin,
 } from '../utils/cascadeModel'
+import type { StartupDestination } from '../startupFeeds/types'
 import type { UpstreamTrace } from '../utils/upstream'
 import {
   filterFeedsByBusVoltage,
@@ -40,6 +41,12 @@ interface SearchTreeViewProps {
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
   onBreaker: (c: Circuit, e: ReactMouseEvent) => void
+  /** Informe arranque: bajantes aguas abajo del origen común (col. L). */
+  hubDownstream?: StartupDestination[]
+  /** Solo lectura (sin globos ni clic en interruptores). */
+  reportMode?: boolean
+  showHeader?: boolean
+  groupCaption?: string
 }
 
 const HOVER_DELAY_MS = 1800
@@ -386,6 +393,7 @@ function LcsOutletBranch({
   onBreaker,
   onHoverInfo,
   onHoverInfoEnd,
+  reportMode,
 }: {
   outlet: Circuit
   viaVoltage?: string | null
@@ -400,6 +408,7 @@ function LcsOutletBranch({
   onBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
+  reportMode?: boolean
 }) {
   const path = useLcsOutletPath(outlet)
   const handlers: BreakerHandlers = {
@@ -428,6 +437,7 @@ function LcsOutletBranch({
           onBreaker={onBreaker}
           onHoverInfo={onHoverInfo}
           onHoverInfoEnd={onHoverInfoEnd}
+          reportMode={reportMode}
         />
         <div className="stree-branch__leg">
           <div className="stree-branch__wire" aria-hidden />
@@ -476,6 +486,7 @@ function LcsOutletBranch({
             onBreaker={onBreaker}
             onHoverInfo={onHoverInfo}
             onHoverInfoEnd={onHoverInfoEnd}
+            reportMode={reportMode}
           />
           <div className="stree-branch__wire" aria-hidden />
           <RailBreaker circuit={bus.incoming} handlers={handlers} />
@@ -546,6 +557,95 @@ function LcsOutletBranch({
  * Nodo del árbol: padres (aguas arriba) arriba, este equipo abajo.
  * Cada equipo se pinta una sola vez en su posición del árbol.
  */
+/** Bajantes desde un origen común hacia los equipos destino (informe arranque). */
+function DownstreamDestinations({
+  destinations,
+  protectionStatus,
+  lockedCircuits,
+  energizedCircuitIds,
+  energizedEquipmentIds,
+  onBreaker,
+  onHoverInfo,
+  onHoverInfoEnd,
+  reportMode,
+}: {
+  destinations: StartupDestination[]
+  protectionStatus: Record<string, ProtectionState>
+  lockedCircuits: Set<string>
+  energizedCircuitIds: Set<string>
+  energizedEquipmentIds: Set<string>
+  onBreaker: (c: Circuit, e: ReactMouseEvent) => void
+  onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
+  onHoverInfoEnd?: () => void
+  reportMode?: boolean
+}) {
+  const dual = destinations.length > 1
+  return (
+    <div
+      className={`stree-downstream${dual ? ' stree-downstream--dual' : ''}`}
+    >
+      <div
+        className="stree-branch__wire stree-downstream__stem"
+        aria-hidden
+      />
+      {dual && <div className="stree-join stree-downstream__join" aria-hidden />}
+      <div className="stree-downstream__branches">
+        {destinations.map((dest) => {
+          const equipment = eqById(dest.equipmentId)
+          const circuit = dest.circuitId
+            ? system690.circuits.find((c) => c.id === dest.circuitId)
+            : undefined
+          const isAlt = dest.lineType === 'alternativa'
+          if (!equipment) return null
+          return (
+            <div
+              key={dest.equipmentId}
+              className={`stree-branch stree-branch--down${isAlt ? ' stree-branch--alt' : ' stree-branch--norm'}`}
+            >
+              <div className="stree-branch__leg">
+                <div className="stree-branch__wire" aria-hidden />
+                {circuit && dest.protectionName !== '—' ? (
+                  <>
+                    <BreakerMini
+                      circuit={circuit}
+                      state={protectionStatus[circuit.id]}
+                      locked={lockedCircuits.has(circuit.id)}
+                      flowing={energizedCircuitIds.has(circuit.id)}
+                      onClick={(e) => onBreaker(circuit, e)}
+                      onHoverInfo={reportMode ? undefined : onHoverInfo}
+                      onHoverInfoEnd={onHoverInfoEnd}
+                    />
+                    <span
+                      className={`stree-branch__tag${isAlt ? ' stree-branch__tag--alt' : ''}`}
+                    >
+                      {lineBadge(dest.lineType)}
+                    </span>
+                  </>
+                ) : (
+                  <div
+                    className="stree-branch__wire stree-branch__wire--thru"
+                    aria-hidden
+                  />
+                )}
+                <div
+                  className={`stree-branch__wire stree-branch__wire--foot${isAlt ? ' stree-branch__wire--alt' : ''}`}
+                  aria-hidden
+                />
+              </div>
+              <EquipCard
+                equipment={equipment}
+                live={energizedEquipmentIds.has(equipment.id)}
+                highlight
+                compact={reportMode}
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function TreeNode({
   equipmentId,
   isTarget,
@@ -562,6 +662,8 @@ function TreeNode({
   onBreaker,
   onHoverInfo,
   onHoverInfoEnd,
+  hubDownstream,
+  reportMode,
 }: {
   equipmentId: string
   isTarget?: boolean
@@ -578,6 +680,8 @@ function TreeNode({
   onBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
+  hubDownstream?: StartupDestination[]
+  reportMode?: boolean
 }) {
   const equipment = eqById(equipmentId)
   const capExpanded =
@@ -653,6 +757,7 @@ function TreeNode({
                       onBreaker={onBreaker}
                       onHoverInfo={onHoverInfo}
                       onHoverInfoEnd={onHoverInfoEnd}
+                      reportMode={reportMode}
                     />
                   </div>
                 )
@@ -677,6 +782,7 @@ function TreeNode({
                     onBreaker={onBreaker}
                     onHoverInfo={onHoverInfo}
                     onHoverInfoEnd={onHoverInfoEnd}
+                    reportMode={reportMode}
                   />
                   <div className="stree-branch__leg">
                     <div className="stree-branch__wire" aria-hidden />
@@ -738,15 +844,30 @@ function TreeNode({
           equipment={equipment}
           live={energizedEquipmentIds.has(equipment.id)}
           highlight={isTarget}
-          capExpandable={capExpandable}
+          capExpandable={capExpandable && !reportMode}
           capExpanded={capExpanded}
           onToggleCapExpand={
-            capExpandable
+            capExpandable && !reportMode
               ? () => onToggleCapExpand(equipmentId)
               : undefined
           }
+          compact={reportMode && !isTarget}
         />
       </div>
+
+      {hubDownstream && hubDownstream.length > 0 && (
+        <DownstreamDestinations
+          destinations={hubDownstream}
+          protectionStatus={protectionStatus}
+          lockedCircuits={lockedCircuits}
+          energizedCircuitIds={energizedCircuitIds}
+          energizedEquipmentIds={energizedEquipmentIds}
+          onBreaker={onBreaker}
+          onHoverInfo={onHoverInfo}
+          onHoverInfoEnd={onHoverInfoEnd}
+          reportMode={reportMode}
+        />
+      )}
     </div>
   )
 }
@@ -759,6 +880,10 @@ export function SearchTreeView({
   energizedCircuitIds,
   energizedEquipmentIds,
   onBreaker,
+  hubDownstream,
+  reportMode = false,
+  showHeader = true,
+  groupCaption,
 }: SearchTreeViewProps) {
   const direct = upstreamEdges(equipmentId, null, false, true).filter(
     (c) => !c.virtual,
@@ -799,28 +924,45 @@ export function SearchTreeView({
     })
   }
 
+  const noopBreaker = (_c: Circuit, e: ReactMouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+  const breakerHandler = reportMode ? noopBreaker : onBreaker
+
+  const hasHubLeaves =
+    hubDownstream != null && hubDownstream.length > 0
+
   return (
-    <div className="stree">
-      <header className="stree__head">
-        <h3>Árbol de alimentaciones · {equipmentId}</h3>
-        <p>
-          Del cuadro principal (MSB-6PWS) hacia abajo, sin generadores ni QG*.
-          Los paneles PNL-MSB suben al MSB por el BUS. Misma filosofía en 440 V
-          y 230 V: QVS (y QS* paralela, si existe) alimentan VS bajo el LCS;
-          QVM/VM y QNV/NV solo si el equipo está en esa barra. En 24 V: NORM
-          completa; ALT y AUX hasta el MSB-24PWxxxx (doble clic en ese cuadro
-          para expandir aguas arriba). El equipo aparece una sola vez
-          {direct.length > 1
-            ? ` · ${direct.length} alimentaciones NORM/ALT convergentes`
-            : ''}
-          . {realInTrace} circuitos reales en la traza.
-        </p>
-      </header>
+    <div className={`stree${reportMode ? ' stree--report' : ''}`}>
+      {showHeader && (
+        <header className="stree__head">
+          <h3>Árbol de alimentaciones · {equipmentId}</h3>
+          <p>
+            Del cuadro principal (MSB-6PWS) hacia abajo, sin generadores ni QG*.
+            Los paneles PNL-MSB suben al MSB por el BUS. Misma filosofía en 440 V
+            y 230 V: QVS (y QS* paralela, si existe) alimentan VS bajo el LCS;
+            QVM/VM y QNV/NV solo si el equipo está en esa barra. En 24 V: NORM
+            completa; ALT y AUX hasta el MSB-24PWxxxx (doble clic en ese cuadro
+            para expandir aguas arriba). El equipo aparece una sola vez
+            {direct.length > 1
+              ? ` · ${direct.length} alimentaciones NORM/ALT convergentes`
+              : ''}
+            . {realInTrace} circuitos reales en la traza.
+          </p>
+        </header>
+      )}
+
+      {groupCaption && (
+        <p className="stree__group-caption">{groupCaption}</p>
+      )}
 
       <div className="stree__canvas">
         <TreeNode
           equipmentId={equipmentId}
-          isTarget
+          isTarget={!hasHubLeaves}
+          hubDownstream={hubDownstream}
+          reportMode={reportMode}
           visited={new Set()}
           expandedCapIds={expandedCapIds}
           onToggleCapExpand={toggleCapExpand}
@@ -828,13 +970,13 @@ export function SearchTreeView({
           lockedCircuits={lockedCircuits}
           energizedCircuitIds={energizedCircuitIds}
           energizedEquipmentIds={energizedEquipmentIds}
-          onBreaker={onBreaker}
-          onHoverInfo={showBreakerInfo}
-          onHoverInfoEnd={() => setBrkBalloon(null)}
+          onBreaker={breakerHandler}
+          onHoverInfo={reportMode ? undefined : showBreakerInfo}
+          onHoverInfoEnd={reportMode ? undefined : () => setBrkBalloon(null)}
         />
       </div>
 
-      {brkBalloon && (
+      {!reportMode && brkBalloon && (
         <CircuitBalloon
           circuit={brkBalloon.circuit}
           state={protectionStatus[brkBalloon.circuit.id]}

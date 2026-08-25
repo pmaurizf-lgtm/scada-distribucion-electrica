@@ -28,6 +28,7 @@ import {
   isAux24Feed,
   nestableChildFeeders,
 } from '../utils/cascadeModel'
+import { dataFlowVoltageProps } from '../utils/flowVoltage'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBusDrop, equipFamOf } from './EquipmentBusDrop'
 
@@ -416,6 +417,7 @@ export function Ssb2209BoardView({
       ref={boardRef}
       className={`ssb-board ssb-board--2209${inFlow ? ' ssb-board--fed' : ''}${s1Live || s2Live || s3Live ? ' ssb-board--live' : ''}`}
       data-ssb={ssb.id}
+      {...dataFlowVoltageProps(ssb.id)}
     >
       {/*
         DEFINITIVO: QN centrado en trazo SALIDAS 1 (s1-stack CSS).

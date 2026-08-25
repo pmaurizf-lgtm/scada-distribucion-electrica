@@ -13,6 +13,7 @@ import {
   isUnifilarLinkOnlyFeed,
   nestableChildFeeders,
 } from '../utils/cascadeModel'
+import { dataFlowVoltageFor4SfsBus } from '../utils/flowVoltage'
 import {
   isMsb4SfsInterconnect,
   msb4SfsInterconnects,
@@ -167,6 +168,7 @@ function Trf115Branch({
   return (
     <div
       className={`hbus__slot msb4sfs-trf115${primaryFlow || returnFlow ? ' msb4sfs-trf115--flow' : ''}${located ? ' msb4sfs-trf115--locate' : ''}`}
+      {...dataFlowVoltageFor4SfsBus('440')}
       data-equip={trf.id}
       data-locate={located ? '1' : undefined}
       data-circuit-id={primary.id}
@@ -277,6 +279,7 @@ function RackSection({
     <div
       className={`msb4sfs-rack msb4sfs-rack--${bus}${busLive ? ' msb4sfs-rack--live' : ''}${nestedUnderTrf ? ' msb4sfs-rack--nested-trf' : ''}`}
       data-bus={bus}
+      {...dataFlowVoltageFor4SfsBus(bus)}
     >
       <div className="msb4sfs-rack__inner-top">
         <div className="msb4sfs-rack__in-row">

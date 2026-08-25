@@ -36,6 +36,33 @@
   --wire-spare: 1.5px;
   --wire-flow-halo: 7px;
   --zoom: 1;
+  /* Flujo animado por tensión (cable + partícula + halo RGB) */
+  --v690-wire: #4ade80;
+  --v690-particle: #bbf7d0;
+  --v690-glow-rgb: 74, 222, 128;
+  --v440-wire: #3b82f6;
+  --v440-particle: #93c5fd;
+  --v440-glow-rgb: 59, 130, 246;
+  --v230-wire: #e6c200;
+  --v230-particle: #fde047;
+  --v230-glow-rgb: 230, 194, 0;
+  --v115-wire: #f97316;
+  --v115-particle: #fdba74;
+  --v115-glow-rgb: 249, 115, 22;
+  --v24-wire: #ef4444;
+  --v24-particle: #fca5a5;
+  --v24-glow-rgb: 239, 68, 68;
+  --v400hz-wire: #d946ef;
+  --v400hz-particle: #f0abfc;
+  --v400hz-glow-rgb: 217, 70, 239;
+  /* Alumbrado (bajo INS): blanco, distinto del 230 V amarillo de acometida */
+  --valum-wire: #f0f0f0;
+  --valum-particle: #ffffff;
+  --valum-glow-rgb: 240, 240, 240;
+  /* Activo en el subárbol (cada zona lo redefine) */
+  --flow-wire: var(--v230-wire);
+  --flow-particle: var(--v230-particle);
+  --flow-glow-rgb: var(--v230-glow-rgb);
 }
 
 *,
@@ -56,6 +83,138 @@ body {
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Alcance de tensión: --flow-* se heredan en cables y partículas del subárbol.
+ * Por defecto 690 V en planta MSB; cada equipo redefine con data-flow-v (PUMA/DCP-10).
+ */
+.plant-msb,
+.plant-zoom-space {
+  --flow-wire: var(--v690-wire);
+  --flow-particle: var(--v690-particle);
+  --flow-glow-rgb: var(--v690-glow-rgb);
+}
+
+[data-flow-v='690'] {
+  --flow-wire: var(--v690-wire);
+  --flow-particle: var(--v690-particle);
+  --flow-glow-rgb: var(--v690-glow-rgb);
+}
+
+[data-flow-v='440'] {
+  --flow-wire: var(--v440-wire);
+  --flow-particle: var(--v440-particle);
+  --flow-glow-rgb: var(--v440-glow-rgb);
+}
+
+[data-flow-v='230'] {
+  --flow-wire: var(--v230-wire);
+  --flow-particle: var(--v230-particle);
+  --flow-glow-rgb: var(--v230-glow-rgb);
+}
+
+[data-flow-v='115'] {
+  --flow-wire: var(--v115-wire);
+  --flow-particle: var(--v115-particle);
+  --flow-glow-rgb: var(--v115-glow-rgb);
+}
+
+[data-flow-v='24'] {
+  --flow-wire: var(--v24-wire);
+  --flow-particle: var(--v24-particle);
+  --flow-glow-rgb: var(--v24-glow-rgb);
+}
+
+[data-flow-v='400hz'] {
+  --flow-wire: var(--v400hz-wire);
+  --flow-particle: var(--v400hz-particle);
+  --flow-glow-rgb: var(--v400hz-glow-rgb);
+}
+
+[data-flow-v='alum'] {
+  --flow-wire: var(--valum-wire);
+  --flow-particle: var(--valum-particle);
+  --flow-glow-rgb: var(--valum-glow-rgb);
+}
+
+/* Stubs TRF→QVS dual: tensión fija por ramal */
+.hbus-drop__trf-stub--230 {
+  --flow-wire: var(--v230-wire);
+  --flow-particle: var(--v230-particle);
+  --flow-glow-rgb: var(--v230-glow-rgb);
+}
+
+.hbus-drop__trf-stub--440 {
+  --flow-wire: var(--v440-wire);
+  --flow-particle: var(--v440-particle);
+  --flow-glow-rgb: var(--v440-glow-rgb);
+}
+
+/*
+ * Piernas de acometida: color unificado por tensión (data-flow-v en cada pierna).
+ * Sustituye el criterio NORM=amarillo / ALT=azul en cables y carteles.
+ */
+.hbus-drop__leg[data-flow-v] {
+  --leg-wire-idle: color-mix(in srgb, var(--flow-wire) 40%, #3d4f4a);
+}
+
+.hbus-drop__leg[data-flow-v] .hbus-drop__wire:not(.hbus-drop__wire--csb-drop),
+.hbus-drop__leg[data-flow-v] .hbus-drop__free-end {
+  background: var(--leg-wire-idle) !important;
+  box-shadow: none;
+}
+
+.hbus-drop__leg[data-flow-v] .hbus-drop__free-end::after {
+  background: var(--leg-wire-idle);
+}
+
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--flow .hbus-drop__wire,
+.hbus-drop__leg[data-flow-v] .hbus-drop__wire--flow,
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--flow .hbus-drop__free-end {
+  background: var(--flow-wire) !important;
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--flow .hbus-drop__free-end::after {
+  background: var(--flow-wire);
+}
+
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__wire--from-bus,
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__free-end {
+  background: var(--flow-wire) !important;
+}
+
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__free-end::after {
+  background: var(--flow-wire);
+}
+
+.hbus-drop__leg[data-flow-v] .hbus-drop__tag {
+  color: var(--flow-wire);
+}
+
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--open .hbus-drop__wire--mid,
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--open .hbus-drop__wire--to-eq {
+  background: var(--leg-wire-idle) !important;
+  opacity: 1;
+  box-shadow: none;
+}
+
+.hbus-drop__leg[data-flow-v] .hbus-drop__wire--csb-drop {
+  background: var(--leg-wire-idle) !important;
+}
+
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--flow .hbus-drop__wire--csb-drop,
+.hbus-drop__leg[data-flow-v].hbus-drop__leg--from-live .hbus-drop__wire--csb-drop {
+  background: var(--flow-wire) !important;
+}
+
+.hbus-drop__leg[data-flow-v]:hover .hbus-drop__wire,
+.hbus-drop__leg[data-flow-v]:hover .hbus-drop__wire--thru {
+  outline-color: color-mix(in srgb, var(--flow-wire) 50%, transparent);
 }
 
 .sr-only {
@@ -265,11 +424,11 @@ body {
 }
 
 .equip-chassis--msb4sfs.equip-chassis--feed-flow::before {
-  background: #e6c200;
+  background: var(--flow-wire);
 }
 
 .equip-chassis--msb4sfs.equip-chassis--feed-alt::before {
-  background: var(--line-alt);
+  background: var(--flow-wire);
 }
 
 .hbus-drop--msb4sfs-open {
@@ -337,10 +496,12 @@ body {
 
 .msb4sfs-trf115__wire {
   display: block;
+  position: relative;
   width: 2px;
   flex: 0 0 0.55rem;
   min-height: 0.55rem;
   background: var(--wire-idle);
+  overflow: visible;
 }
 
 /* Empalme con el eje de la barra 440 (mismo criterio que las otras salidas) */
@@ -361,7 +522,8 @@ body {
 
 .msb4sfs-trf115__wire--flow,
 .msb4sfs-trf115--flow .msb4sfs-trf115__wire {
-  background: #e6c200;
+  background: var(--flow-wire);
+  overflow: visible;
 }
 
 .msb4sfs-trf115__eq {
@@ -513,6 +675,8 @@ body {
   width: 2px;
   background: var(--wire-idle);
   flex-shrink: 0;
+  position: relative;
+  overflow: visible;
 }
 
 .msb4sfs-rack__vwire--from-feed {
@@ -527,7 +691,8 @@ body {
 
 .msb4sfs-rack__vwire--flow,
 .msb4sfs-rack__in-slot--flow .msb4sfs-rack__vwire {
-  background: #e6c200;
+  background: var(--flow-wire);
+  overflow: visible;
 }
 
 /* Bus-tie Q01/Q51: acometida remota + bajante hasta la barra */
@@ -569,19 +734,11 @@ body {
 .msb4sfs-rack__bustie-free--flow,
 .msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-free,
 .msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-free::after {
-  background: #e6c200;
-}
-
-.msb4sfs-rack__bustie-mid {
-  display: block;
-  width: 2px;
-  flex: 0 0 0.35rem;
-  min-height: 0.35rem;
-  background: var(--line-normal);
+  background: var(--flow-wire);
 }
 
 .msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-mid {
-  background: #e6c200;
+  background: var(--flow-wire);
 }
 
 .msb4sfs-rack__bustie-tag {
@@ -611,6 +768,14 @@ body {
   text-align: right;
 }
 
+.msb4sfs-rack__bustie-mid {
+  display: block;
+  width: 2px;
+  flex: 0 0 0.35rem;
+  min-height: 0.35rem;
+  background: var(--line-normal);
+}
+
 .msb4sfs-rack__bustie-down {
   position: relative;
   flex: 1 0 1rem;
@@ -622,7 +787,7 @@ body {
 }
 
 .msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-down {
-  background: #e6c200;
+  background: var(--flow-wire);
 }
 
 .msb4sfs-rack__bustie-peer {
@@ -667,19 +832,19 @@ body {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #e6c200;
+  color: var(--v400hz-wire);
   min-width: 2.6rem;
 }
 
 .msb4sfs-rack--115 .msb4sfs-rack__rail-tag {
-  color: #7ec8e3;
+  color: var(--v115-wire);
 }
 
 .msb4sfs-rack__rail {
   flex: 1 1 auto;
   height: 4px;
   border-radius: 1px;
-  background: #b24ec4;
+  background: color-mix(in srgb, var(--flow-wire) 55%, #3d4f4a);
   opacity: 0.85;
   position: relative;
   z-index: 0;
@@ -687,15 +852,17 @@ body {
 
 .msb4sfs-rack__rail--live {
   opacity: 1;
-  box-shadow: 0 0 8px rgba(178, 78, 196, 0.55);
+  overflow: visible;
+  background: var(--flow-wire);
+  box-shadow: 0 0 8px rgba(var(--flow-glow-rgb), 0.55);
 }
 
 .msb4sfs-rack--115 .msb4sfs-rack__rail {
-  background: #5a9eb8;
+  background: color-mix(in srgb, var(--flow-wire) 55%, #3d4f4a);
 }
 
 .msb4sfs-rack--115 .msb4sfs-rack__rail--live {
-  box-shadow: 0 0 8px rgba(90, 158, 184, 0.5);
+  box-shadow: 0 0 8px rgba(var(--flow-glow-rgb), 0.5);
 }
 
 .msb4sfs-rack__drops {
@@ -1019,6 +1186,65 @@ body {
   box-shadow: 0 0 0 1px rgba(214, 69, 69, 0.4);
 }
 
+.candados-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.candados-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.candados-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.candados-menu__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 11.5rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elevated, #1a222c);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.candados-menu__item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.candados-menu__item:hover:not(:disabled) {
+  background: rgba(230, 194, 0, 0.12);
+}
+
+.candados-menu__item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.candados-menu__item--on {
+  background: rgba(214, 69, 69, 0.2);
+  color: #f0a0a0;
+}
+
 .status-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1084,12 +1310,35 @@ body {
   display: inline-block;
   width: 22px;
   height: 0;
-  border-top: 2.5px solid var(--line-normal);
+  border-top: 2.5px solid var(--flow-wire);
 }
 
-.legend-line--alt {
-  border-top-color: var(--line-alt);
-  border-top-style: solid;
+.legend-line--v690 {
+  border-top-color: var(--v690-wire);
+}
+
+.legend-line--v440 {
+  border-top-color: var(--v440-wire);
+}
+
+.legend-line--v230 {
+  border-top-color: var(--v230-wire);
+}
+
+.legend-line--v115 {
+  border-top-color: var(--v115-wire);
+}
+
+.legend-line--v24 {
+  border-top-color: var(--v24-wire);
+}
+
+.legend-line--v400hz {
+  border-top-color: var(--v400hz-wire);
+}
+
+.legend-line--alum {
+  border-top-color: var(--valum-wire);
 }
 
 .workspace {
@@ -2018,6 +2267,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .casc-gen--running {
   color: var(--line-normal);
   box-shadow: 0 0 14px rgba(230, 194, 0, 0.5);
+  animation: live-equip-pulse 2s ease-in-out infinite;
 }
 
 .casc-gen__state {
@@ -2097,7 +2347,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .plant-msb__vwire--from-gen {
   height: 0.55rem;
-  background: #b24ec4;
+  background: color-mix(in srgb, var(--v690-wire) 55%, #3d6b55);
   margin-top: 0;
 }
 
@@ -2106,7 +2356,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   flex: 1 0 auto;
   min-height: 0.85rem;
   height: auto;
-  background: #b24ec4;
+  background: color-mix(in srgb, var(--v690-wire) 55%, #3d6b55);
   margin-bottom: 0;
 }
 
@@ -2140,38 +2390,37 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   width: 2px;
   flex: 1 0 auto;
   min-height: 1.15rem;
-  background: #7dcfb0;
+  background: color-mix(in srgb, var(--v690-wire) 55%, #3d6b55);
   overflow: visible;
 }
 
 .plant-msb__bustie--flow .plant-msb__bustie-down {
-  /* Color original; halo en movimiento */
-  background: #7dcfb0;
+  background: var(--flow-wire);
 }
 
 .plant-msb__bustie--flow .plant-msb__bustie-down::after {
   content: '';
   position: absolute;
   left: 50%;
-  width: 10px;
-  height: 28%;
+  width: var(--wire-flow-halo);
+  height: 32%;
+  min-height: 8px;
   transform: translateX(-50%);
   border-radius: 6px;
   background: linear-gradient(
     180deg,
     transparent,
-    rgba(255, 255, 255, 0.9),
+    var(--flow-particle),
     transparent
   );
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
   animation: flow-halo-v 1.1s linear infinite;
   pointer-events: none;
 }
 
 .plant-msb__qg-slot--flow .plant-msb__vwire--from-gen,
 .plant-msb__qg-slot--flow .plant-msb__vwire--to-rail {
-  /* Mantener color de acometida gen→barra */
-  background: #b24ec4;
+  background: var(--flow-wire);
 }
 
 /* Rack unifilar: una sola barra por cuadro */
@@ -2252,36 +2501,70 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   right: 0;
   top: 0;
   height: 2px;
-  background: #b24ec4;
+  background: color-mix(in srgb, var(--flow-wire) 55%, #3d4f4a);
   z-index: 0;
   pointer-events: none;
 }
 
 .plant-rack__rail-seg--live {
-  /* Color original de barra; halo horizontal (misma forma que el vertical) */
-  background: #e0a0f0;
-  box-shadow: none;
+  background: var(--flow-wire);
+  box-shadow: 0 0 8px rgba(var(--flow-glow-rgb), 0.45);
   overflow: visible;
 }
 
-.plant-rack__rail-seg--live::after {
+/*
+ * Partículas horizontales = mismas que verticales (doble halo, sin pulso de barra).
+ */
+.plant-rack__rail-seg--live::before,
+.plant-rack__rail-seg--live::after,
+.msb4sfs-rack__rail--live::before,
+.msb4sfs-rack__rail--live::after,
+.ssb-board__bus--live::before,
+.ssb-board__bus--live::after,
+.lcs440-cell__bus--live::before,
+.lcs440-cell__bus--live::after,
+.plant__bridge-hwire--flow::before,
+.plant__bridge-hwire--flow::after,
+.lcs440-tie--flow .lcs440-tie__bridge::before,
+.lcs440-tie--flow .lcs440-tie__bridge::after,
+.trf-feed440--flow .trf-feed440__collector::before,
+.trf-feed440--flow .trf-feed440__collector::after,
+.hbus--nested .hbus__rail--live::before,
+.hbus--nested .hbus__rail--live::after {
   content: '';
   position: absolute;
   top: 50%;
   left: 0;
-  width: 18%;
-  height: 10px;
+  width: 32%;
+  min-width: 8px;
+  height: var(--wire-flow-halo);
   transform: translateY(-50%);
   border-radius: 6px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
+    var(--flow-particle) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
   animation: flow-halo-h 1.05s linear infinite;
   pointer-events: none;
+  z-index: 2;
+}
+
+.plant-rack__rail-seg--live::before,
+.msb4sfs-rack__rail--live::before,
+.ssb-board__bus--live::before,
+.lcs440-cell__bus--live::before,
+.plant__bridge-hwire--flow::before,
+.lcs440-tie--flow .lcs440-tie__bridge::before,
+.trf-feed440--flow .trf-feed440__collector::before,
+.hbus--nested .hbus__rail--live::before {
+  animation-delay: -0.52s;
+  width: 24%;
+  min-width: 6px;
+  height: calc(var(--wire-flow-halo) - 2px);
+  opacity: 0.75;
 }
 
 .plant-rack__rail {
@@ -2403,7 +2686,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .plant__tie-path {
-  stroke: #7dcfb0;
+  stroke: color-mix(in srgb, var(--v690-wire) 70%, #3d6b55);
   stroke-width: 2;
   stroke-linecap: square;
   stroke-linejoin: miter;
@@ -2411,18 +2694,17 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .plant__tie-svg--flow .plant__tie-path {
-  /* Color original de interconexión */
-  stroke: #7dcfb0;
+  stroke: var(--flow-wire);
 }
 
 .plant__tie-halo {
-  stroke: rgba(255, 255, 255, 0.92);
+  stroke: var(--flow-particle);
   stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 14 36;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.75));
+  filter: drop-shadow(0 0 5px rgba(var(--flow-glow-rgb), 0.75));
   animation: flow-halo-dash 0.85s linear infinite;
   pointer-events: none;
 }
@@ -2464,6 +2746,11 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   position: relative;
   z-index: 4;
   isolation: isolate;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    background-color 0.22s ease,
+    filter 0.22s ease;
 }
 
 .casc-brk:hover {
@@ -2518,7 +2805,11 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .casc-brk--flow {
-  box-shadow: 0 0 0 1px rgba(230, 194, 0, 0.55);
+  border-color: color-mix(in srgb, var(--flow-wire) 75%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--flow-wire) 55%, transparent),
+    0 0 10px rgba(var(--flow-glow-rgb), 0.35);
+  animation: brk-flow-pulse 1.8s ease-in-out infinite;
 }
 
 .casc-brk--flash {
@@ -2695,10 +2986,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-top: 0;
 }
 
-/* En planta MSB: stub corto unido al interruptor, sin llegar a la barra local */
+/* En planta MSB: stub libre (T); altura alineada con NORM más abajo */
 .plant-rack__half-drops .hbus-drop__free-end {
-  flex: 0 0 0.9rem;
-  height: 0.9rem;
+  flex: 0 0 0.45rem;
+  height: 0.45rem;
   margin-top: 0;
 }
 
@@ -2719,31 +3010,31 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: var(--wire-idle);
 }
 
-.hbus-drop__leg--alt.hbus-drop__leg--flow .hbus-drop__wire,
-.hbus-drop__leg--alt .hbus-drop__wire--flow {
+.hbus-drop__leg--alt.hbus-drop__leg--flow:not([data-flow-v]) .hbus-drop__wire,
+.hbus-drop__leg--alt:not([data-flow-v]) .hbus-drop__wire--flow {
   background: var(--line-alt);
 }
 
-.hbus-drop__leg--norm.hbus-drop__leg--flow .hbus-drop__wire,
-.hbus-drop__leg--norm .hbus-drop__wire--flow {
+.hbus-drop__leg--norm.hbus-drop__leg--flow:not([data-flow-v]) .hbus-drop__wire,
+.hbus-drop__leg--norm:not([data-flow-v]) .hbus-drop__wire--flow {
   background: var(--line-normal);
 }
 
 /* Tensión hasta el chip si el origen está vivo pero el interruptor no conduce */
-.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow) .hbus-drop__wire--from-bus {
+.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow):not([data-flow-v]) .hbus-drop__wire--from-bus {
   background: var(--line-normal);
 }
 
-.hbus-drop__leg--alt.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow) .hbus-drop__wire--from-bus {
+.hbus-drop__leg--alt.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow):not([data-flow-v]) .hbus-drop__wire--from-bus {
   background: var(--line-alt);
 }
 
 .hbus-drop__tag {
   position: absolute;
-  left: calc(50% + 6px);
-  /* junto al tramo mid, no en el to-eq */
+  left: calc(50% + 5px);
+  /* Junto al tramo mid, a la derecha del cable; un poco más abajo para no tapar el chip */
   top: auto;
-  bottom: calc(0.85rem + 0.15rem);
+  bottom: calc(0.55rem + 0.05rem);
   font-family: var(--mono);
   font-size: 0.58rem;
   font-weight: 700;
@@ -2752,6 +3043,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: transparent !important;
   pointer-events: none;
   white-space: nowrap;
+  z-index: 4;
 }
 
 .hbus-drop__tag--norm {
@@ -2867,14 +3159,21 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .hbus-drop--flow > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
 .hbus-drop__tops--link-thru .hbus-drop__wire--thru.hbus-drop__wire--flow {
-  background: #e6c200;
+  background: var(--flow-wire);
+}
+
+.hbus-drop__leg--thru[data-flow-v].hbus-drop__leg--flow .hbus-drop__wire--thru,
+.hbus-drop__leg--thru[data-flow-v] .hbus-drop__wire--thru.hbus-drop__wire--flow {
+  background: var(--flow-wire) !important;
 }
 
 /*
- * Cadena FIU→TRF→carga (MSB-4SFS): bajante sólido del padre hasta el hijo
- * link-only (sin chip 59/60/8.4). El cable vive en .hbus--chain-link, no
- * solo en el ::before del recuadro (más fiable / sin clipping).
+ * Cadena FIU→TRF→carga (MSB-4SFS) y SBT→SCV→MSB (planta 690 V):
+ * bajante sólido del padre hasta el hijo link-only.
  */
+.hbus-drop--chain-open > .hbus--chain-link.hbus--direct,
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only)
+  > .hbus--chain-link.hbus--direct,
 .msb4sfs-rack .hbus-drop--chain-open > .hbus--chain-link.hbus--direct,
 .msb4sfs-rack
   .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only)
@@ -2884,6 +3183,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   padding-top: 1.35rem;
 }
 
+.hbus-drop--chain-open > .hbus--chain-link::before,
 .msb4sfs-rack .hbus-drop--chain-open > .hbus--chain-link::before {
   content: '';
   position: absolute;
@@ -2892,17 +3192,40 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   transform: translateX(-50%);
   width: 2px;
   height: 1.35rem;
-  background: var(--wire-idle);
+  background: var(--leg-wire-idle, var(--wire-idle));
   opacity: 1;
   z-index: 3;
   pointer-events: none;
 }
 
+.hbus-drop--chain-open > .hbus--chain-link[data-flow-v]::before,
+.hbus-drop--chain-open > .hbus--chain-link .hbus-drop[data-flow-v]::before {
+  background: color-mix(in srgb, var(--flow-wire) 40%, #3d4f4a);
+}
+
+.hbus-drop--chain-open.hbus-drop--flow > .hbus--chain-link::before,
+.hbus-drop--chain-open > .hbus--chain-link.hbus--live::before,
 .msb4sfs-rack .hbus-drop--chain-open.hbus-drop--flow > .hbus--chain-link::before {
-  background: #e6c200;
+  background: var(--flow-wire);
+}
+
+.hbus-drop--chain-open > .hbus--chain-convert::before {
+  background: linear-gradient(
+    180deg,
+    var(--v690-wire) 0%,
+    var(--v400hz-wire) 100%
+  );
+}
+
+.hbus-drop--chain-open.hbus-drop--flow > .hbus--chain-convert::before {
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
 }
 
 /* Evitar doble trazo tenue a través del texto del padre en esta cadena */
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
 .msb4sfs-rack
   .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link)
   > .hbus-drop__eq-row
@@ -2918,6 +3241,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: transparent;
 }
 
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::after,
 .msb4sfs-rack
   .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link)
   > .hbus-drop__eq-row
@@ -2926,6 +3253,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   display: none;
 }
 
+.hbus-drop--chain-open > .hbus--chain-link .hbus-drop--link-only > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
 .msb4sfs-rack
   .hbus-drop--chain-open
   > .hbus--chain-link
@@ -2934,6 +3262,56 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   .hbus-drop__wire--thru {
   flex: 0 0 0.85rem;
   min-height: 0.85rem;
+}
+
+/* TRF→SSB (S01 interno): pata continua hasta el borde del chasis / INS */
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link
+  .hbus-drop--ssb-open.hbus-drop--link-only
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru,
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link
+  .hbus-drop--ssb-open.hbus-drop--link-only
+  > .hbus-drop__tops--link-aux
+  .hbus-drop__wire--thru {
+  flex: 0 0 2.35rem;
+  min-height: 2.35rem;
+  margin-top: -0.15rem;
+  margin-bottom: -0.55rem;
+  background: color-mix(in srgb, var(--flow-wire) 50%, #3d4f4a);
+}
+
+.hbus-drop--fam-trf.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link
+  .hbus-drop--ssb-open.hbus-drop--link-only
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru,
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link.hbus--live
+  .hbus-drop--ssb-open.hbus-drop--link-only
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru,
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link
+  .hbus-drop--ssb-open.hbus-drop--link-only.hbus-drop--flow
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru,
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link
+  .hbus-drop--ssb-open.hbus-drop--link-only
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru.hbus-drop__wire--flow {
+  background: var(--flow-wire) !important;
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link
+  .hbus-drop--ssb-open.hbus-drop--link-only
+  > .hbus-drop__eq-row
+  > .equip-chassis--ssb {
+  margin-top: -0.35rem;
 }
 
 /* AUX del MSB: encima del marco, en el lado opuesto al bus-tie (QT*),
@@ -2995,57 +3373,80 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   z-index: 1;
 }
 
-/* Flujo: color original del cable + halo claro en movimiento */
+/* Flujo: cable vivo + halo de tensión (doble partícula vertical) */
 .hbus-drop__leg--flow .hbus-drop__wire,
 .hbus-drop__wire--flow {
   background-image: none;
-  box-shadow: none;
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
   animation: none;
 }
 
+.hbus-drop__leg--flow .hbus-drop__wire::before,
+.hbus-drop__wire--flow::before,
 .hbus-drop__leg--flow .hbus-drop__wire::after,
 .hbus-drop__wire--flow::after {
   content: '';
   position: absolute;
   left: 50%;
-  width: 10px;
+  width: var(--wire-flow-halo);
   height: 32%;
-  min-height: 10px;
+  min-height: 8px;
   transform: translateX(-50%);
   border-radius: 6px;
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
+    var(--flow-particle) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
   animation: flow-halo-v 1.05s linear infinite;
   pointer-events: none;
   z-index: 2;
 }
 
-.hbus-drop__leg--alt.hbus-drop__leg--flow .hbus-drop__wire,
-.hbus-drop__leg--alt .hbus-drop__wire--flow {
-  background: var(--line-alt);
+.hbus-drop__leg--flow .hbus-drop__wire::before,
+.hbus-drop__wire--flow::before {
+  animation-delay: -0.52s;
+  opacity: 0.75;
+  width: calc(var(--wire-flow-halo) - 2px);
+  height: 24%;
+}
+
+/* Aguas abajo de interruptor abierto: nunca partículas (gana a reglas --flow) */
+.hbus-drop__leg--open .hbus-drop__wire--mid::before,
+.hbus-drop__leg--open .hbus-drop__wire--mid::after,
+.hbus-drop__leg--open .hbus-drop__wire--to-eq::before,
+.hbus-drop__leg--open .hbus-drop__wire--to-eq::after {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
+}
+
+.hbus-drop__leg--alt.hbus-drop__leg--flow:not([data-flow-v]) .hbus-drop__wire,
+.hbus-drop__leg--alt:not([data-flow-v]) .hbus-drop__wire--flow {
+  background: var(--flow-wire);
   background-image: none;
 }
 
-.hbus-drop__leg--norm.hbus-drop__leg--flow .hbus-drop__wire {
-  background: var(--line-normal);
+.hbus-drop__leg--norm.hbus-drop__leg--flow:not([data-flow-v]) .hbus-drop__wire {
+  background: var(--flow-wire);
   background-image: none;
 }
 
-/* Interruptor abierto: sin circulación aguas abajo del chip */
-.hbus-drop__leg--open .hbus-drop__wire--mid,
-.hbus-drop__leg--open .hbus-drop__wire--to-eq {
+/* Interruptor abierto: sin circulación aguas abajo del chip (color tensión atenuado si hay data-flow-v) */
+.hbus-drop__leg--open:not([data-flow-v]) .hbus-drop__wire--mid,
+.hbus-drop__leg--open:not([data-flow-v]) .hbus-drop__wire--to-eq {
   background: #4a5c56;
   opacity: 0.75;
   box-shadow: none;
   animation: none;
 }
 
+.hbus-drop__leg--open .hbus-drop__wire--mid::before,
 .hbus-drop__leg--open .hbus-drop__wire--mid::after,
+.hbus-drop__leg--open .hbus-drop__wire--to-eq::before,
 .hbus-drop__leg--open .hbus-drop__wire--to-eq::after {
   content: none;
   display: none;
@@ -3053,20 +3454,21 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 /* Tensión hasta el interruptor abierto si el origen/barra está vivo */
 .hbus-drop__leg--open.hbus-drop__leg--from-live .hbus-drop__wire--from-bus {
-  background: #e6c200;
+  background: var(--flow-wire);
   opacity: 0.95;
 }
 
 .plant-msb__vwire--flow {
-  box-shadow: none;
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
   animation: none;
 }
 
+.plant-msb__vwire--flow::before,
 .plant-msb__vwire--flow::after {
   content: '';
   position: absolute;
   left: 50%;
-  width: 10px;
+  width: var(--wire-flow-halo);
   height: 36%;
   min-height: 8px;
   transform: translateX(-50%);
@@ -3074,45 +3476,33 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: linear-gradient(
     180deg,
     transparent,
-    rgba(255, 255, 255, 0.95),
+    var(--flow-particle),
     transparent
   );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
   animation: flow-halo-v 1.05s linear infinite;
   pointer-events: none;
+}
+
+.plant-msb__vwire--flow::before {
+  animation-delay: -0.52s;
+  width: 8px;
+  height: 26%;
+  opacity: 0.7;
 }
 
 .plant-msb__vwire--into-box.plant-msb__vwire--flow,
 .plant-msb__vwire--from-gen.plant-msb__vwire--flow,
 .plant-msb__vwire--to-rail.plant-msb__vwire--flow {
-  background: #b24ec4 !important;
+  background: var(--flow-wire) !important;
 }
 
 .plant__bridge-hwire--flow {
   position: relative;
-  background: #7dcfb0 !important;
+  background: var(--flow-wire) !important;
   box-shadow: none;
   animation: none;
   overflow: visible;
-}
-
-.plant__bridge-hwire--flow::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 18%;
-  height: 10px;
-  transform: translateY(-50%);
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
-    transparent 100%
-  );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-  animation: flow-halo-h 1.05s linear infinite;
-  pointer-events: none;
 }
 
 @keyframes flow-halo-v {
@@ -3134,7 +3524,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 @keyframes flow-halo-h {
   0% {
-    left: -5%;
+    left: -15%;
     opacity: 0;
   }
   12% {
@@ -3144,7 +3534,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
     opacity: 1;
   }
   100% {
-    left: 95%;
+    left: 100%;
     opacity: 0;
   }
 }
@@ -3155,7 +3545,53 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   }
 }
 
-/* Empalme compartido eliminado: cada pierna tiene su --to-eq */
+@keyframes brk-flow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--flow-wire) 45%, transparent),
+      0 0 6px rgba(var(--flow-glow-rgb), 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--flow-wire) 85%, transparent),
+      0 0 14px rgba(var(--flow-glow-rgb), 0.5);
+  }
+}
+
+@keyframes live-equip-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--flow-wire) 10%, transparent),
+      0 0 8px rgba(var(--flow-glow-rgb), 0.12);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--flow-wire) 28%, transparent),
+      0 0 16px rgba(var(--flow-glow-rgb), 0.32);
+  }
+}
+
+/* Empalmes cable↔equipo / cable↔barra: solape fijo (sin hueco negro) */
+.hbus-drop__wire--to-eq,
+.hbus-drop__wire--mid,
+.lcs440-rail__qvs-leg__wire--to-bus,
+.ssb-board__riser--to-bus,
+.msb4sfs-trf115__wire--to-q50,
+.plant-msb__vwire--to-rail {
+  margin-bottom: -2px;
+}
+
+.hbus-drop__wire--mid {
+  margin-top: -1px;
+}
+
+/* Thru / link-only: solape con el recuadro hijo */
+.hbus-drop__wire--thru,
+.hbus-drop__tops--link-thru .hbus-drop__wire--thru {
+  margin-bottom: -2px;
+}
 .hbus-drop__join {
   display: none;
 }
@@ -3183,8 +3619,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .hbus-drop__eq--live {
-  border-color: rgba(230, 194, 0, 0.7);
-  box-shadow: 0 0 10px rgba(230, 194, 0, 0.25);
+  border-color: color-mix(in srgb, var(--flow-wire) 70%, transparent);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.25);
 }
 
 /* Barra horizontal unifilar (salidas colgando) */
@@ -3208,16 +3644,20 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: rgba(0, 0, 0, 0.18);
   width: max-content;
   max-width: min(92vw, 1100px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .hbus__title {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.45rem;
   margin-bottom: 0.25rem;
   padding: 0 0.35rem;
   font-size: 0.72rem;
+  text-align: center;
 }
 
 .hbus__title strong {
@@ -3243,21 +3683,35 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   position: relative;
   z-index: 2;
   height: 2px;
-  margin: 0 0.2rem;
+  margin: 0;
+  align-self: stretch;
+  width: 100%;
+  min-width: 4.5rem;
   pointer-events: none;
+  overflow: visible;
 }
 
 .hbus--nested .hbus__rail {
   display: block;
+  position: relative;
   width: 100%;
   height: 2px;
-  background: var(--line-normal);
+  background: color-mix(in srgb, var(--flow-wire) 55%, #3d4f4a);
+  overflow: visible;
+}
+
+.hbus--nested .hbus__rail--live {
+  background: var(--flow-wire);
+  box-shadow: 0 0 8px rgba(var(--flow-glow-rgb), 0.45);
+  overflow: visible;
 }
 
 .hbus--nested .hbus__drops {
   /* Solapa la barra: las acometidas nacen exactamente en ella */
   margin-top: -2px;
   padding-top: 0;
+  justify-content: center;
+  width: 100%;
 }
 
 .hbus__drops {
@@ -3579,7 +4033,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   box-sizing: border-box;
 }
 
-/* Continuidad ABT→TRF con LCS abierto: stub y thru del mismo largo */
+/* Continuidad ABT→TRF: hueco visible + thru único que lo cruza */
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only):has(
     .hbus-drop--lcs-open
   )
@@ -3598,13 +4052,21 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   )
   > .hbus-drop__eq-wrap
   .hbus-drop__eq::before {
-  bottom: -1.35rem;
+  /* Trazo interno del ABT; la bajante es el thru del TRF */
+  top: 0;
+  bottom: 0;
+  opacity: 0.18;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__tops--link-aux .hbus-drop__wire--thru {
-  flex: 0 0 1.35rem;
-  min-height: 1.35rem;
+  flex: 0 0 1.55rem;
+  min-height: 1.55rem;
+  margin-top: -1.45rem;
+  margin-bottom: -2px;
+  position: relative;
+  z-index: 6;
+  overflow: visible;
 }
 
 /* Con LCS abierto: thru centrado en el vano TRF (sin offset AUX) */
@@ -3617,31 +4079,30 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
- * ABT → hijo (SSB/TRF/carga) sin interruptor: línea solo debajo del ABT
- * (no atraviesa el texto del recuadro), hasta el borde superior del hijo.
+ * ABT → hijo (SSB/TRF/carga) sin interruptor:
+ * hueco entre recuadros + thru del hijo que lo cruza (partículas de bajante).
  */
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus--direct {
   margin-top: 0;
-  padding-top: 1.65rem;
+  padding-top: 1.35rem;
 }
 
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
-  /* Solo bajante bajo el recuadro; sin continuidad a través del texto */
   content: '';
-  top: 100%;
-  bottom: -1.65rem;
+  top: 0;
+  bottom: 0;
   left: 50%;
   width: 2px;
   transform: translateX(-50%);
-  opacity: 1;
-  background: var(--wire-idle);
+  opacity: 0.18;
+  background: var(--line-normal);
 }
 
 .hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   background: #e6c200;
-  opacity: 1;
+  opacity: 0.22;
 }
 
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::after,
@@ -3649,14 +4110,45 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   display: none;
 }
 
-/* SSB abierto colgando de ABT: el stub llega al riser del INS (sin Q de salida) */
+/* Thru link-only: cruza el hueco hasta el borde inferior del padre */
+.hbus-drop--link-only > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
+.hbus-drop--link-only > .hbus-drop__tops--link-aux .hbus-drop__wire--thru {
+  flex: 0 0 1.55rem;
+  min-height: 1.55rem;
+  margin-top: -1.45rem;
+  margin-bottom: -2px;
+  width: 2px;
+  position: relative;
+  z-index: 6;
+  overflow: visible;
+  background: var(--wire-idle);
+  opacity: 1;
+}
+
+.hbus-drop--link-only.hbus-drop--flow > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
+.hbus-drop--link-only.hbus-drop--flow > .hbus-drop__tops--link-aux .hbus-drop__wire--thru,
+.hbus-drop--link-only > .hbus-drop__tops--link-thru .hbus-drop__wire--thru.hbus-drop__wire--flow {
+  background: var(--flow-wire);
+}
+
+/* SSB abierto colgando de ABT: hueco algo menor + thru continuo */
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--ssb-open.hbus-drop--link-only) > .hbus--direct {
-  padding-top: 0.85rem;
+  padding-top: 0.95rem;
 }
 
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--ssb-open.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--ssb-open.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
-  bottom: -0.85rem;
+  top: 0;
+  bottom: 0;
+  opacity: 0.18;
+}
+
+.hbus-drop--ssb-open.hbus-drop--link-only > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
+.hbus-drop--ssb-open.hbus-drop--link-only > .hbus-drop__tops--link-aux .hbus-drop__wire--thru {
+  flex: 0 0 2.15rem;
+  min-height: 2.15rem;
+  margin-top: -1.05rem;
+  margin-bottom: -0.35rem;
 }
 
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--lcs-open) > .hbus-drop__tops {
@@ -3694,15 +4186,16 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
-  top: 100%;
-  bottom: -1.35rem;
-  opacity: 1;
-  background: var(--wire-idle);
+  /* Sin stub bajo el TRF: bajantes = .hbus-drop__trf-stub o thru */
+  top: 0;
+  bottom: 0;
+  opacity: 0.18;
+  background: var(--line-normal);
 }
 
 .hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
-  bottom: -1.35rem;
+  bottom: 0;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::before,
@@ -3710,6 +4203,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--lcs-open) > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus-drop.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop--lcs-open) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
   background: #e6c200;
+  opacity: 0.22;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open > .hbus-drop__eq-wrap .hbus-drop__eq::after,
@@ -3720,58 +4214,226 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
- * TRF dual (230+440): exactamente dos bajantes (sin eje central),
- * alineadas con QVS en coordenadas de layout (corregidas por zoom).
- * Estructura actual: .hbus-drop > .eq-row > .eq-wrap > .eq
+ * TRF dual (230+440): bajantes reales (.hbus-drop__trf-stub), no ::before/::after.
+ * Así usan las mismas partículas que el resto de cables.
  */
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before,
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
-  left: var(--trf-out-230, 25%);
+.hbus-drop__trf-stub {
+  display: none;
+}
+
+/*
+ * Solo el TRF que alimenta el LCS abierto (hijo directo del drop), nunca TRFs
+ * anidados aguas abajo — evita bajantes huérfanas con --trf-out-* heredadas.
+ */
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub {
+  display: block;
+  position: absolute;
   top: 100%;
   bottom: auto;
+  width: 2px;
   height: var(--trf-stub-h, 1.35rem);
+  transform: translateX(-50%);
+  background: var(--wire-idle);
+  opacity: 1;
+  z-index: 8;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub--230,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub--230 {
+  left: var(--trf-out-230, 25%);
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub--440,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub--440 {
+  left: var(--trf-out-440, 75%);
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow {
+  background: #e6c200;
+}
+
+/* Partículas idénticas a bajantes (doble halo) */
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub::after,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub::after,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow::after,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 28%;
+  min-height: 10px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--flow-particle) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
+  animation: flow-halo-v 1.05s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow::before {
+  animation-delay: -0.52s;
+  opacity: 0.75;
+  width: calc(var(--wire-flow-halo) - 2px);
+  height: 20%;
+}
+
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq
+  > .hbus-drop__trf-stub.hbus-drop__wire--flow {
+  background: var(--flow-wire);
+}
+
+/* Dual-feed: ::before/::after del recuadro ya no son stubs */
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  height: auto;
   width: 2px;
   transform: translateX(-50%);
-  opacity: 1;
-  background: var(--wire-idle);
+  opacity: 0.18;
+  background: var(--line-normal);
   content: '';
-  z-index: 3;
+  z-index: 0;
+  animation: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after,
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
-  display: block;
-  content: '';
-  position: absolute;
-  left: var(--trf-out-440, 75%);
-  top: 100%;
-  bottom: auto;
-  height: var(--trf-stub-h, 1.35rem);
-  width: 2px;
-  transform: translateX(-50%);
-  background: var(--wire-idle);
-  opacity: 1;
-  z-index: 3;
-  pointer-events: none;
-  animation: none;
-  box-shadow: none;
-  border-radius: 0;
-  min-height: 0;
+  display: none !important;
+  content: none !important;
+  animation: none !important;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::before,
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-wrap .hbus-drop__eq::after,
-.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
-  background: #e6c200;
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before {
+  background: var(--flow-wire);
+  opacity: 0.22;
+  animation: none !important;
 }
 
 .hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::before,
 .hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq::after,
 .hbus--direct > .hbus__drops > .hbus__slot > .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
-  bottom: auto;
-  height: var(--trf-stub-h, 1.35rem);
+  top: 0;
+  bottom: 0;
+  height: auto;
 }
 
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap,
@@ -3784,14 +4446,26 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq,
 .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq {
   overflow: visible;
+  position: relative;
 }
 
-/* Stub TRF cubre TRF→chip; dejar un tramo local corto visible por si el stub falla */
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-wrap .hbus-drop__eq,
+.hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq {
+  overflow: visible;
+}
+
+/*
+ * Dual TRF→QVS: un solo cable (stub del TRF). El wire--from del QVS se anula
+ * para no crear un segundo tramo desalinhado (escalón).
+ */
 .lcs-dual--both .lcs440-rail__qvs-leg__wire--from {
-  flex: 0 0 0.55rem;
-  min-height: 0.55rem;
-  margin-top: 0;
-  opacity: 1;
+  flex: 0 0 0 !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none;
 }
 
 .lcs-dual--both .lcs440-rail__qvs-leg__wire--to-bus {
@@ -3839,8 +4513,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
     rgba(14, 24, 34, 0.82) 100%
   );
   box-shadow: inset 0 0 0 1px rgba(90, 150, 210, 0.12);
-  /* Separado del TRF: la pierna QVS hace de puente vertical */
-  margin-top: 0.35rem;
+  /* Hueco mínimo: el stub TRF→QVS es el puente continuo */
+  margin-top: 0.12rem;
   /* Plantilla LCS-4PWS0001: padding izq = der (LCS_LAYOUT_TOKENS.chassisPadX) */
   padding: 0.25rem 0.55rem 0.65rem;
   overflow: visible;
@@ -3896,10 +4570,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .ssb-board__riser {
   display: block;
+  position: relative;
   width: 2px;
   height: 0.55rem;
-  background: var(--wire-idle);
+  background: color-mix(in srgb, var(--flow-wire) 50%, #3d4f4a);
   flex-shrink: 0;
+  overflow: visible;
 }
 
 /*
@@ -3912,27 +4588,29 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   left: 50%;
   top: 0;
   width: 2px;
-  height: 2.35rem;
+  /* Atraviesa el padding del rótulo hasta besar el INS */
+  height: calc(2.35rem + 0.15rem);
   transform: translateX(-50%);
-  background: var(--wire-idle);
-  opacity: 0.9;
+  background: color-mix(in srgb, var(--flow-wire) 50%, #3d4f4a);
+  opacity: 1;
   z-index: 1;
   pointer-events: none;
 }
 
 .equip-chassis--ssb.equip-chassis--feed-flow::before {
-  background: #e6c200;
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
 }
 
 .equip-chassis--ssb.equip-chassis--feed-alt::before {
-  background: var(--line-alt);
+  background: var(--flow-wire);
 }
 
-/* Chasis: riser bajo la zona del rótulo, sin trepar al cuadro */
+/* Chasis: riser corto bajo el rótulo, empalme con ::before → INS */
 .hbus-drop--ssb-open > .equip-chassis--ssb .ssb-board__feed > .ssb-board__riser:first-child,
 .hbus-drop--ssb-open > .hbus-drop__eq-row > .equip-chassis--ssb .ssb-board__feed > .ssb-board__riser:first-child {
-  margin-top: 0;
-  height: 0.5rem;
+  margin-top: -0.35rem;
+  height: 0.45rem;
   position: relative;
   z-index: 3;
 }
@@ -3971,26 +4649,93 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-bottom: -2px;
 }
 
-.ssb-board__riser--flow,
-.equip-chassis--feed-flow .ssb-board__riser {
-  background: var(--line-normal);
+.ssb-board__riser--flow {
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
 }
 
-.equip-chassis--feed-alt .ssb-board__riser {
-  background: var(--line-alt);
+.equip-chassis--feed-alt .ssb-board__riser--flow {
+  background: var(--flow-wire);
+}
+
+/* data-flow-v en chasis SSB (CascadeView) y board: risers heredan --flow-wire */
+.equip-chassis--ssb[data-flow-v]::before,
+.ssb-board[data-flow-v] .ssb-board__riser {
+  background: color-mix(in srgb, var(--flow-wire) 50%, #3d4f4a);
+}
+
+.equip-chassis--ssb[data-flow-v].equip-chassis--feed-flow::before,
+.ssb-board[data-flow-v] .ssb-board__riser--flow {
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+/* Entrada/salida INS: amarillo (tensión) cuando la acometida o la barra fluyen */
+.equip-chassis--ssb.equip-chassis--feed-flow .ssb-board__feed > .ssb-board__riser:first-child,
+.ssb-board--fed .ssb-board__feed > .ssb-board__riser:first-child {
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+.ssb-board--live .ssb-board__riser--to-bus,
+.ssb-board--fed:not(:has(.breaker-chip)) .ssb-board__riser--to-bus {
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+/* Alumbrado: riser bajo INS, barra y salidas en blanco (data-flow-v=alum) */
+.ssb-board--alum .ssb-board__riser--to-bus,
+.ssb-board--alum .ssb-board__bus,
+.ssb-board--alum .ssb-board__drops {
+  --flow-wire: var(--valum-wire);
+  --flow-particle: var(--valum-particle);
+  --flow-glow-rgb: var(--valum-glow-rgb);
+}
+
+/* Salidas del cuadro de alumbrado: forzar blanco aunque el hijo declare 230 */
+.ssb-board--alum .ssb-board__drops > .hbus__drops > .hbus__slot > .hbus-drop,
+.ssb-board--alum
+  .ssb-board__drops
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop
+  > .hbus-drop__tops
+  .hbus-drop__leg {
+  --flow-wire: var(--valum-wire);
+  --flow-particle: var(--valum-particle);
+  --flow-glow-rgb: var(--valum-glow-rgb);
+  --leg-wire-idle: color-mix(in srgb, var(--valum-wire) 45%, #3d4f4a);
+}
+
+.ssb-board--alum .ssb-board__riser--to-bus.ssb-board__riser--flow {
+  background: var(--valum-wire);
+  box-shadow: 0 0 6px rgba(var(--valum-glow-rgb), 0.35);
 }
 
 .ssb-board__bus {
+  position: relative;
   height: 4px;
   width: 100%;
   min-width: 7.2rem;
-  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530),
+    color-mix(in srgb, var(--flow-wire) 70%, #3d4f4a) 45%,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530)
+  );
   border-radius: 1px;
+  overflow: visible;
   z-index: 1;
 }
 
 .ssb-board__bus--live {
-  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 80%, black),
+    var(--flow-wire) 45%,
+    color-mix(in srgb, var(--flow-wire) 80%, black)
+  );
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
 }
 
 .ssb-board__bus-row {
@@ -4030,6 +4775,133 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .ssb-board__drops {
   margin-top: 0.2rem;
+}
+
+/* SSB-2PWS4531 (Excel 2864): INS → Q01 → 6 enchufes trifásicos IEC */
+.ssb-board--4531 {
+  min-width: 14rem;
+  width: max-content;
+  align-items: center;
+  gap: 0;
+}
+
+.ssb4531-q01 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 2.5rem;
+  margin-top: 0.15rem;
+}
+
+.ssb4531-q01__wire {
+  flex: 0 0 0.85rem;
+  width: 2px;
+  background: var(--wire-idle);
+}
+
+.ssb4531-q01__wire--from-live,
+.ssb4531-q01__wire--flow {
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+.ssb4531-q01__wire--to-skt {
+  flex: 0 0 0.5rem;
+}
+
+.ssb4531-outlets {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 0.1rem;
+}
+
+.ssb4531-skt-bar {
+  position: relative;
+  width: calc(6 * 3.1rem + 5 * 0.35rem);
+  max-width: 100%;
+  height: 3px;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530),
+    color-mix(in srgb, var(--flow-wire) 70%, #3d4f4a) 45%,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530)
+  );
+  opacity: 0.85;
+  z-index: 2;
+}
+
+.ssb4531-skt-bar--live {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 80%, black),
+    var(--flow-wire) 45%,
+    color-mix(in srgb, var(--flow-wire) 80%, black)
+  );
+  opacity: 1;
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+.ssb4531-sockets {
+  display: grid;
+  grid-template-columns: repeat(6, 3.1rem);
+  column-gap: 0.35rem;
+  justify-content: center;
+  margin-top: 0;
+  padding: 0 0 0.15rem;
+}
+
+.ssb4531-socket {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 3.1rem;
+  gap: 0.1rem;
+}
+
+.ssb4531-socket__wire {
+  flex: 0 0 0.45rem;
+  width: 2px;
+  background: var(--wire-idle);
+  margin-top: -1px;
+}
+
+.ssb4531-socket__wire--from-live,
+.ssb4531-socket__wire--flow {
+  background: var(--flow-wire);
+  box-shadow: 0 0 5px rgba(var(--flow-glow-rgb), 0.3);
+}
+
+.ssb4531-socket-sym--flow {
+  filter: drop-shadow(0 0 4px rgba(var(--flow-glow-rgb), 0.45));
+}
+
+.ssb4531-socket__idx {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.ssb4531-socket--flow .ssb4531-socket__idx,
+.ssb4531-socket--live .ssb4531-socket__idx {
+  color: var(--flow-wire);
+}
+
+.ssb4531-socket__id {
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  color: var(--muted);
+  line-height: 1.1;
+  text-align: center;
+  max-width: 3.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* SSB-2PWS2209: una sola rejilla (QN/QA no se desalinean del cuerpo) */
@@ -4498,16 +5370,37 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   width: 100%;
   height: 4px;
   border-radius: 1px;
-  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530),
+    color-mix(in srgb, var(--flow-wire) 70%, #3d4f4a) 45%,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530)
+  );
 }
 .ssb2209-bus__bar--live {
-  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 80%, black),
+    var(--flow-wire) 45%,
+    color-mix(in srgb, var(--flow-wire) 80%, black)
+  );
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
 }
 .ssb2209-bus__bar--ups {
-  background: linear-gradient(90deg, #6a8aaa, #b8a060 45%, #6a8aaa);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 35%, #4a4030),
+    color-mix(in srgb, var(--flow-wire) 55%, #6a5a40) 45%,
+    color-mix(in srgb, var(--flow-wire) 35%, #4a4030)
+  );
 }
 .ssb2209-bus__bar--ups.ssb2209-bus__bar--live {
-  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 80%, black),
+    var(--flow-wire) 45%,
+    color-mix(in srgb, var(--flow-wire) 80%, black)
+  );
 }
 
 .ssb2209-outlets { margin-top: 0.1rem; }
@@ -4734,6 +5627,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   box-shadow:
     inset 0 0 0 1px rgba(230, 194, 0, 0.12),
     0 0 12px rgba(230, 194, 0, 0.12);
+  animation: live-equip-pulse 2.4s ease-in-out infinite;
 }
 
 .equip-chassis__label {
@@ -4896,71 +5790,79 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
- * Remoto (otro cuadro): stub libre, NO unido a la barra local.
- * Mismo criterio que plant-rack MSB + colores NORM/ALT.
+ * ALT/AUX (stub en T): misma cota de chip que NORM.
+ * Cota in-flow del --from-bus = altura flex + margen negativo a la barra.
+ * No tocar piernas --local ni --from-bus.
  */
-.hbus--lcs-section .hbus-drop__leg--remote .hbus-drop__free-end {
-  flex: 0 0 0.9rem;
-  height: 0.9rem;
+.plant-rack__half-drops .hbus-drop__free-end {
+  /* (rail-label-h + 0.45rem) + (−rail-label-h) = 0.45rem */
+  flex: 0 0 0.45rem !important;
+  height: 0.45rem !important;
+  min-height: 0.45rem !important;
+  margin-top: 0 !important;
+  margin-bottom: -2px;
   width: 2px;
-  margin-top: 0.4rem;
-  background: var(--line-normal) !important;
 }
 
-.hbus--lcs-section .hbus-drop__leg--remote.hbus-drop__leg--alt .hbus-drop__free-end {
-  background: var(--wire-idle-alt) !important;
+.hbus--lcs-section:not(.hbus--ssb-section) .hbus-drop__free-end {
+  /* (gap + 0.35rem) + (−gap − 4px) = 0.35rem − 4px */
+  flex: 0 0 calc(0.35rem - 4px) !important;
+  height: calc(0.35rem - 4px) !important;
+  min-height: calc(0.35rem - 4px) !important;
+  margin-top: 0 !important;
+  margin-bottom: -2px;
+  width: 2px;
 }
 
-.hbus--lcs-section .hbus-drop__leg--remote.hbus-drop__leg--norm .hbus-drop__free-end {
-  background: var(--wire-idle) !important;
+.hbus--ssb-section .hbus-drop__free-end {
+  /* 1.15rem + (−4px) */
+  flex: 0 0 calc(1.15rem - 4px) !important;
+  height: calc(1.15rem - 4px) !important;
+  min-height: calc(1.15rem - 4px) !important;
+  margin-top: 0 !important;
+  margin-bottom: -2px;
+  width: 2px;
 }
 
-.hbus--lcs-section .hbus-drop__leg--remote.hbus-drop__leg--alt.hbus-drop__leg--flow .hbus-drop__free-end {
-  background: var(--line-alt) !important;
+/* Cartel NORM/ALT/AUX a la derecha del cable (no encima) */
+.hbus-drop__leg .hbus-drop__tag {
+  position: absolute;
+  left: calc(50% + 5px);
+  right: auto;
+  top: auto;
+  bottom: calc(0.55rem + 0.05rem);
+  transform: none;
+  margin: 0;
+  z-index: 4;
 }
 
-.hbus--lcs-section .hbus-drop__leg--remote.hbus-drop__leg--norm.hbus-drop__leg--flow .hbus-drop__free-end {
-  background: var(--line-normal) !important;
+.hbus--lcs-section .hbus-drop__leg[data-flow-v] .hbus-drop__wire:not(.hbus-drop__wire--csb-drop),
+.hbus--lcs-section .hbus-drop__leg[data-flow-v] .hbus-drop__free-end {
+  background: var(--leg-wire-idle) !important;
 }
 
-.hbus--lcs-section .hbus-drop__leg--alt .hbus-drop__wire {
-  background: var(--wire-idle-alt) !important;
-}
-
-.hbus--lcs-section .hbus-drop__leg--norm .hbus-drop__wire {
-  background: var(--wire-idle) !important;
-}
-
-.hbus--lcs-section .hbus-drop__leg--aux .hbus-drop__wire {
-  background: var(--wire-idle-aux) !important;
-}
-
-.hbus--lcs-section .hbus-drop__leg--alt.hbus-drop__leg--flow .hbus-drop__wire {
-  background: var(--line-alt) !important;
-}
-
-.hbus--lcs-section .hbus-drop__leg--norm.hbus-drop__leg--flow .hbus-drop__wire {
-  background: var(--line-normal) !important;
-}
-
-.hbus--lcs-section .hbus-drop__leg--aux.hbus-drop__leg--flow .hbus-drop__wire {
-  background: var(--line-aux) !important;
-}
-
-.hbus--lcs-section
-  .hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
-  .hbus-drop__wire--from-bus {
-  background: var(--line-normal) !important;
+.hbus--lcs-section .hbus-drop__leg[data-flow-v].hbus-drop__leg--flow .hbus-drop__wire,
+.hbus--lcs-section .hbus-drop__leg[data-flow-v] .hbus-drop__wire--flow {
+  background: var(--flow-wire) !important;
 }
 
 .hbus--lcs-section
-  .hbus-drop__leg--alt.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
-  .hbus-drop__wire--from-bus {
-  background: var(--line-alt) !important;
+  .hbus-drop__leg[data-flow-v].hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__wire--from-bus,
+.hbus--lcs-section
+  .hbus-drop__leg[data-flow-v].hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__free-end {
+  background: var(--flow-wire) !important;
 }
 
-.hbus--lcs-section .hbus-drop__leg--open .hbus-drop__wire--mid,
-.hbus--lcs-section .hbus-drop__leg--open .hbus-drop__wire--to-eq {
+.hbus--lcs-section .hbus-drop__leg[data-flow-v].hbus-drop__leg--open .hbus-drop__wire--mid,
+.hbus--lcs-section .hbus-drop__leg[data-flow-v].hbus-drop__leg--open .hbus-drop__wire--to-eq {
+  background: var(--leg-wire-idle) !important;
+  opacity: 1;
+}
+
+.hbus--lcs-section .hbus-drop__leg--open:not([data-flow-v]) .hbus-drop__wire--mid,
+.hbus--lcs-section .hbus-drop__leg--open:not([data-flow-v]) .hbus-drop__wire--to-eq {
   background: var(--wire-idle) !important;
   opacity: 0.85;
 }
@@ -5003,6 +5905,77 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .hbus-drop__eq--fam-trf .hbus-drop__id {
   color: #e0b078;
+}
+
+.hbus-drop__eq--fam-trf .hbus-drop__trf-inbrk {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.2rem;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+/* TRF con S01 interno: cable continuo hasta SSB link-only */
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq {
+  overflow: visible;
+}
+
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link.hbus--direct {
+  position: relative;
+  margin-top: 0;
+  /* Un poco más de pata desde S01 hasta el SSB */
+  padding-top: 1.55rem;
+}
+
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 1.55rem;
+  background: color-mix(in srgb, var(--flow-wire) 40%, #3d4f4a);
+  opacity: 1;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.hbus-drop--fam-trf.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link::before {
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+/* Tras S01 (secundaria 230 V): el tramo al SSB usa la tensión del hijo */
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link[data-flow-v]::before {
+  background: color-mix(in srgb, var(--flow-wire) 40%, #3d4f4a);
+}
+
+.hbus-drop--fam-trf.hbus-drop--chain-open:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link[data-flow-v].hbus--live::before,
+.hbus-drop--fam-trf.hbus-drop--chain-open.hbus-drop--flow:has(.hbus-drop__trf-inbrk)
+  > .hbus--chain-link[data-flow-v]::before {
+  background: var(--flow-wire);
+}
+
+/* El color del thru sigue data-flow-v (230 V amarillo tras S01) */
+.hbus-drop--link-only > .hbus-drop__tops--link-thru .hbus-drop__wire--thru.hbus-drop__wire--flow,
+.hbus-drop--link-only.hbus-drop--flow > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
+.hbus-drop--link-only.hbus-drop--flow > .hbus-drop__tops--link-aux .hbus-drop__wire--thru {
+  background: var(--flow-wire) !important;
+}
+
+.hbus-drop__bank--convert {
+  color: #c4a8ff;
+  border-color: rgba(196, 168, 255, 0.35);
 }
 
 .hbus-drop__eq--fam-lcs {
@@ -5141,6 +6114,17 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   pointer-events: none;
 }
 
+.hbus-drop[data-flow-v] .hbus-drop__eq::before {
+  background: color-mix(in srgb, var(--flow-wire) 45%, #3d4f4a);
+  opacity: 0.55;
+}
+
+.hbus-drop[data-flow-v].hbus-drop--flow .hbus-drop__eq::before,
+.hbus-drop[data-flow-v] .hbus-drop__eq--live::before {
+  background: var(--flow-wire);
+  opacity: 0.28;
+}
+
 .hbus-drop--alt .hbus-drop__eq::before {
   background: var(--line-alt);
 }
@@ -5150,22 +6134,30 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   opacity: 0.2;
 }
 
-.hbus-drop__eq > * {
+.hbus-drop__eq > *:not(.hbus-drop__trf-stub) {
   position: relative;
   z-index: 1;
 }
 
-/* Flujo dentro del recuadro: solo si la acometida local conduce (--flow) */
-.hbus-drop--flow .hbus-drop__eq::before {
-  background: #e6c200;
+/* Flujo dentro del recuadro: solo acometida local (nunca pisar stubs TRF→QVS dual) */
+.hbus-drop--flow:not(.hbus-drop--dual-feed)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq::before,
+.hbus-drop--flow:not(.hbus-drop--dual-feed) > .hbus-drop__eq-wrap > .hbus-drop__eq::before {
+  background: var(--flow-wire);
   opacity: 0.22;
 }
 
-.hbus-drop--flow .hbus-drop__eq::after {
+.hbus-drop--flow:not(.hbus-drop--dual-feed)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  > .hbus-drop__eq::after,
+.hbus-drop--flow:not(.hbus-drop--dual-feed) > .hbus-drop__eq-wrap > .hbus-drop__eq::after {
   content: '';
   position: absolute;
   left: 50%;
-  width: 10px;
+  width: var(--wire-flow-halo);
   height: 32%;
   min-height: 10px;
   transform: translateX(-50%);
@@ -5173,14 +6165,22 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
+    var(--flow-particle) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
   animation: flow-halo-v 1.05s linear infinite;
   opacity: 0.38;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Equipo hijo sin conducción: no heredar partículas del CCM/cuadro padre */
+.hbus-drop:not(.hbus-drop--flow) > .hbus-drop__eq-row > .hbus-drop__eq-wrap > .hbus-drop__eq::after,
+.hbus-drop:not(.hbus-drop--flow) > .hbus-drop__eq-wrap > .hbus-drop__eq::after {
+  content: none;
+  display: none;
+  animation: none;
 }
 
 /* Cadena abierta: la línea atraviesa el recuadro hacia el hijo */
@@ -5309,11 +6309,11 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   opacity: 0.85;
 }
 
-/* Nested bus expands under the drop column */
+/* Nested bus: centrado bajo el equipo (no estirar a la izquierda) */
 .hbus-drop > .hbus--nested {
-  align-self: stretch;
-  margin-left: -0.15rem;
-  margin-right: -0.15rem;
+  align-self: center;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .casc-feed {
@@ -5637,11 +6637,65 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .stree-eq--compact {
   padding: 0.35rem 0.45rem;
   min-width: 4.5rem;
+  max-width: 7.75rem;
   gap: 0.15rem;
 }
 
 .stree-eq--compact .stree-eq__id {
-  font-size: 0.68rem;
+  font-size: 0.56rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.1;
+}
+
+.stree-eq--compact .stree-eq__sym {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.stree-eq--compact .stree-eq__dcp {
+  font-size: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Informe arranque: PUMA en una sola línea en todos los recuadros */
+.stree--report .stree-eq__id {
+  font-size: 0.56rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.1;
+}
+
+.stree--report .stree-eq {
+  max-width: 8.25rem;
+}
+
+.stree--report .stree-eq--target {
+  min-width: 6rem;
+  max-width: 9rem;
+  padding: 0.45rem 0.35rem;
+}
+
+.stree--report .stree-eq__sym {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.stree--report .stree-eq__dcp {
+  font-size: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .stree-eq {
@@ -5690,6 +6744,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .stree-eq--live {
   border-color: rgba(230, 194, 0, 0.65);
+  box-shadow: 0 0 8px rgba(230, 194, 0, 0.28);
+  animation: live-equip-pulse 2.4s ease-in-out infinite;
 }
 
 .stree-eq--ref {
@@ -5977,10 +7033,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .trf-feed440__wire {
+  position: relative;
   width: 2px;
   height: 0.7rem;
   background: var(--line-normal);
   flex: 0 0 auto;
+  overflow: visible;
 }
 
 .trf-feed440__wire--long {
@@ -6009,11 +7067,13 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .trf-feed440__collector {
+  position: relative;
   width: calc(100% - 2.4rem);
   height: 3px;
   margin: 0 auto;
   background: var(--line-normal);
   border-radius: 1px;
+  overflow: visible;
 }
 
 .trf-feed440__qvs {
@@ -6122,7 +7182,9 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /* Halo de flujo en espejo: VS→NV va hacia la izquierda */
+.lcs440-rail--mirror .lcs440-cell__bus--live::before,
 .lcs440-rail--mirror .lcs440-cell__bus--live::after,
+.lcs440-rail--mirror .lcs440-tie--flow .lcs440-tie__bridge::before,
 .lcs440-rail--mirror .lcs440-tie--flow .lcs440-tie__bridge::after {
   animation-direction: reverse;
 }
@@ -6374,6 +7436,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   isolation: isolate;
   background: var(--bg-elevated);
   min-width: 2.6rem;
+  margin-top: -1px;
+  margin-bottom: -1px;
 }
 
 .lcs440-rail__qvs-leg__wire {
@@ -6384,6 +7448,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: var(--wire-idle);
   align-self: center;
   z-index: 2;
+  overflow: visible;
 }
 
 .lcs440-rail__qvs-leg__wire--from {
@@ -6400,12 +7465,44 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire {
-  background: var(--line-normal);
+  background: var(--flow-wire);
+}
+
+/* Piernas QVS/QS LCS: color por tensión de barra (data-flow-v) */
+.lcs440-rail__qvs-leg[data-flow-v],
+.lcs440-rail__qs-leg[data-flow-v] {
+  --leg-wire-idle: color-mix(in srgb, var(--flow-wire) 40%, #3d4f4a);
+}
+
+.lcs440-rail__qvs-leg[data-flow-v] .lcs440-rail__qvs-leg__wire,
+.lcs440-rail__qs-leg[data-flow-v] .lcs440-rail__qvs-leg__wire {
+  background: var(--leg-wire-idle) !important;
+  box-shadow: none;
+}
+
+.lcs440-rail__qvs-leg[data-flow-v].lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire,
+.lcs440-rail__qs-leg[data-flow-v].lcs440-rail__qs-leg--flow .lcs440-rail__qvs-leg__wire {
+  background: var(--flow-wire) !important;
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.35);
+}
+
+.lcs440-rail__qvs-leg[data-flow-v].lcs440-rail__qvs-leg--from-live:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from,
+.lcs440-rail__qs-leg[data-flow-v].lcs440-rail__qs-leg--from-live:not(.lcs440-rail__qs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from {
+  background: var(--flow-wire) !important;
+}
+
+.lcs440-rail__qvs-leg[data-flow-v].lcs440-rail__qvs-leg--open:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--to-bus,
+.lcs440-rail__qs-leg[data-flow-v].lcs440-rail__qs-leg--open:not(.lcs440-rail__qs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--to-bus {
+  background: var(--leg-wire-idle) !important;
 }
 
 .lcs440-rail__qvs-leg--from-live:not(.lcs440-rail__qvs-leg--flow)
   .lcs440-rail__qvs-leg__wire--from {
-  background: var(--line-normal);
+  background: var(--flow-wire);
 }
 
 .lcs440-rail__qvs-leg--open:not(.lcs440-rail__qvs-leg--flow)
@@ -6413,12 +7510,130 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: var(--wire-idle);
 }
 
-.equip-chassis--feed-alt .lcs440-rail__qvs-leg__wire {
-  background: var(--line-alt);
+.equip-chassis--feed-alt .lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire {
+  background: var(--flow-wire);
 }
 
-.equip-chassis--feed-flow .lcs440-rail__qvs-leg__wire {
-  background: var(--line-normal);
+.equip-chassis--feed-alt
+  .lcs440-rail__qvs-leg--from-live:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from {
+  background: var(--flow-wire);
+}
+
+/*
+ * Partículas verticales en LCS / QS / SSB / 4SFS / TRF (mismo patrón que bajantes MSB).
+ */
+.lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire::before,
+.lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire::after,
+.lcs440-rail__qs-leg--flow .lcs440-rail__qvs-leg__wire::before,
+.lcs440-rail__qs-leg--flow .lcs440-rail__qvs-leg__wire::after,
+.msb4sfs-rack__vwire--flow::before,
+.msb4sfs-rack__vwire--flow::after,
+.msb4sfs-rack__in-slot--flow .msb4sfs-rack__vwire::before,
+.msb4sfs-rack__in-slot--flow .msb4sfs-rack__vwire::after,
+.msb4sfs-trf115__wire--flow::before,
+.msb4sfs-trf115__wire--flow::after,
+.msb4sfs-trf115--flow .msb4sfs-trf115__wire::before,
+.msb4sfs-trf115--flow .msb4sfs-trf115__wire::after,
+.ssb-board__riser--flow::before,
+.ssb-board__riser--flow::after,
+.trf-feed440--flow .trf-feed440__wire::before,
+.trf-feed440--flow .trf-feed440__wire::after,
+.lcs-out--flow .lcs-out__stub::before,
+.lcs-out--flow .lcs-out__wire::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: var(--wire-flow-halo);
+  height: 32%;
+  min-height: 8px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--flow-particle) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
+  animation: flow-halo-v 1.05s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire::before,
+.lcs440-rail__qs-leg--flow .lcs440-rail__qvs-leg__wire::before,
+.msb4sfs-rack__vwire--flow::before,
+.msb4sfs-rack__in-slot--flow .msb4sfs-rack__vwire::before,
+.msb4sfs-trf115__wire--flow::before,
+.msb4sfs-trf115--flow .msb4sfs-trf115__wire::before,
+.ssb-board__riser--flow::before,
+.trf-feed440--flow .trf-feed440__wire::before,
+.lcs-out--flow .lcs-out__stub::before,
+.lcs-out--flow .lcs-out__wire::before {
+  animation-delay: -0.52s;
+  opacity: 0.75;
+  width: calc(var(--wire-flow-halo) - 2px);
+  height: 24%;
+}
+
+/* Tensión hasta el chip (abierto): partícula solo en el tramo de acometida */
+.lcs440-rail__qvs-leg--from-live:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from::before,
+.lcs440-rail__qvs-leg--from-live:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from::after,
+.lcs440-rail__qs-leg--from-live:not(.lcs440-rail__qs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from::before,
+.lcs440-rail__qs-leg--from-live:not(.lcs440-rail__qs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from::after,
+.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__wire--from-bus::before,
+.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__wire--from-bus::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 8px;
+  height: 28%;
+  min-height: 8px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--flow-particle) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.45);
+  animation: flow-halo-v 1.4s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.65;
+}
+
+.lcs440-rail__qvs-leg--from-live:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from::before,
+.lcs440-rail__qs-leg--from-live:not(.lcs440-rail__qs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--from::before,
+.hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+  .hbus-drop__wire--from-bus::before {
+  animation-delay: -0.7s;
+  width: 6px;
+  height: 20%;
+}
+
+/* Aguas abajo abierto en LCS: sin partículas */
+.lcs440-rail__qvs-leg--open:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--to-bus::before,
+.lcs440-rail__qvs-leg--open:not(.lcs440-rail__qvs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--to-bus::after,
+.lcs440-rail__qs-leg--open:not(.lcs440-rail__qs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--to-bus::before,
+.lcs440-rail__qs-leg--open:not(.lcs440-rail__qs-leg--flow)
+  .lcs440-rail__qvs-leg__wire--to-bus::after {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
 }
 
 .lcs440-rail__vs-tag,
@@ -6538,15 +7753,18 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .lcs440-tie__bridge {
+  position: relative;
   flex: 1 1 auto;
   height: 4px;
   min-width: 0.35rem;
-  background: #7dcfb0;
+  background: color-mix(in srgb, var(--flow-wire) 55%, #3d4f4a);
   align-self: center;
+  overflow: visible;
 }
 
 .lcs440-tie--flow .lcs440-tie__bridge {
-  background: #e6c200;
+  background: var(--flow-wire);
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.3);
 }
 
 .lcs440-tie .casc-brk {
@@ -6558,7 +7776,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .lcs440-tie--flow .casc-brk {
-  box-shadow: 0 0 0 1px color-mix(in srgb, #e6c200 50%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--flow-wire) 50%, transparent);
 }
 
 .lcs440-cell__tag {
@@ -6595,7 +7813,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .lcs440-cell__bus {
   position: relative;
   height: 4px;
-  background: linear-gradient(90deg, #6a8aaa, #9ab4c8 45%, #6a8aaa);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530),
+    color-mix(in srgb, var(--flow-wire) 70%, #3d4f4a) 45%,
+    color-mix(in srgb, var(--flow-wire) 42%, #2a3530)
+  );
   border-radius: 1px;
   width: 100%;
   min-width: 5.5rem;
@@ -6603,51 +7826,22 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   z-index: 1;
 }
 
-/* Barras 230 V: tono bronce/ámbar para distinguirlas del azul-gris 440 V */
-.lcs440-board[data-voltage='230'] .lcs440-cell__bus {
-  background: linear-gradient(90deg, #8a7040, #c9a86a 45%, #8a7040);
-}
-
-.lcs440-board[data-voltage='230'] .lcs440-tie__bridge {
-  background: #b89a5c;
-}
-
 .lcs440-cell__bus--live {
-  background: linear-gradient(90deg, #c9a400, #ffe066 45%, #c9a400);
-  box-shadow: none;
-}
-
-.lcs440-board[data-voltage='230'] .lcs440-cell__bus--live {
-  background: linear-gradient(90deg, #b8860b, #ffd24a 45%, #b8860b);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 80%, black),
+    var(--flow-wire) 45%,
+    color-mix(in srgb, var(--flow-wire) 80%, black)
+  );
+  box-shadow: 0 0 6px rgba(var(--flow-glow-rgb), 0.3);
 }
 
 .lcs440-board[data-voltage='230'] .lcs440-tie--flow .lcs440-tie__bridge {
-  background: #e6c200;
-}
-
-/* Mismo halo que el flujo vertical, orientado en horizontal */
-.lcs440-cell__bus--live::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 18%;
-  height: 10px;
-  transform: translateY(-50%);
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
-    transparent 100%
-  );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-  animation: flow-halo-h 1.05s linear infinite;
-  pointer-events: none;
-  z-index: 2;
+  background: var(--flow-wire);
 }
 
 /* Dentro del chasis LCS: flujo más tenue para no tapar etiquetas */
+.equip-chassis .lcs440-cell__bus--live::before,
 .equip-chassis .lcs440-cell__bus--live::after {
   opacity: 0.38;
 }
@@ -6657,25 +7851,9 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   overflow: visible;
 }
 
+.equip-chassis .lcs440-tie--flow .lcs440-tie__bridge::before,
 .equip-chassis .lcs440-tie--flow .lcs440-tie__bridge::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 40%;
-  height: 10px;
-  transform: translateY(-50%);
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
-    transparent 100%
-  );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-  animation: flow-halo-h 1.05s linear infinite;
   opacity: 0.38;
-  pointer-events: none;
 }
 
 .lcs440-drops {
@@ -6752,7 +7930,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .lcs-out--flow .lcs-out__stub,
 .lcs-out--flow .lcs-out__wire {
-  background: #e6c200;
+  background: var(--flow-wire);
 }
 
 .lcs-out--flow .lcs-out__stub::after,
@@ -6760,7 +7938,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   content: '';
   position: absolute;
   left: 50%;
-  width: 10px;
+  width: var(--wire-flow-halo);
   height: 55%;
   min-height: 6px;
   transform: translateX(-50%);
@@ -6768,10 +7946,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
+    var(--flow-particle) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
   animation: flow-halo-v 1.05s linear infinite;
   pointer-events: none;
   z-index: 2;
@@ -6824,7 +8002,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .lcs-out--flow .lcs-out__eq::before {
-  background: #e6c200;
+  background: var(--flow-wire);
   opacity: 0.22;
 }
 
@@ -6832,7 +8010,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   content: '';
   position: absolute;
   left: 50%;
-  width: 10px;
+  width: var(--wire-flow-halo);
   height: 32%;
   min-height: 8px;
   transform: translateX(-50%);
@@ -6840,10 +8018,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.95) 50%,
+    var(--flow-particle) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
   animation: flow-halo-v 1.05s linear infinite;
   opacity: 0.38;
   pointer-events: none;
@@ -6956,17 +8134,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .topbar__actions--view,
-.topbar__actions--sim,
-.topbar__actions--data {
+.topbar__actions--sim {
   padding-right: 0.55rem;
   margin-right: 0.1rem;
   border-right: 1px solid var(--border);
-}
-
-.topbar__actions--data {
-  border-right: 0;
-  padding-right: 0;
-  margin-right: 0;
 }
 
 /* Barras: más peso visual + remate suave */
@@ -6991,14 +8162,14 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 0 0 0.5px rgba(0, 0, 0, 0.25),
-    0 0 5px rgba(178, 78, 196, 0.28);
+    0 0 5px rgba(var(--flow-glow-rgb), 0.28);
 }
 
 .msb4sfs-rack--115 .msb4sfs-rack__rail--live {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     0 0 0 0.5px rgba(0, 0, 0, 0.25),
-    0 0 5px rgba(90, 158, 184, 0.28);
+    0 0 5px rgba(var(--flow-glow-rgb), 0.28);
 }
 
 /* Jerarquía de cables: barra > acometida > salida > respeto */
@@ -7024,40 +8195,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   opacity: 0.72;
 }
 
-/* Menos glow en flujo / equipos vivos */
-.hbus-drop__leg--flow .hbus-drop__wire::after,
-.hbus-drop__wire--flow::after {
-  width: var(--wire-flow-halo);
-  min-height: 8px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.55) 50%,
-    transparent 100%
-  );
-  box-shadow: 0 0 5px rgba(255, 255, 255, 0.35);
-}
-
-.plant-rack__rail-seg--live::after {
-  height: 7px;
-  width: 14%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.55) 50%,
-    transparent 100%
-  );
-  box-shadow: 0 0 5px rgba(255, 255, 255, 0.35);
-}
-
 .hbus-drop__eq--live {
-  box-shadow: 0 0 6px rgba(230, 194, 0, 0.14);
-}
-
-.equip-chassis--live {
-  box-shadow:
-    inset 0 0 0 1px rgba(230, 194, 0, 0.1),
-    0 0 7px rgba(230, 194, 0, 0.08);
+  animation: live-equip-pulse 2.4s ease-in-out infinite;
 }
 
 /* Locate / jump: marco más limpio, menos pulso agresivo */
@@ -7268,3 +8407,488 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   font-size: 0.54rem;
   color: var(--muted);
 }
+
+/* —— Arranque / informe alimentaciones —— */
+.startup-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  height: 100%;
+  overflow: auto;
+  background: #eef2f5;
+  color: #1a2330;
+  padding: 0.75rem 1rem 1.25rem;
+  box-sizing: border-box;
+}
+
+.startup-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.startup-panel__h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.startup-panel__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #5a6a7a;
+  max-width: 40rem;
+}
+
+.startup-panel__h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.startup-panel__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  align-items: flex-end;
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid #cfd8e0;
+  border-radius: 6px;
+  margin-bottom: 0.65rem;
+}
+
+.startup-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4a5a6a;
+  min-width: 14rem;
+}
+
+.startup-panel__field--grow {
+  flex: 1 1 100%;
+}
+
+.startup-panel__field input,
+.startup-panel__field textarea {
+  font: inherit;
+  font-weight: 500;
+  color: #1a2330;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #b0bec5;
+  border-radius: 4px;
+  background: #fafbfc;
+}
+
+.startup-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.startup-panel__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.startup-panel__scroll {
+  overflow: auto;
+  max-height: min(70vh, 900px);
+  background: #fff;
+  border: 1px solid #cfd8e0;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.startup-tree__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #0d47a1;
+}
+
+.startup-tree__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #546e7a;
+  margin: 0 0 0.75rem;
+}
+
+.startup-tree__swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+.startup-tree__swatch--norm { background: #f9a825; }
+.startup-tree__swatch--alt { background: #1e88e5; }
+.startup-tree__swatch--origin { background: #00897b; }
+.startup-tree__swatch--dest { background: #6d4c41; }
+
+.startup-tree__roots,
+.startup-tree__children {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+}
+
+.startup-tree__roots {
+  padding-left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: flex-start;
+}
+
+.startup-tree__node {
+  position: relative;
+  margin: 0.35rem 0;
+}
+
+.startup-tree__card {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid #90a4ae;
+  background: #f5f7fa;
+  min-width: 7.5rem;
+  max-width: 14rem;
+}
+
+.startup-tree__node--msb > .startup-tree__card {
+  background: #e3f2fd;
+  border-color: #1565c0;
+}
+
+.startup-tree__node--panel > .startup-tree__card {
+  background: #fff8e1;
+  border-color: #f9a825;
+}
+
+.startup-tree__node--origin > .startup-tree__card {
+  background: #e0f2f1;
+  border-color: #00897b;
+  font-weight: 600;
+}
+
+.startup-tree__node--destination > .startup-tree__card {
+  background: #efebe9;
+  border-color: #6d4c41;
+}
+
+.startup-tree__id {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.startup-tree__name {
+  font-size: 0.62rem;
+  color: #455a64;
+}
+
+.startup-tree__local {
+  font-size: 0.58rem;
+  color: #78909c;
+}
+
+.startup-tree__edge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  align-self: flex-start;
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+  margin-bottom: 0.15rem;
+}
+
+.startup-tree__edge--norm {
+  background: #fff59d;
+  color: #f57f17;
+}
+
+.startup-tree__edge--alt {
+  background: #bbdefb;
+  color: #0d47a1;
+}
+
+.startup-tree__empty {
+  color: #78909c;
+  font-size: 0.85rem;
+}
+
+.startup-table-print {
+  background: #fff;
+  border: 1px solid #cfd8e0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+.startup-table-print__title {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  color: #0d47a1;
+}
+
+.startup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.62rem;
+}
+
+.startup-table th,
+.startup-table td {
+  border: 1px solid #b0bec5;
+  padding: 0.28rem 0.35rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.startup-table thead th {
+  background: #eceff1;
+  font-weight: 700;
+  color: #37474f;
+}
+
+.startup-table__row--group td {
+  border-top: 2px solid #546e7a;
+}
+
+.startup-panel .banner {
+  margin-bottom: 0.65rem;
+}
+
+/* Árbol arranque: mismo estilo que búsqueda + bajantes destino */
+.stree-downstream {
+  display: flex;
+  flex-direction: column;
+  /* stretch: la barra horizontal debe abarcar todas las ramas (como .stree-feed) */
+  align-items: stretch;
+  width: max-content;
+  margin-inline: auto;
+}
+
+.stree-downstream__stem {
+  align-self: center;
+  min-height: 0.85rem;
+}
+
+.stree-downstream--dual .stree-downstream__stem {
+  min-height: 0.55rem;
+}
+
+.stree-downstream__join {
+  margin-top: 0;
+}
+
+.stree-downstream__branches {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.75rem;
+}
+
+.stree-branch--down {
+  min-width: 5.75rem;
+}
+
+.stree__group-caption {
+  margin: 0 0 0.5rem;
+  padding: 0 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.stree--report .stree-eq {
+  cursor: default;
+}
+
+.startup-panel__scroll--stree {
+  background: #0e1614;
+  border-color: #2a3a40;
+  padding: 0.5rem;
+}
+
+.startup-trees {
+  min-width: max-content;
+  color: var(--text);
+}
+
+.startup-trees__doc-title {
+  padding: 0.75rem 1rem 0.25rem;
+}
+
+.startup-trees__doc-title h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #e6f0ee;
+}
+
+.startup-trees__doc-title p {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.startup-trees__group {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.25rem;
+}
+
+.startup-trees__group .stree {
+  padding-top: 0.35rem;
+}
+
+/* Captura PDF: fondo blanco y texto legible (sustituye tema oscuro del panel) */
+.startup-trees--export {
+  background: #fff !important;
+  color: #1a2330 !important;
+  padding: 1rem 1.25rem 1.5rem !important;
+}
+
+.startup-trees--export .startup-trees__doc-title h2 {
+  color: #0d47a1 !important;
+}
+
+.startup-trees--export .startup-trees__doc-title p,
+.startup-trees--export .stree__group-caption {
+  color: #546e7a !important;
+}
+
+.startup-trees--export .startup-trees__group {
+  border-top-color: #cfd8e0 !important;
+}
+
+.startup-trees--export .stree-eq {
+  background: #f5f7fa !important;
+  border-color: #90a4ae !important;
+  color: #1a2330 !important;
+}
+
+.startup-trees--export .stree-eq--target {
+  border-color: #f9a825 !important;
+  box-shadow: 0 0 0 1px rgba(249, 168, 37, 0.55) !important;
+}
+
+.startup-trees--export .stree-eq__id,
+.startup-trees--export .stree-eq__name,
+.startup-trees--export .stree-eq__dcp {
+  color: #1a2330 !important;
+}
+
+.startup-trees--export .stree-eq__id {
+  font-size: 0.56rem !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  line-height: 1.1 !important;
+}
+
+.startup-trees--export .stree-eq__dcp {
+  font-size: 0.5rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.startup-trees--export .stree-eq {
+  max-width: 8.25rem !important;
+}
+
+.startup-trees--export .startup-trees__doc-title,
+.startup-trees--export .startup-trees__group,
+.startup-trees--export .stree__group-caption {
+  break-inside: avoid;
+}
+
+.startup-trees--export .stree-branch__bus {
+  color: #546e7a !important;
+  border-color: #b0bec5 !important;
+  background: #fff !important;
+}
+
+/* Congelar animaciones en captura PDF del informe de arranque */
+.startup-trees--export *,
+.startup-trees--export *::before,
+.startup-trees--export *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .casc-brk--flow,
+  .casc-gen--running,
+  .equip-chassis--live,
+  .hbus-drop__eq--live,
+  .stree-eq--live,
+  .plant-rack__rail-seg--live,
+  .hbus-drop__leg--flow .hbus-drop__wire::before,
+  .hbus-drop__wire--flow::before,
+  .hbus-drop__leg--flow .hbus-drop__wire::after,
+  .hbus-drop__wire--flow::after,
+  .plant-msb__vwire--flow::before,
+  .plant-msb__vwire--flow::after,
+  .plant-rack__rail-seg--live::before,
+  .plant-rack__rail-seg--live::after,
+  .msb4sfs-rack__rail--live::before,
+  .msb4sfs-rack__rail--live::after,
+  .ssb-board__bus--live::before,
+  .ssb-board__bus--live::after,
+  .lcs440-cell__bus--live::before,
+  .lcs440-cell__bus--live::after,
+  .lcs440-tie--flow .lcs440-tie__bridge::before,
+  .lcs440-tie--flow .lcs440-tie__bridge::after,
+  .trf-feed440--flow .trf-feed440__collector::before,
+  .trf-feed440--flow .trf-feed440__collector::after,
+  .hbus--nested .hbus__rail--live,
+  .hbus--nested .hbus__rail--live::before,
+  .hbus--nested .hbus__rail--live::after,
+  .lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire::before,
+  .lcs440-rail__qvs-leg--flow .lcs440-rail__qvs-leg__wire::after,
+  .lcs440-rail__qs-leg--flow .lcs440-rail__qvs-leg__wire::before,
+  .lcs440-rail__qs-leg--flow .lcs440-rail__qvs-leg__wire::after,
+  .msb4sfs-rack__vwire--flow::before,
+  .msb4sfs-rack__vwire--flow::after,
+  .ssb-board__riser--flow::before,
+  .ssb-board__riser--flow::after,
+  .trf-feed440--flow .trf-feed440__wire::before,
+  .trf-feed440--flow .trf-feed440__wire::after,
+  .hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+    .hbus-drop__wire--from-bus::before,
+  .hbus-drop__leg--from-live:not(.hbus-drop__leg--flow)
+    .hbus-drop__wire--from-bus::after,
+  .hbus-drop__leg--flow .hbus-drop__free-end::before,
+  .plant-msb__bustie--flow .plant-msb__bustie-down::after,
+  .plant__bridge-hwire--flow::before,
+  .plant__bridge-hwire--flow::after,
+  .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+    > .hbus-drop__eq-row
+    > .hbus-drop__eq-wrap
+    > .hbus-drop__eq::before,
+  .hbus-drop.hbus-drop--feeds-lcs-open.hbus-drop--dual-feed.hbus-drop--flow
+    > .hbus-drop__eq-row
+    > .hbus-drop__eq-wrap
+    > .hbus-drop__eq::after,
+  .plant__tie-svg--flow .plant__tie-path {
+    animation: none !important;
+  }
+}
+

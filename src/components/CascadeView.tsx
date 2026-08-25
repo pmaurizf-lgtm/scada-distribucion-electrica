@@ -30,13 +30,14 @@ import {
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
 import { getPlantRevealPath } from '../utils/upstream'
+import { dataFlowVoltageFromCircuit, dataFlowVoltageForBoardFeed, dataFlowVoltageProps } from '../utils/flowVoltage'
 import {
   isLcsEquipment,
   isTrfWithLoadCenter,
   trfLoadCenterFeed,
   windingNotesForTrf,
 } from '../abtDownstream'
-import { isMsb4Sfs } from '../voltageSystems/hz400'
+import { isMsb4Sfs, isScv4Sfs, isSbt6Pws, isSbtToScvDirectFeed } from '../voltageSystems/hz400'
 import { Msb4SfsBoardView } from './Msb4SfsBoardView'
 import {
   hasSsbBoardLayout,
@@ -247,10 +248,18 @@ function HorizontalBus({
   const list = focusCircuitIds
     ? items.filter((it) => focusCircuitIds.has(it.circuit.id))
     : items
+  /** Barra CCM / cuadro anidado energizada (mismo criterio que el equipo padre). */
+  const nestedBusLive = Boolean(nested && energizedEquipmentIds.has(label))
+  const chainLink =
+    Boolean(direct) &&
+    list.some((it) => isUnifilarLinkOnlyFeed(it.circuit))
+  const chainConvert =
+    chainLink && list.some((it) => isSbtToScvDirectFeed(it.circuit))
 
   return (
     <div
-      className={`hbus${nested ? ' hbus--nested' : ''}${direct ? ' hbus--direct' : ''}`}
+      className={`hbus${nested ? ' hbus--nested' : ''}${direct ? ' hbus--direct' : ''}${chainLink ? ' hbus--chain-link' : ''}${chainConvert ? ' hbus--chain-convert' : ''}${nestedBusLive ? ' hbus--live' : ''}`}
+      {...dataFlowVoltageProps(label)}
     >
       {!direct && (
         <>
@@ -259,7 +268,9 @@ function HorizontalBus({
             <span>{voltage}</span>
           </div>
           <div className="hbus__rail-wrap" aria-hidden>
-            <div className="hbus__rail" />
+            <div
+              className={`hbus__rail${nestedBusLive ? ' hbus__rail--live' : ''}`}
+            />
           </div>
         </>
       )}
@@ -373,6 +384,34 @@ function BusDrop({
         : undefined,
     [equipment.id],
   )
+  const conversionNote = useMemo(() => {
+    if (isScv4Sfs(equipment.id)) return '690→400 Hz'
+    if (isSbt6Pws(equipment.id)) return '690 V→SCV'
+    return undefined
+  }, [equipment.id])
+  const trfStubFlow = useMemo(() => {
+    if (!equipment.id.startsWith('TRF-')) return undefined
+    const qvs = system690.circuits.filter(
+      (c) =>
+        !c.virtual &&
+        c.originId === equipment.id &&
+        c.destinationId.startsWith('LCS-') &&
+        /^QVS-/i.test(c.protectionName),
+    )
+    if (qvs.length === 0) return undefined
+    return {
+      v230: qvs.some(
+        (c) =>
+          String(c.protectionName).includes('230') &&
+          energizedCircuitIds.has(c.id),
+      ),
+      v440: qvs.some(
+        (c) =>
+          String(c.protectionName).includes('440') &&
+          energizedCircuitIds.has(c.id),
+      ),
+    }
+  }, [equipment.id, energizedCircuitIds])
   /** Cadena ABT → TRF → LCS / SBT → SCV: enlace vertical directo (sin barra «salidas»). */
   const directChain =
     equipment.id.startsWith('ABT-') ||
@@ -467,6 +506,7 @@ function BusDrop({
     return (
       <div
         className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--lcs-open${located ? ' hbus-drop--locate' : ''}`}
+        {...dataFlowVoltageProps(equipment.id)}
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
@@ -492,6 +532,7 @@ function BusDrop({
         )}
         <div
           className={`equip-chassis equip-chassis--lcs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
+          {...dataFlowVoltageProps(equipment.id)}
           onDoubleClick={toggleExpand}
           aria-label={`${equipment.id} · doble clic para plegar`}
         >
@@ -541,6 +582,7 @@ function BusDrop({
     return (
       <div
         className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--msb4sfs-open${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
+        {...dataFlowVoltageProps(equipment.id)}
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
@@ -568,6 +610,7 @@ function BusDrop({
           {linkOnly ? (
             <div
               className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              {...dataFlowVoltageFromCircuit(localFeed)}
               data-circuit-id={localFeed.id}
               aria-hidden
             >
@@ -578,6 +621,7 @@ function BusDrop({
           ) : (
             <div
               className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}${protectionStatus[localFeed.id] !== 'cerrada' && !localFlowing ? ' hbus-drop__leg--open' : ''}${energizedEquipmentIds.has(localFeed.originId) && !localFlowing ? ' hbus-drop__leg--from-live' : ''}`}
+              {...dataFlowVoltageFromCircuit(localFeed)}
               data-circuit-id={localFeed.id}
             >
               <span
@@ -607,6 +651,7 @@ function BusDrop({
         <div className="hbus-drop__eq-row">
           <div
             className={`equip-chassis equip-chassis--msb4sfs${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
+            {...dataFlowVoltageProps(equipment.id)}
             onDoubleClick={toggleExpand}
             aria-label={`${equipment.id} · doble clic para plegar`}
           >
@@ -656,6 +701,7 @@ function BusDrop({
     return (
       <div
         className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${canExpand ? ' hbus-drop--expandable' : ''} hbus-drop--ssb-open${ssb2209 ? ' hbus-drop--ssb2209' : ''}${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
+        {...dataFlowVoltageProps(equipment.id)}
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={localFeed.id}
@@ -681,6 +727,7 @@ function BusDrop({
               ))}
             <div
               className={`hbus-drop__leg hbus-drop__leg--local${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}${protectionStatus[localFeed.id] !== 'cerrada' && !localFlowing ? ' hbus-drop__leg--open' : ''}${energizedEquipmentIds.has(localFeed.originId) && !localFlowing ? ' hbus-drop__leg--from-live' : ''}`}
+              {...dataFlowVoltageForBoardFeed(localFeed, equipment)}
               data-circuit-id={localFeed.id}
             >
               <span
@@ -707,23 +754,32 @@ function BusDrop({
             </div>
           </div>
         )}
-        {linkOnly && aux24Feeds.length > 0 && !isAux24Feed(localFeed) && (
-          <div className="hbus-drop__tops hbus-drop__tops--link-aux">
-            {aux24Feeds.map((aux) => (
-              <Aux24Incoming
-                key={aux.id}
-                circuit={aux}
-                protectionStatus={protectionStatus}
-                energizedCircuitIds={energizedCircuitIds}
-                lockedCircuits={lockedCircuits}
-                onLocalBreaker={onLocalBreaker}
-                onJumpToCircuit={onJumpToCircuit}
-                onHoverInfo={onHoverInfo}
-                onHoverInfoEnd={onHoverInfoEnd}
-              />
-            ))}
+        {linkOnly && (
+          <div
+            className={`hbus-drop__tops${
+              aux24Feeds.length > 0 && !isAux24Feed(localFeed)
+                ? ' hbus-drop__tops--link-aux'
+                : ' hbus-drop__tops--link-thru'
+            }`}
+          >
+            {aux24Feeds.length > 0 &&
+              !isAux24Feed(localFeed) &&
+              aux24Feeds.map((aux) => (
+                <Aux24Incoming
+                  key={aux.id}
+                  circuit={aux}
+                  protectionStatus={protectionStatus}
+                  energizedCircuitIds={energizedCircuitIds}
+                  lockedCircuits={lockedCircuits}
+                  onLocalBreaker={onLocalBreaker}
+                  onJumpToCircuit={onJumpToCircuit}
+                  onHoverInfo={onHoverInfo}
+                  onHoverInfoEnd={onHoverInfoEnd}
+                />
+              ))}
             <div
               className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              {...dataFlowVoltageForBoardFeed(localFeed, equipment)}
               data-circuit-id={localFeed.id}
               aria-hidden
             >
@@ -736,6 +792,7 @@ function BusDrop({
         <div className="hbus-drop__eq-row">
           <div
             className={`equip-chassis equip-chassis--ssb${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
+            {...dataFlowVoltageProps(equipment.id)}
             onDoubleClick={toggleExpand}
             aria-label={`${equipment.id} · doble clic para plegar`}
           >
@@ -810,6 +867,8 @@ function BusDrop({
       onToggleExpand={() => onToggleEquip(equipment.id)}
       equipFam={equipFam}
       bankNote={trfBankNote}
+      conversionNote={conversionNote}
+      trfStubFlow={trfStubFlow}
       located={locateEquipmentId === equipment.id}
       linkOnlyFromParent={isUnifilarLinkOnlyFeed(localFeed)}
       rootClassName={[
@@ -2422,6 +2481,7 @@ function BoardColumn({
     <div
       className={`plant-msb-col plant-msb-col--tie-${tieSide}`}
       data-board={board.id as BoardId}
+      {...dataFlowVoltageProps(board.id)}
       aria-label={`Doble clic para ${expanded ? 'plegar' : 'desplegar'} el cuadro`}
       onDoubleClick={(e) => {
         const t = e.target

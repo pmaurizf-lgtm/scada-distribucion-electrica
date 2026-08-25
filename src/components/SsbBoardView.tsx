@@ -17,15 +17,18 @@ import {
   ssbIncomingCircuit,
 } from '../abtDownstream/ssbBoard'
 import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
+import { isSsb2Pws4531 } from '../abtDownstream/ssb2pws4531'
 import {
   childFeeders,
   feedScopedChildFeeders,
   isAux24Feed,
   nestableChildFeeders,
 } from '../utils/cascadeModel'
+import { dataFlowVoltageAlum, dataFlowVoltageProps, isLightingBoard } from '../utils/flowVoltage'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBusDrop, equipFamOf } from './EquipmentBusDrop'
 import { Ssb2209BoardView } from './Ssb2209BoardView'
+import { Ssb4531BoardView } from './Ssb4531BoardView'
 
 type SharedProps = {
   protectionStatus: Record<string, ProtectionState>
@@ -72,6 +75,16 @@ export function SsbBoardView({
     )
   }
 
+  if (isSsb2Pws4531(ssb.id)) {
+    return (
+      <Ssb4531BoardView
+        ssb={ssb}
+        feed={feed}
+        {...shared}
+      />
+    )
+  }
+
   const ins =
     ssbIncomingCircuit(system690, ssb.id) ??
     childFeeders(system690, ssb.id).find((x) =>
@@ -97,10 +110,14 @@ export function SsbBoardView({
   const boardAncestors = new Set(ancestorIds ?? [])
   boardAncestors.add(ssb.id)
 
+  const lighting = isLightingBoard(ssb)
+  const alumProps = lighting ? dataFlowVoltageAlum() : {}
+
   return (
     <div
-      className={`ssb-board${inFlow ? ' ssb-board--fed' : ''}${busLive ? ' ssb-board--live' : ''}${!ins ? ' ssb-board--bus-only' : ''}`}
+      className={`ssb-board${inFlow ? ' ssb-board--fed' : ''}${busLive ? ' ssb-board--live' : ''}${!ins ? ' ssb-board--bus-only' : ''}${lighting ? ' ssb-board--alum' : ''}`}
       data-ssb={ssb.id}
+      {...dataFlowVoltageProps(ssb.id)}
     >
       <div className="ssb-board__feed">
         <span
@@ -124,16 +141,21 @@ export function SsbBoardView({
         )}
         <span
           className={`ssb-board__riser ssb-board__riser--to-bus${insFlow || (!ins && inFlow) ? ' ssb-board__riser--flow' : ''}`}
+          {...alumProps}
           aria-hidden
         />
       </div>
 
       <div
         className={`ssb-board__bus${busLive ? ' ssb-board__bus--live' : ''}`}
+        {...alumProps}
         aria-hidden
       />
 
-      <div className="ssb-board__drops hbus hbus--nested hbus--lcs-section hbus--ssb-section">
+      <div
+        className="ssb-board__drops hbus hbus--nested hbus--lcs-section hbus--ssb-section"
+        {...alumProps}
+      >
         <div className="hbus__drops">
           {focused.map(({ circuit, equipment }) => (
             <div key={circuit.id} className="hbus__slot">
@@ -180,6 +202,7 @@ function Ssb115InternalBoard({
     <div
       className={`ssb-board ssb-board--115${feedFlow ? ' ssb-board--fed' : ''}${busLive ? ' ssb-board--live' : ''}`}
       data-ssb-115={bus.id}
+      {...dataFlowVoltageProps(bus.id)}
     >
       <div className="ssb-board__feed">
         <span

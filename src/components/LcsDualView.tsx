@@ -26,9 +26,9 @@ import {
   aux24FeedsForEquipment,
   feedScopedChildFeeders,
   incomingFeeds,
-  isAbtOutgoingFeed,
   isAux24Feed,
   isPendingFeed,
+  isUnifilarLinkOnlyFeed,
   lineBadge,
   nestableChildFeeders,
   pairedRemoteFeeds,
@@ -40,6 +40,12 @@ import { EquipmentBalloon } from './EquipmentBalloon'
 import { EquipmentBusDrop, equipFamOf, symbolFor } from './EquipmentBusDrop'
 import { SsbBoardView } from './SsbBoardView'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
+import {
+  dataFlowVoltageFromCircuit,
+  dataFlowVoltageFromLcsBus,
+  dataFlowVoltageForBoardFeed,
+  dataFlowVoltageProps,
+} from '../utils/flowVoltage'
 
 type FeedSyncVars = {
   feedCol: number
@@ -262,15 +268,20 @@ function sectionOf(bus: LcsVoltageBus, service: ServiceClass): LcsSection | unde
 
 function BusDrops({
   outlets,
+  busVoltage,
   locateEquipmentId,
   expandedEquip,
   onToggleEquip,
   ...shared
 }: {
   outlets: LcsOutlet[]
+  busVoltage: number | string
 } & SharedProps) {
   return (
-    <div className="hbus hbus--nested hbus--lcs-section">
+    <div
+      className="hbus hbus--nested hbus--lcs-section"
+      {...dataFlowVoltageFromLcsBus(busVoltage)}
+    >
       <div className="hbus__drops">
         {outlets.map(({ circuit, equipment }) => (
           <div key={circuit.id} className="hbus__slot">
@@ -371,7 +382,7 @@ function LcsOutletDrop({
   }, [ancestorIds, equipment.id])
 
   if (ssbOpen) {
-    const linkOnly = isAbtOutgoingFeed(circuit)
+    const linkOnly = isUnifilarLinkOnlyFeed(circuit)
 
     const renderIncomingLeg = (feed: Circuit, kind: 'local' | 'remote') => {
       const isAlt = feed.lineType === 'alternativa'
@@ -383,6 +394,7 @@ function LcsOutletDrop({
         <div
           key={feed.id}
           className={`hbus-drop__leg hbus-drop__leg--${kind}${isAlt ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${flowing ? ' hbus-drop__leg--flow' : ''}${breakerOpen && !flowing ? ' hbus-drop__leg--open' : ''}${originLive && !flowing ? ' hbus-drop__leg--from-live' : ''}`}
+          {...dataFlowVoltageForBoardFeed(feed, equipment)}
           data-circuit-id={kind === 'local' ? feed.id : undefined}
           data-remote-circuit={kind === 'remote' ? feed.id : undefined}
           title={
@@ -446,6 +458,7 @@ function LcsOutletDrop({
     return (
       <div
         className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''} hbus-drop--expandable hbus-drop--ssb-open${dualIncoming ? ' hbus-drop--dual' : ''}${is2209 ? ' hbus-drop--ssb2209' : ''}${linkOnly ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}`}
+        {...dataFlowVoltageProps(equipment.id)}
         data-equip={equipment.id}
         data-locate={located ? '1' : undefined}
         data-circuit-id={circuit.id}
@@ -476,8 +489,14 @@ function LcsOutletDrop({
             {renderIncomingLeg(localFeed, 'local')}
           </div>
         )}
-        {linkOnly && aux24Feeds.length > 0 && (
-          <div className="hbus-drop__tops hbus-drop__tops--link-aux">
+        {linkOnly && (
+          <div
+            className={`hbus-drop__tops${
+              aux24Feeds.length > 0
+                ? ' hbus-drop__tops--link-aux'
+                : ' hbus-drop__tops--link-thru'
+            }`}
+          >
             {aux24Feeds.map((aux) => (
               <Aux24Incoming
                 key={aux.id}
@@ -493,6 +512,7 @@ function LcsOutletDrop({
             ))}
             <div
               className={`hbus-drop__leg hbus-drop__leg--thru${isAltLocal ? ' hbus-drop__leg--alt' : ' hbus-drop__leg--norm'}${localFlowing ? ' hbus-drop__leg--flow' : ''}`}
+              {...dataFlowVoltageForBoardFeed(circuit, equipment)}
               data-circuit-id={circuit.id}
               aria-hidden
             >
@@ -505,6 +525,7 @@ function LcsOutletDrop({
         <div className="hbus-drop__eq-row">
           <div
             className={`equip-chassis equip-chassis--ssb${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
+            {...dataFlowVoltageProps(equipment.id)}
             onDoubleClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
@@ -567,7 +588,7 @@ function LcsOutletDrop({
       }
       equipFam={equipFam}
       located={located}
-      linkOnlyFromParent={isAbtOutgoingFeed(circuit)}
+      linkOnlyFromParent={isUnifilarLinkOnlyFeed(circuit)}
       rootClassName={
         expanded && (kids.length > 0 || hasSsbBoardLayout(equipment))
           ? hasSsbBoardLayout(equipment)
@@ -595,7 +616,26 @@ function LcsOutletDrop({
         />
       )}
       {expanded && !hasSsbBoardLayout(equipment) && kids.length > 0 && (
-        <div className="hbus hbus--nested hbus--direct">
+        <div
+          className={`hbus hbus--nested hbus--direct${
+            kids.some((k) => isUnifilarLinkOnlyFeed(k.circuit))
+              ? ' hbus--chain-link'
+              : ''
+          }${
+            kids.some(
+              (k) =>
+                isUnifilarLinkOnlyFeed(k.circuit) &&
+                energizedCircuitIds.has(k.circuit.id),
+            )
+              ? ' hbus--live'
+              : ''
+          }`}
+          {...(kids.find((k) => isUnifilarLinkOnlyFeed(k.circuit))
+            ? dataFlowVoltageFromCircuit(
+                kids.find((k) => isUnifilarLinkOnlyFeed(k.circuit))!.circuit,
+              )
+            : {})}
+        >
           <div className="hbus__drops">
             {kids.map(({ circuit: c, equipment: eq }) => (
               <div key={c.id} className="hbus__slot">
@@ -690,6 +730,7 @@ export function LcsVoltageBoard({
     <div
       ref={qvsLegRef}
       className={`lcs440-rail__qvs-leg${inFlow ? ' lcs440-rail__qvs-leg--flow' : ''}${qvsOpen && !inFlow ? ' lcs440-rail__qvs-leg--open' : ''}${qvsFromLive ? ' lcs440-rail__qvs-leg--from-live' : ''}`}
+      {...dataFlowVoltageFromLcsBus(bus.voltage)}
       data-qvs={bus.voltage}
     >
       <span className="lcs440-rail__qvs-leg__wire lcs440-rail__qvs-leg__wire--from" aria-hidden />
@@ -714,6 +755,7 @@ export function LcsVoltageBoard({
     <ParallelFeedLeg
       parallel={parallel}
       voltageLabel={vLabel}
+      busVoltage={bus.voltage}
       flowing={parallelFlow}
       eqLive={energizedEquipmentIds.has(parallel.equipment.id)}
       {...shared}
@@ -738,7 +780,7 @@ export function LcsVoltageBoard({
         )}
       </div>
       <div className="lcs440-rail__vs-drops">
-        <BusDrops outlets={vs?.outlets ?? []} {...shared} />
+        <BusDrops outlets={vs?.outlets ?? []} busVoltage={bus.voltage} {...shared} />
         {parallel && (
           <div className="lcs440-rail__vs-parallel-spacer" aria-hidden />
         )}
@@ -747,7 +789,10 @@ export function LcsVoltageBoard({
   )
 
   const qvmBlock = qvm ? (
-    <div className={`lcs440-tie lcs440-rail__qvm${qvmFlow ? ' lcs440-tie--flow' : ''}`}>
+    <div
+      className={`lcs440-tie lcs440-rail__qvm${qvmFlow ? ' lcs440-tie--flow' : ''}`}
+      {...dataFlowVoltageFromLcsBus(bus.voltage)}
+    >
       <span className="lcs440-tie__bridge lcs440-tie__bridge--left" aria-hidden />
       <BreakerChip
         name={qvm.protectionName}
@@ -777,13 +822,16 @@ export function LcsVoltageBoard({
         className={`lcs440-cell__bus lcs440-rail__vm-bus${vmLive ? ' lcs440-cell__bus--live' : ''}`}
       />
       <div className="lcs440-rail__vm-drops">
-        <BusDrops outlets={vm?.outlets ?? []} {...shared} />
+        <BusDrops outlets={vm?.outlets ?? []} busVoltage={bus.voltage} {...shared} />
       </div>
     </>
   )
 
   const qnvBlock = qnv ? (
-    <div className={`lcs440-tie lcs440-rail__qnv${qnvFlow ? ' lcs440-tie--flow' : ''}`}>
+    <div
+      className={`lcs440-tie lcs440-rail__qnv${qnvFlow ? ' lcs440-tie--flow' : ''}`}
+      {...dataFlowVoltageFromLcsBus(bus.voltage)}
+    >
       <span className="lcs440-tie__bridge lcs440-tie__bridge--left" aria-hidden />
       <BreakerChip
         name={qnv.protectionName}
@@ -813,7 +861,7 @@ export function LcsVoltageBoard({
         className={`lcs440-cell__bus lcs440-rail__nv-bus${nvLive ? ' lcs440-cell__bus--live' : ''}`}
       />
       <div className="lcs440-rail__nv-drops">
-        <BusDrops outlets={nv?.outlets ?? []} {...shared} />
+        <BusDrops outlets={nv?.outlets ?? []} busVoltage={bus.voltage} {...shared} />
       </div>
     </>
   )
@@ -832,6 +880,7 @@ export function LcsVoltageBoard({
     <div
       className={`lcs440-board${mirror ? ' lcs440-board--mirror' : ''}${vsLive ? ' lcs440-board--live' : ''}${feed ? ' lcs440-board--fed' : ''}${parallel ? ' lcs440-board--parallel-feed' : ''}`}
       data-voltage={bus.voltage}
+      {...dataFlowVoltageFromLcsBus(bus.voltage)}
     >
       <div className={`lcs440-rail${mirror ? ' lcs440-rail--mirror' : ''}`}>
         {feedBay}
@@ -849,6 +898,7 @@ export function LcsVoltageBoard({
 function ParallelFeedLeg({
   parallel,
   voltageLabel,
+  busVoltage,
   flowing,
   eqLive,
   protectionStatus,
@@ -859,6 +909,7 @@ function ParallelFeedLeg({
 }: {
   parallel: LcsParallelIncoming
   voltageLabel: string
+  busVoltage: number | string
   flowing: boolean
   eqLive: boolean
 } & SharedProps) {
@@ -880,6 +931,7 @@ function ParallelFeedLeg({
   return (
     <div
       className={`lcs440-rail__qs-leg${flowing ? ' lcs440-rail__qs-leg--flow' : ''}${protectionStatus[circuit.id] !== 'cerrada' && !flowing ? ' lcs440-rail__qs-leg--open' : ''}${eqLive && !flowing ? ' lcs440-rail__qs-leg--from-live' : ''}`}
+      {...dataFlowVoltageFromLcsBus(busVoltage)}
       data-qs={circuit.protectionName}
     >
       <div

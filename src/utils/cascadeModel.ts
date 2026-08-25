@@ -318,6 +318,20 @@ export function isAbtOutgoingFeed(circuit: Circuit): boolean {
 }
 
 /**
+ * Salida secundaria 230 V desde TRF (p. ej. S01→SSB): el chip va
+ * dentro del recuadro TRF, no en la pierna de bajante.
+ */
+export function isTrfInternalConversionFeed(circuit: Circuit): boolean {
+  if (circuit.virtual || !circuit.originId.startsWith('TRF-')) return false
+  if (/4SFS/i.test(circuit.originId)) return false
+  const v = String(circuit.voltage ?? '').replace(/\s*V$/i, '')
+  if (!v.startsWith('230')) return false
+  if (circuit.destinationId.startsWith('LCS-')) return false
+  if (/^QVS-/i.test(circuit.protectionName)) return false
+  return true
+}
+
+/**
  * Salida dibujada solo como cable (sin chip de interruptor):
  * ABT→…, SBT-6PWS→SCV-4SFS, o aguas abajo de FIU-4SFS (Excel sin Q real).
  */
@@ -346,9 +360,10 @@ export function isLinkOnlyOutgoingFeed(circuit: Circuit): boolean {
 
 /**
  * Sin chip en el cable del unifilar: enlaces reales + acometidas cuyo
- * interruptor vive dentro del cuadro (SCV→MSB-4SFS / Q00).
+ * interruptor vive dentro del cuadro (SCV→MSB-4SFS / Q00) o en el TRF (S01).
  */
 export function isUnifilarLinkOnlyFeed(circuit: Circuit): boolean {
+  if (isTrfInternalConversionFeed(circuit)) return true
   if (isLinkOnlyOutgoingFeed(circuit)) return true
   return (
     !circuit.virtual &&

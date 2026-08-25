@@ -2,6 +2,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react'
 import type { Circuit, ProtectionState } from '../types'
 import { BreakerChip } from './BreakerChip'
 import { aux24JumpRevealId } from '../utils/cascadeModel'
+import { dataFlowVoltageFromCircuit } from '../utils/flowVoltage'
 
 /**
  * AUX 24 V como pierna superior estilo alimentación remota (a la izquierda de ALT/NORM):
@@ -33,6 +34,7 @@ export function Aux24Incoming({
   return (
     <div
       className={`hbus-drop__leg hbus-drop__leg--remote hbus-drop__leg--aux${flowing ? ' hbus-drop__leg--flow' : ''}`}
+      {...dataFlowVoltageFromCircuit(circuit)}
       data-circuit-id={circuit.id}
       title={`AUX 24 V → receptor ${receptorId} (desde ${circuit.originId}). Pulsa el interruptor para ir al receptor.`}
     >

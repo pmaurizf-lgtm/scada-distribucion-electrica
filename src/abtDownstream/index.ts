@@ -67,3 +67,13 @@ export {
   SSB_2209_QA_NOTE,
   SSB_2209_TIE_NOTE,
 } from './ssb2pws2209'
+
+export {
+  buildSsb4531Model,
+  isSsb2Pws4531,
+  isSsb4531SocketBus,
+  isSsb4531SocketFeed,
+  SSB_2PWS4531_ID,
+  SSB_4531_SKT_BUS,
+  SSB_4531_SOCKET_NOTE,
+} from './ssb2pws4531'

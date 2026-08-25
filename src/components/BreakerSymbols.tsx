@@ -192,6 +192,59 @@ export function ManualBreakerSymbol({
   )
 }
 
+/**
+ * Base enchufe trifásica IEC 60309 (III+T): círculo con tres fases + tierra.
+ */
+export function TrifasicSocketSymbol({
+  live = false,
+  flowing = false,
+}: {
+  live?: boolean
+  flowing?: boolean
+}) {
+  const color = flowing
+    ? 'var(--flow-wire)'
+    : live
+      ? 'color-mix(in srgb, var(--flow-wire) 55%, #8a9a94)'
+      : '#6b7d77'
+  return (
+    <svg
+      className={`ssb4531-socket-sym${flowing ? ' ssb4531-socket-sym--flow' : ''}${live ? ' ssb4531-socket-sym--live' : ''}`}
+      viewBox="0 0 36 36"
+      width="28"
+      height="28"
+      aria-hidden
+    >
+      <circle
+        cx="18"
+        cy="16"
+        r="11"
+        fill="none"
+        stroke={color}
+        strokeWidth="1.8"
+      />
+      <circle cx="13" cy="14" r="2.2" fill={color} />
+      <circle cx="23" cy="14" r="2.2" fill={color} />
+      <circle cx="18" cy="20" r="2.2" fill={color} />
+      <path
+        d="M18 27v4M14 31h8"
+        fill="none"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16 29.5l2-2.5 2 2.5"
+        fill="none"
+        stroke={color}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 /** Candado rojo = protección bloqueada en abierto (no manipulable) */
 export function LockBadge() {
   return (
