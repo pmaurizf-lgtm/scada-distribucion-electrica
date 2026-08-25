@@ -1,7 +1,6 @@
 /**
- * Persistencia local de la simulación (PWA / offline).
- * Misma app en desktop y móvil: los cambios de lógica de energía siguen
- * aplicando; solo se guarda/restaura el estado de usuario.
+ * Persistencia local de la simulación durante la sesión (PWA / offline).
+ * Al cargar la app siempre se parte de reposo: no se restaura estado previo.
  */
 import type { ProtectionStatusMap } from '../types'
 

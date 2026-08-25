@@ -17,7 +17,7 @@ import { computeEnergyFlow, toggleProtectionState } from '../utils/energyFlow'
 import { findEquipmentByQuery, getUpstreamTrace } from '../utils/upstream'
 import { isPendingFeed } from '../utils/cascadeModel'
 import {
-  loadPersistedSim,
+  clearPersistedSim,
   savePersistedSim,
 } from '../utils/simPersistence'
 import {
@@ -47,21 +47,7 @@ const searchableEquipment = system690.equipment.filter(
     e.id !== 'ORIGEN-PENDIENTE',
 )
 
-function initialProtectionStatus(): ProtectionStatusMap {
-  const saved = loadPersistedSim()
-  if (saved?.protectionStatus) return saved.protectionStatus
-  return toProtectionStatusMap(sampleProtectionStatus)
-}
-
-function initialLocked(): Set<string> {
-  const saved = loadPersistedSim()
-  return new Set(saved?.lockedCircuits ?? [])
-}
-
-function initialGens(): Set<string> {
-  const saved = loadPersistedSim()
-  return new Set(saved?.runningGenerators ?? [])
-}
+const REST_STATUS_SOURCE = 'reposo · todos abiertos · gens parados'
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
@@ -74,19 +60,18 @@ export function ScadaCanvas() {
   const cascadeRef = useRef<CascadeViewHandle>(null)
   const isMobile = useIsMobileUi()
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
-  const [protectionStatus, setProtectionStatus] =
-    useState<ProtectionStatusMap>(initialProtectionStatus)
-  const [lockedCircuits, setLockedCircuits] =
-    useState<Set<string>>(initialLocked)
-  const [runningGenerators, setRunningGenerators] =
-    useState<Set<string>>(initialGens)
+  const [protectionStatus, setProtectionStatus] = useState<ProtectionStatusMap>(
+    () => toProtectionStatusMap(sampleProtectionStatus),
+  )
+  const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const [runningGenerators, setRunningGenerators] = useState<Set<string>>(
+    () => new Set(),
+  )
   const [lockTool, setLockTool] = useState<LockTool>('none')
   const [zoom, setZoom] = useState(1)
-  const [statusSource, setStatusSource] = useState(() =>
-    loadPersistedSim()
-      ? 'estado restaurado (local / offline)'
-      : 'todos abiertos · gens parados',
-  )
+  const [statusSource, setStatusSource] = useState(REST_STATUS_SOURCE)
   const [locateQuery, setLocateQuery] = useState('')
   const [feedsQuery, setFeedsQuery] = useState('')
   const [searchHint, setSearchHint] = useState<string | null>(null)
@@ -105,6 +90,11 @@ export function ScadaCanvas() {
   })
   const [startupMode, setStartupMode] = useState(false)
   const [simulationActive, setSimulationActive] = useState(false)
+
+  useEffect(() => {
+    // Cada carga: reposo limpio (sin flujo ni candados de sesiones anteriores)
+    clearPersistedSim()
+  }, [])
 
   useEffect(() => {
     if (isMobile) {
@@ -180,7 +170,8 @@ export function ScadaCanvas() {
     setRunningGenerators(new Set())
     setLockedCircuits(new Set())
     setLockTool('none')
-    setStatusSource('reposo · todos abiertos · gens parados')
+    setStatusSource(REST_STATUS_SOURCE)
+    clearPersistedSim()
   }, [])
 
   const handleSimulateToggle = useCallback(() => {
@@ -251,11 +242,20 @@ export function ScadaCanvas() {
     setStatusSource('candado retirado · interruptor manipulable')
   }, [simulationActive])
 
-  const zoomIn = () =>
-    setZoom((z) => Math.min(ZOOM_MAX, Math.round((z + ZOOM_STEP) * 100) / 100))
-  const zoomOut = () =>
-    setZoom((z) => Math.max(ZOOM_MIN, Math.round((z - ZOOM_STEP) * 100) / 100))
-  const zoomReset = () => setZoom(1)
+  const zoomIn = () => {
+    const next = Math.min(ZOOM_MAX, Math.round((zoom + ZOOM_STEP) * 100) / 100)
+    if (cascadeRef.current) cascadeRef.current.zoomAtCenter(next)
+    else setZoom(next)
+  }
+  const zoomOut = () => {
+    const next = Math.max(ZOOM_MIN, Math.round((zoom - ZOOM_STEP) * 100) / 100)
+    if (cascadeRef.current) cascadeRef.current.zoomAtCenter(next)
+    else setZoom(next)
+  }
+  const zoomReset = () => {
+    if (cascadeRef.current) cascadeRef.current.zoomAtCenter(1)
+    else setZoom(1)
+  }
 
   const closeCandadosMenu = useCallback(() => {
     const el = candadosDetailsRef.current
