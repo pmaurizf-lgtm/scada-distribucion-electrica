@@ -36,7 +36,7 @@ export function Aux24Incoming({
       className={`hbus-drop__leg hbus-drop__leg--remote hbus-drop__leg--aux${flowing ? ' hbus-drop__leg--flow' : ''}`}
       {...dataFlowVoltageFromCircuit(circuit)}
       data-circuit-id={circuit.id}
-      title={`AUX 24 V → receptor ${receptorId} (desde ${circuit.originId}). Pulsa el interruptor para ir al receptor.`}
+      title={`AUX 24 V desde ${circuit.originId} → ${receptorId}`}
     >
       <span className="hbus-drop__free-end" aria-hidden />
       <BreakerChip
@@ -47,12 +47,17 @@ export function Aux24Incoming({
         circuit={circuit}
         flowing={flowing}
         locked={lockedCircuits.has(circuit.id)}
-        title={`Ir al receptor ${receptorId} (AUX 24 V · ${circuit.protectionName})`}
+        title={/^MSB-/i.test(receptorId)
+          ? `AUX 24 V · ${circuit.protectionName} (desde ${circuit.originId})`
+          : `Ir al receptor ${receptorId} (AUX 24 V · ${circuit.protectionName})`}
         onHoverInfo={onHoverInfo}
         onHoverInfoEnd={onHoverInfoEnd}
         onClick={(e) => {
           e.stopPropagation()
-          onJumpToCircuit?.(circuit)
+          // Si el receptor es un MSB board (ya lo estamos viendo), no saltamos
+          if (!/^MSB-/i.test(receptorId)) {
+            onJumpToCircuit?.(circuit)
+          }
         }}
       />
       <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />
