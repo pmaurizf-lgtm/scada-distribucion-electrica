@@ -8,7 +8,7 @@ export function NavantiaLogo({ className }: Props) {
   return (
     <img
       className={`navantia-logo${className ? ` ${className}` : ''}`}
-      src="/navantia-logo.webp"
+      src={`${import.meta.env.BASE_URL}navantia-logo.webp`}
       alt="Navantia"
       width={198}
       height={25}
