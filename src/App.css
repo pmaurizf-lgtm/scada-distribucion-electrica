@@ -4130,10 +4130,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
  * (pata a salida del ABT recortada + línea extra a la derecha).
  * Ajustamos solo para ABT para no tocar otros tramos.
  */
-.hbus-drop--fam-abt.hbus-drop--link-only
+.hbus-drop--fam-trf.hbus-drop--link-only
   > .hbus-drop__tops--link-thru
   .hbus-drop__wire--thru,
-.hbus-drop--fam-abt.hbus-drop--link-only
+.hbus-drop--fam-trf.hbus-drop--link-only
   > .hbus-drop__tops--link-aux
   .hbus-drop__wire--thru {
   margin-top: -1.05rem;
