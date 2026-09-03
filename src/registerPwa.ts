@@ -20,7 +20,7 @@ export function registerPwa(): void {
       } catch {
         /* ignore */
       }
-      window.location.reload()
+      // No forzamos recargar: la UI muestra un toast y el usuario recarga cuando quiere.
     },
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return

@@ -50,6 +50,28 @@ function pickAltIncoming(feeds: Circuit[], primary?: Circuit): Circuit | undefin
 }
 
 /**
+ * True si `id` está aguas arriba de algún otro equipo pedido (aparece en su traza).
+ * Evita árboles redundantes: TRF/LCS pedidos junto con un hijo → solo el del hijo.
+ */
+function isAncestorOfOtherRequested(
+  id: string,
+  requestedIds: ReadonlySet<string>,
+  data: DistributionData,
+  traceCache: Map<string, UpstreamTrace>,
+): boolean {
+  for (const other of requestedIds) {
+    if (other === id) continue
+    let trace = traceCache.get(other)
+    if (!trace) {
+      trace = getUpstreamTrace(other, data.circuits)
+      traceCache.set(other, trace)
+    }
+    if (trace.equipmentIds.includes(id)) return true
+  }
+  return false
+}
+
+/**
  * Construye informe de puesta en marcha: destinos → grupos por origen común → bosque.
  */
 export function buildStartupReport(
@@ -115,6 +137,23 @@ export function buildStartupReport(
     destByOrigin.set(originId, list)
   }
 
+  // Quitar destinos cubiertos por otro pedido aguas abajo (p. ej. TRF si también hay LCS/SSB)
+  const requestedSet = new Set(resolvedIds)
+  const traceCache = new Map<string, UpstreamTrace>()
+  for (const [originId, items] of [...destByOrigin.entries()]) {
+    const kept = items.filter(
+      ({ dest }) =>
+        !isAncestorOfOtherRequested(
+          dest.equipmentId,
+          requestedSet,
+          data,
+          traceCache,
+        ),
+    )
+    if (kept.length === 0) destByOrigin.delete(originId)
+    else destByOrigin.set(originId, kept)
+  }
+
   const groups: StartupGroup[] = []
   const allCircuits: Circuit[] = []
   const seenCircuits = new Set<string>()
@@ -124,10 +163,12 @@ export function buildStartupReport(
     const originIncoming = incomingFeeds(data, originId)
     const normC = pickPrimaryIncoming(originIncoming)
     const altC = pickAltIncoming(originIncoming, normC)
-    let originTrace: UpstreamTrace = getUpstreamTrace(originId, data.circuits)
+    let originTrace: UpstreamTrace =
+      traceCache.get(originId) ?? getUpstreamTrace(originId, data.circuits)
+    traceCache.set(originId, originTrace)
     // Si el origen es el propio destino sin feeds aguas arriba útiles
     if (!originTrace.circuits.length && items.length === 1) {
-      originTrace = getUpstreamTrace(items[0].dest.equipmentId, data.circuits)
+      originTrace = getUpstreamTrace(items[0]!.dest.equipmentId, data.circuits)
     }
 
     for (const c of originTrace.circuits) {

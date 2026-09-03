@@ -8,6 +8,10 @@ import { incomingFeeds } from './cascadeModel'
 import { looksLikeEquipmentId } from '../startupFeeds/parseDestinationsExcel'
 import { findEquipmentByQuery } from './upstream'
 
+const MAX_LOCK_SHEET_CELLS = 200_000
+const MAX_LOCK_TOKENS = 2_500
+const MAX_LOCK_TARGETS = 3_000
+
 /** Extrae tokens candidatas (IDs) de la 1ª hoja. */
 export function parseLockTargetsFromWorkbook(data: ArrayBuffer): string[] {
   const wb = XLSX.read(data, { type: 'array' })
@@ -19,6 +23,10 @@ export function parseLockTargetsFromWorkbook(data: ArrayBuffer): string[] {
     defval: null,
     raw: false,
   }) as (string | number | null)[][]
+
+  // Guardrail: evita procesar hojas absurdas que pueden congelar el navegador.
+  // (sheet_to_json ya materializa toda la matriz, así que limitamos tokens/retorno pronto.)
+  if (rows.length > MAX_LOCK_SHEET_CELLS) return []
 
   const seen = new Set<string>()
   const out: string[] = []
@@ -40,6 +48,7 @@ export function parseLockTargetsFromWorkbook(data: ArrayBuffer): string[] {
       if (seen.has(key)) continue
       seen.add(key)
       out.push(text)
+      if (out.length >= MAX_LOCK_TOKENS) return out
     }
   }
   return out
@@ -55,6 +64,9 @@ export function resolveLockCircuitIds(
   targets: string[],
   equipmentPool?: Equipment[],
 ): { circuitIds: string[]; unresolved: string[] } {
+  const normalizedTargets =
+    targets.length > MAX_LOCK_TARGETS ? targets.slice(0, MAX_LOCK_TARGETS) : targets
+
   const pool =
     equipmentPool ??
     data.equipment.filter(
@@ -68,7 +80,7 @@ export function resolveLockCircuitIds(
   const circuitIds = new Set<string>()
   const unresolved: string[] = []
 
-  for (const raw of targets) {
+  for (const raw of normalizedTargets) {
     const q = raw.trim()
     if (!q) continue
 

@@ -4,6 +4,10 @@ const HEADER_RE =
   /^(destino|equipo|id|puma|dcp|nombre|destinos|equipment)$/i
 const SKIP_RE = /^(-|—|n\/?a|na|none|null)?$/i
 
+const MAX_FEEDS_SHEET_CELLS = 500_000
+const MAX_DEST_TOKENS = 5_000
+const MAX_TEXT_DEST_TOKENS = 2_500
+
 /** ¿Parece un ID de equipo (PUMA / código con guión)? */
 export function looksLikeEquipmentId(raw: string): boolean {
   const s = raw.trim()
@@ -30,6 +34,9 @@ export function parseDestinationsFromWorkbook(data: ArrayBuffer): string[] {
     raw: false,
   }) as (string | number | null)[][]
 
+  // Guardrail: evitar hojas excesivas que puedan congelar el navegador.
+  if (rows.length > MAX_FEEDS_SHEET_CELLS) return []
+
   const seen = new Set<string>()
   const out: string[] = []
 
@@ -43,6 +50,7 @@ export function parseDestinationsFromWorkbook(data: ArrayBuffer): string[] {
       if (seen.has(key)) continue
       seen.add(key)
       out.push(text)
+      if (out.length >= MAX_DEST_TOKENS) return out
     }
   }
   return out
@@ -62,6 +70,7 @@ export function parseDestinationsFromText(text: string): string[] {
     if (seen.has(key)) continue
     seen.add(key)
     out.push(p)
+    if (out.length >= MAX_TEXT_DEST_TOKENS) return out
   }
   return out
 }

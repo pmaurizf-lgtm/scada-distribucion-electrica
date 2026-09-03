@@ -25,6 +25,9 @@ export function StartupFeedsPanel({
   energizedCircuitIds: Set<string>
   energizedEquipmentIds: Set<string>
 }) {
+  const MAX_FEEDS_EXCEL_BYTES = 10 * 1024 * 1024
+  const ALLOWED_FEEDS_EXCEL_RE = /\.(xlsx|xls|xlsm)$/i
+
   const excelRef = useRef<HTMLInputElement>(null)
   const [title, setTitle] = useState('Alimentaciones puesta en marcha')
   const [manualText, setManualText] = useState('')
@@ -65,6 +68,20 @@ export function StartupFeedsPanel({
   const handleExcel = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!ALLOWED_FEEDS_EXCEL_RE.test(file.name) || !file.size) {
+      setHint('Archivo Excel de destinos no válido.')
+      e.target.value = ''
+      return
+    }
+    if (file.size > MAX_FEEDS_EXCEL_BYTES) {
+      setHint(
+        `Excel demasiado grande (${Math.round(file.size / 1024 / 1024)} MiB). Máx. ${Math.round(
+          MAX_FEEDS_EXCEL_BYTES / 1024 / 1024,
+        )} MiB.`,
+      )
+      e.target.value = ''
+      return
+    }
     try {
       const buf = await file.arrayBuffer()
       const ids = parseDestinationsFromWorkbook(buf)

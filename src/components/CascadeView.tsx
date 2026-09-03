@@ -30,6 +30,7 @@ import {
 } from '../utils/cascadeModel'
 import type { UpstreamTrace } from '../utils/upstream'
 import { getPlantRevealPath } from '../utils/upstream'
+import { resolveJumpScrollTarget } from '../utils/jumpScrollTarget'
 import { dataFlowVoltageFromCircuit, dataFlowVoltageForBoardFeed, dataFlowVoltageProps } from '../utils/flowVoltage'
 import {
   isLcsEquipment,
@@ -1135,7 +1136,13 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   /** Tras localizar: centrar en el equipo (reintentos tras expandir). */
   const pendingLocateScroll = useRef<string | null>(null)
   /** Tras saltar a acometida remota/AUX: centrar y resaltar el alimentador local. */
-  const pendingJumpScroll = useRef<string | null>(null)
+  const pendingJumpScroll = useRef<{
+    circuitId: string
+    originId: string
+    destinationId: string
+    boardIds: string[]
+    expandEquipIds: string[]
+  } | null>(null)
   const [jumpNonce, setJumpNonce] = useState(0)
   const jumpHighlightTimer = useRef<number | null>(null)
   /** Encaje del árbol de alimentaciones ya estabilizado (evita bucles/parpadeo). */
@@ -1734,7 +1741,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   useEffect(() => {
     const mode = pendingViewFit.current
     if (!fitZoomPending.current && mode == null) return
-    if (locateRef.current || focusRef.current) return
+    if (locateRef.current || focusRef.current || pendingJumpScroll.current)
+      return
 
     let cancelled = false
     const fitMode: 'fit' | 'zoom100' = mode === 'zoom100' ? 'zoom100' : 'fit'
@@ -1743,7 +1751,13 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       fitMode === 'fit' ? [120, 320, 650, 1100, 1700] : [50, 120, 250, 450]
 
     const tryFit = (i: number) => {
-      if (cancelled || locateRef.current || focusRef.current) return
+      if (
+        cancelled ||
+        locateRef.current ||
+        focusRef.current ||
+        pendingJumpScroll.current
+      )
+        return
       const isLast = i + 1 >= delays.length
       applyPlantViewFit(fitMode, { clearPending: isLast })
       if (!isLast) {
@@ -1768,13 +1782,19 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     let lastW = stage.clientWidth
     let t: number | undefined
     const ro = new ResizeObserver(() => {
-      if (pinchingRef.current) return
+      if (pinchingRef.current || pendingJumpScroll.current || locateRef.current)
+        return
       const w = stage.clientWidth
       if (Math.abs(w - lastW) < 48) return
       lastW = w
       window.clearTimeout(t)
       t = window.setTimeout(() => {
-        if (pinchingRef.current) return
+        if (
+          pinchingRef.current ||
+          pendingJumpScroll.current ||
+          locateRef.current
+        )
+          return
         fitZoomPending.current = true
         fitAndCenterView()
       }, 100)
@@ -1827,31 +1847,38 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     return true
   }, [scrollStageToElement])
 
-  const scrollToJumpedCircuit = useCallback(() => {
-    const id = pendingJumpScroll.current
+  const scrollToJumpedCircuit = useCallback((opts?: { finalize?: boolean }) => {
+    const pending = pendingJumpScroll.current
     const plant = plantRef.current
-    if (!id || !plant || focusRef.current) return false
+    if (!pending || !plant || focusRef.current) return false
 
-    const drop = plant.querySelector(
-      `.hbus-drop[data-circuit-id="${id}"]`,
-    ) as HTMLElement | null
-    const localBrk = (drop?.querySelector(
-      `.hbus-drop__leg--local [data-circuit-id="${id}"]`,
-    ) ??
-      drop?.querySelector(
-        `.hbus-drop__leg--local[data-circuit-id="${id}"]`,
-      ) ??
-      plant.querySelector(
-        `.hbus-drop__leg--local [data-circuit-id="${id}"]`,
-      )) as HTMLElement | null
+    // Esperar a que la cadena pedida esté desplegada (si no, el scroll queda
+    // obsoleto al seguir creciendo el DOM y parece que “se pliega”).
+    for (const b of pending.boardIds) {
+      if (!expandedBoardsRef.current.has(b)) return false
+    }
+    for (const id of pending.expandEquipIds) {
+      if (!expandedEquipRef.current.has(id)) return false
+    }
 
-    const target = localBrk ?? drop
-    if (!target) return false
+    const resolved = resolveJumpScrollTarget(plant, {
+      circuitId: pending.circuitId,
+      originId: pending.originId,
+      destinationId: pending.destinationId,
+    })
+    if (!resolved) return false
 
-    pendingJumpScroll.current = null
+    const { target, drop } = resolved
+
+    const rect = target.getBoundingClientRect()
+    if (rect.width < 4 || rect.height < 4) return false
+
     scrollStageToElement(target)
 
-    // Quitar resaltados previos de otros saltos
+    if (!opts?.finalize) return true
+
+    pendingJumpScroll.current = null
+
     plant.querySelectorAll('.hbus-drop--jump-hl').forEach((el) => {
       el.classList.remove('hbus-drop--jump-hl')
     })
@@ -1862,10 +1889,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         drop.classList.remove('locate-flash')
       }, 1800)
     }
-    const flashEl = localBrk ?? target
-    flashEl.classList.add('casc-brk--flash')
+    target.classList.add('casc-brk--flash')
     window.setTimeout(() => {
-      flashEl.classList.remove('casc-brk--flash')
+      target.classList.remove('casc-brk--flash')
     }, 1800)
 
     if (jumpHighlightTimer.current != null) {
@@ -1910,15 +1936,20 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   useLayoutEffect(() => {
     if (!pendingJumpScroll.current) return
     let cancelled = false
-    const delays = [0, 60, 160, 320, 560, 900, 1300]
+    // Varios pases: primero cuando existe el local, luego al estabilizar layout
+    const delays = [80, 180, 320, 520, 800, 1200, 1800, 2600]
     const tryScroll = (i: number) => {
-      if (cancelled) return
-      if (scrollToJumpedCircuit()) return
-      if (i + 1 < delays.length) {
+      if (cancelled || !pendingJumpScroll.current) return
+      const isLast = i + 1 >= delays.length
+      const ok = scrollToJumpedCircuit({ finalize: isLast })
+      if (ok && isLast) return
+      if (!isLast) {
         window.setTimeout(
           () => tryScroll(i + 1),
           delays[i + 1]! - delays[i]!,
         )
+      } else if (!ok) {
+        pendingJumpScroll.current = null
       }
     }
     const raf = window.requestAnimationFrame(() => {
@@ -2155,6 +2186,10 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const onJumpToCircuit = useCallback((circuit: Circuit) => {
     if (isPendingFeed(circuit)) return
 
+    pendingFocusTarget.current = null
+    // Evitar que el toque siguiente (doble toque móvil) pliegue al llegar
+    suppressExpandUntilRef.current = performance.now() + 600
+
     if (!viewOriginRef.current) {
       const stage = panRef.current
       viewOriginRef.current = {
@@ -2171,26 +2206,30 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     // Revelar la cadena hasta el origen de la acometida remota (SSB/LCS/…)
     // y abrir ese origen para ver la instancia LOCAL del interruptor.
     const path = getPlantRevealPath(circuit.originId, system690)
-    const boardsToOpen = new Set<BoardId>(path.boardIds)
-    const equipToOpen = new Set<string>(path.expandEquipIds)
+    const boardsToOpen = path.boardIds
+    const equipToOpen = path.expandEquipIds
 
-    pendingJumpScroll.current = circuit.id
+    pendingJumpScroll.current = {
+      circuitId: circuit.id,
+      originId: circuit.originId,
+      destinationId: circuit.destinationId,
+      boardIds: boardsToOpen,
+      expandEquipIds: equipToOpen,
+    }
     fitZoomPending.current = false
+    pendingViewFit.current = null
+    centerPending.current = false
 
-    if (boardsToOpen.size) {
-      setExpandedBoards((prev) => {
-        const next = new Set(prev)
-        for (const id of boardsToOpen) next.add(id)
-        return next
-      })
-    }
-    if (equipToOpen.size) {
-      setExpandedEquip((prev) => {
-        const next = new Set(prev)
-        for (const id of equipToOpen) next.add(id)
-        return next
-      })
-    }
+    setExpandedBoards((prev) => {
+      const next = new Set(prev)
+      for (const id of boardsToOpen) next.add(id)
+      return next
+    })
+    setExpandedEquip((prev) => {
+      const next = new Set(prev)
+      for (const id of equipToOpen) next.add(id)
+      return next
+    })
     // Dispara el centrado + resaltado tras el layout (mismo mecanismo que localizar).
     setJumpNonce((n) => n + 1)
   }, [])

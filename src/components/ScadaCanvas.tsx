@@ -39,6 +39,8 @@ const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
 const ZOOM_STEP = 0.15
 const PWA_HINT_KEY = 'scada-f110-pwa-hint-dismissed'
+const MAX_LOCK_EXCEL_BYTES = 8 * 1024 * 1024
+const ALLOWED_LOCK_EXCEL_RE = /\.(xlsx|xls|xlsm)$/i
 
 const searchableEquipment = system690.equipment.filter(
   (e) =>
@@ -267,6 +269,20 @@ export function ScadaCanvas() {
     async (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
       if (!file) return
+      if (!ALLOWED_LOCK_EXCEL_RE.test(file.name) || !file.size) {
+        setSearchHint('Archivo Excel de candados no válido.')
+        e.target.value = ''
+        return
+      }
+      if (file.size > MAX_LOCK_EXCEL_BYTES) {
+        setSearchHint(
+          `Excel demasiado grande (${Math.round(file.size / 1024 / 1024)} MiB). Máx. ${Math.round(
+            MAX_LOCK_EXCEL_BYTES / 1024 / 1024,
+          )} MiB.`,
+        )
+        e.target.value = ''
+        return
+      }
       try {
         const buf = await file.arrayBuffer()
         const targets = parseLockTargetsFromWorkbook(buf)
@@ -323,14 +339,25 @@ export function ScadaCanvas() {
       setLocateEquipmentId(null)
       return
     }
-    setFocus(null)
     setLocateEquipmentId(found.id)
+    let mobileTraceLen: number | null = null
+    if (isMobile) {
+      const trace = getUpstreamTrace(found.id, system690.circuits)
+      mobileTraceLen = trace.circuits.length
+      setFocus({ equipmentId: found.id, trace })
+    } else {
+      setFocus(null)
+    }
     if (isMobile) setChromeCollapsed(true)
     const dcp =
       found.dcp10Id && found.dcp10Id !== found.id ? ` / ${found.dcp10Id}` : ''
     const nme = found.nme674Id ? ` / NME ${found.nme674Id}` : ''
     setSearchHint(
-      `${found.id}${dcp}${nme} · ${found.name} — localizado en el unifilar.`,
+      isMobile
+        ? `${found.id}${dcp}${nme} · ${found.name} — árbol con ${
+            mobileTraceLen ?? 0
+          } alimentaciones aguas arriba.`
+        : `${found.id}${dcp}${nme} · ${found.name} — localizado en el unifilar.`,
     )
   }
 
@@ -813,7 +840,7 @@ export function ScadaCanvas() {
           {isMobile ? ' · PWA' : ''}
         </span>
       </footer>
-      <PwaUpdateToast enabled={isMobile} />
+      <PwaUpdateToast enabled={true} />
         </>
       )}
     </div>

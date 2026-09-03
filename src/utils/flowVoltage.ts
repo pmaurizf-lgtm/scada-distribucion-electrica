@@ -5,7 +5,7 @@
  * `alum` = distribución de alumbrado (blanco) desde el INS del cuadro hacia abajo.
  */
 import type { Circuit, Equipment } from '../types'
-import { isAux24Feed } from './cascadeModel'
+import { isAux24Feed, isMsb24Equipment } from './cascadeModel'
 import { isSbtToScvDirectFeed } from '../voltageSystems/hz400'
 
 export type FlowVoltage = '690' | '440' | '230' | '115' | '24' | '400hz' | 'alum'
@@ -56,6 +56,7 @@ export function flowVoltageFromCircuitField(
 /** Tensión de una acometida: prioriza `circuit.voltage`, luego destino/origen. */
 export function flowVoltageFromCircuit(circuit: Circuit): FlowVoltage {
   if (isAux24Feed(circuit)) return '24'
+  if (isMsb24Equipment(circuit.originId)) return '24'
   /* Salidas / INS→barra desde cuadro de alumbrado → blanco (no la acometida al cuadro). */
   if (isLightingBoardId(circuit.originId)) return 'alum'
   const fromField = flowVoltageFromCircuitField(circuit)

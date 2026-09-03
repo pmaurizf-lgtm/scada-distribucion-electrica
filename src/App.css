@@ -6441,6 +6441,73 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: var(--line-aux);
 }
 
+/*
+ * Cables del árbol: mismo criterio de tensión que el unifilar (data-flow-v).
+ * Sustituye NORM=amarillo / ALT=azul / AUX=salmon cuando hay tensión conocida.
+ */
+.stree-branch[data-flow-v],
+.stree-branch__leg[data-flow-v],
+.stree-lcs-infeed[data-flow-v],
+.stree-lcs-infeed__leg[data-flow-v],
+.stree-lcs-bus[data-flow-v],
+.stree-downstream[data-flow-v],
+.stree-fan__col[data-flow-v],
+.stree-lcs-rail-wrap[data-flow-v],
+.stree-lcs-rail[data-flow-v],
+.stree-branch__wire[data-flow-v],
+.stree-join[data-flow-v] {
+  --stree-wire-idle: color-mix(in srgb, var(--flow-wire) 40%, #3d4f4a);
+}
+
+.stree-branch[data-flow-v] .stree-branch__wire,
+.stree-branch[data-flow-v] .stree-branch__wire--thru,
+.stree-branch__leg[data-flow-v] .stree-branch__wire,
+.stree-branch__leg[data-flow-v] .stree-branch__wire--thru,
+.stree-lcs-infeed[data-flow-v] .stree-branch__wire,
+.stree-lcs-infeed__leg[data-flow-v] .stree-branch__wire,
+.stree-lcs-bus[data-flow-v] .stree-branch__wire,
+.stree-downstream[data-flow-v] > .stree-branch__wire,
+.stree-fan__col[data-flow-v] .stree-branch__wire,
+.stree-fan__col[data-flow-v] .stree-branch__wire--thru,
+.stree-lcs-rail-wrap[data-flow-v] .lcs440-rail__qvs-leg__wire,
+.stree-lcs-rail[data-flow-v] .lcs440-rail__qvs-leg__wire,
+.stree-lcs-rail[data-flow-v] .lcs440-tie__bridge,
+.stree-lcs-rail[data-flow-v] .stree-branch__wire,
+.stree-branch__wire[data-flow-v] {
+  background: var(--stree-wire-idle);
+  color: var(--flow-wire);
+  opacity: 1;
+}
+
+.stree-branch[data-flow-v].stree-branch--flow .stree-branch__wire,
+.stree-branch[data-flow-v].stree-branch--flow .stree-branch__wire--thru,
+.stree-branch__leg[data-flow-v].stree-branch__leg--flow .stree-branch__wire,
+.stree-branch__leg[data-flow-v].stree-branch__leg--flow .stree-branch__wire--thru,
+.stree-lcs-infeed[data-flow-v].stree-lcs-infeed--flow > .stree-branch__wire,
+.stree-lcs-infeed__leg[data-flow-v].stree-lcs-infeed__leg--flow .stree-branch__wire {
+  background: var(--flow-wire);
+  box-shadow: 0 0 5px rgba(var(--flow-glow-rgb), 0.3);
+}
+
+.stree-branch[data-flow-v] .stree-branch__tag,
+.stree-branch[data-flow-v] .stree-branch__tag--alt,
+.stree-branch[data-flow-v] .stree-branch__tag--aux {
+  color: var(--flow-wire);
+}
+
+.stree-join[data-flow-v] {
+  background: var(--stree-wire-idle);
+}
+
+.stree-lcs-bus[data-flow-v] .stree-lcs-bus__bar {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 55%, #2a3532),
+    var(--flow-wire) 45%,
+    color-mix(in srgb, var(--flow-wire) 55%, #2a3532)
+  );
+}
+
 .stree-branch__tag {
   font-family: var(--mono);
   font-size: 0.58rem;
@@ -8697,15 +8764,480 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 
 .stree-downstream__branches {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  margin-inline: auto;
+}
+
+.stree-downstream__branch-row {
+  display: flex;
   flex-wrap: nowrap;
   align-items: flex-start;
   justify-content: center;
   gap: 1.75rem;
 }
 
+.stree-downstream__buses {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2.25rem;
+  width: max-content;
+  margin-inline: auto;
+}
+
+.stree-downstream__bus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 5.75rem;
+}
+
+/* LCS árbol: rejilla lcs440-rail (barras continuas, acopladores centrados) */
+.stree-lcs-rails {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  margin-top: 0;
+}
+
+.stree-node:has(> .stree-node__lcs-hub) {
+  --stree-lcs-tap-h: 2.15rem;
+  --stree-lcs-hub-gap: 0.5rem;
+  --stree-lcs-fan-drop: 0.9rem;
+}
+
+/* Dual aguas arriba: el stem central no baja bajo el LCS (QVS van por columna) */
+.stree-node:has(> .stree-node__lcs-hub) > .stree-feed > .stree-branch__wire--stem {
+  display: none;
+}
+
+/* Hub LCS + carriles: pierna QVS como unifilar (qvs → label → bus) */
+.stree-node__lcs-hub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.stree-feed--single + .stree-node__lcs-hub,
+.stree-feed--dual + .stree-node__lcs-hub {
+  margin-top: -1px;
+}
+
+.stree-node__lcs-hub > .stree-node__self {
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.stree-node__lcs-hub > .stree-node__self .stree-eq {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-bottom: 0;
+  padding-bottom: 0.35rem;
+  overflow: hidden;
+}
+
+.stree-node__lcs-hub > .stree-lcs-rails {
+  margin-top: var(--stree-lcs-hub-gap, 0.5rem);
+  position: relative;
+  z-index: 3;
+  overflow: visible;
+  width: 100%;
+  align-items: center;
+}
+
+.stree-lcs-rails__cols {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2.25rem;
+  width: max-content;
+}
+
+.stree-lcs-rail-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: visible;
+}
+
+/* Bajante LCS → QVS: siempre vía stree-lcs-rails__fan (no tap suelto en columna) */
+
+.stree-lcs-rail {
+  --lcs-vs-col: 5.75rem;
+  --lcs-tie-w: 4.25rem;
+  --lcs-bus-gap: 0;
+}
+
+.stree-lcs-rail.lcs440-rail {
+  grid-template-rows:
+    [qvs] minmax(3.2rem, auto)
+    [label] minmax(1.75rem, auto)
+    [bus] 4px
+    [bus-gap] 0
+    [drops] auto;
+}
+
+/*
+ * Pierna QVS en árbol: rejilla interna fija (arriba / QVS / abajo a barra).
+ * Evita que flex reparta el espacio y deje el cartel VS montado sobre el chip.
+ */
+.stree-node__lcs-hub .lcs440-rail__qvs-leg {
+  z-index: 5;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto minmax(1.25rem, 1fr);
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  justify-items: center;
+  width: 3.4rem;
+  min-width: 3.4rem;
+}
+
+.stree-node__lcs-hub .lcs440-rail__qvs-leg__wire--from {
+  grid-row: 1;
+  align-self: stretch;
+  width: 2px;
+  min-height: 0.5rem;
+  height: auto;
+  flex: unset;
+  margin: 0;
+}
+
+.stree-node__lcs-hub .lcs440-rail__qvs-leg .casc-brk {
+  grid-row: 2;
+  background: var(--bg-elevated);
+  margin: 0;
+  flex: unset;
+}
+
+.stree-node__lcs-hub .lcs440-rail__qvs-leg__wire--to-bus {
+  grid-row: 3;
+  align-self: stretch;
+  justify-self: center;
+  width: 2px;
+  min-height: 1.85rem;
+  height: auto;
+  flex: unset;
+  margin: 0 0 -2px;
+}
+
+/* Cartel VS en fila label, lateral al eje QVS — no sobre la pata vertical */
+.stree-lcs-rail .lcs440-rail__vs-tag {
+  grid-row: label;
+  align-self: end;
+  justify-self: center;
+  margin: 0 0 0.85rem 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.stree-node__lcs-hub .stree-lcs-rail--vs-vm.lcs440-rail:not(.lcs440-rail--mirror) .lcs440-rail__vs-tag,
+.stree-node__lcs-hub .stree-lcs-rail--vs-only.lcs440-rail:not(.lcs440-rail--mirror) .lcs440-rail__vs-tag {
+  transform: translateX(calc(-1 * (var(--lcs-vs-col, 5.75rem) / 2 - 0.35rem)));
+}
+
+.stree-node__lcs-hub .stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__vs-tag,
+.stree-node__lcs-hub .stree-lcs-rail--vs-only.lcs440-rail--mirror .lcs440-rail__vs-tag {
+  transform: translateX(calc(var(--lcs-vs-col, 5.75rem) / 2 - 0.35rem));
+}
+
+/* Solo VS */
+.stree-lcs-rail--vs-only.lcs440-rail {
+  grid-template-columns: minmax(var(--lcs-vs-col), max-content);
+}
+
+.stree-lcs-rail--vs-only .lcs440-rail__qvs-leg {
+  grid-column: 1;
+}
+
+.stree-lcs-rail--vs-only .lcs440-rail__vs-tag,
+.stree-lcs-rail--vs-only .lcs440-rail__vs-bus,
+.stree-lcs-rail--vs-only .lcs440-rail__vs-drops {
+  grid-column: 1;
+}
+
+/* VS + VM */
+.stree-lcs-rail--vs-vm.lcs440-rail {
+  grid-template-columns:
+    minmax(var(--lcs-vs-col), max-content)
+    var(--lcs-tie-w)
+    max-content;
+}
+
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror {
+  grid-template-columns:
+    max-content
+    var(--lcs-tie-w)
+    minmax(var(--lcs-vs-col), max-content);
+}
+
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__qvs-leg,
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__vs-tag,
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__vs-bus,
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__vs-drops {
+  grid-column: 3;
+}
+
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__qvm {
+  grid-column: 2;
+}
+
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__vm-tag,
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__vm-bus,
+.stree-lcs-rail--vs-vm.lcs440-rail--mirror .lcs440-rail__vm-drops {
+  grid-column: 1;
+}
+
+/* Completo VS—QVM—VM—QNV—NV: columnas estándar lcs440-rail (--full) */
+
+.stree-lcs-rail .lcs440-rail__vs-drops,
+.stree-lcs-rail .lcs440-rail__vm-drops,
+.stree-lcs-rail .lcs440-rail__nv-drops {
+  min-width: 100%;
+}
+
+.stree-lcs-rail .stree-downstream--attach-bus {
+  width: 100%;
+  align-items: center;
+}
+
+.stree-lcs-rail .stree-downstream--attach-bus .stree-downstream__branch-row {
+  gap: 1.15rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.stree-lcs-rail .stree-downstream--attach-bus .stree-branch__leg > .stree-branch__wire:first-child {
+  min-height: 0.4rem;
+}
+
+.stree-lcs-rail .lcs440-rail--mirror .lcs440-rail__vs-drops .stree-downstream__branch-row,
+.stree-lcs-rail .lcs440-rail--mirror .lcs440-rail__vm-drops .stree-downstream__branch-row,
+.stree-lcs-rail .lcs440-rail--mirror .lcs440-rail__nv-drops .stree-downstream__branch-row {
+  justify-content: flex-end;
+}
+
+.stree-lcs-rail[data-flow-v] .lcs440-cell__bus {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flow-wire) 55%, #2a3532),
+    var(--flow-wire) 45%,
+    color-mix(in srgb, var(--flow-wire) 55%, #2a3532)
+  );
+}
+
+.stree-lcs-rail[data-flow-v='230'] .lcs440-cell__tag--VS {
+  background: #2a2418;
+  color: #e8d4a8;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #8a7040 55%, transparent);
+}
+
+/*
+ * Abanico LCS: bajante centrada + barra horizontal (dual) alineada con patas QVS.
+ * Vanos explícitos bajo el cuadro LCS (hub-gap + fan-drop) — sin solapar el LCS.
+ */
+.stree-lcs-rails--dual {
+  --stree-lcs-dual-gap: 2.75rem;
+  --stree-lcs-bridge: 0.45rem;
+  --stree-lcs-bar-qvs-gap: 0.85rem;
+}
+
+.stree-lcs-rails--single {
+  --stree-lcs-bridge: 0.45rem;
+}
+
+.stree-lcs-rails__shift {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: max-content;
+  max-width: 100%;
+}
+
+.stree-lcs-rails__fan {
+  position: relative;
+  width: 100%;
+  height: var(--stree-lcs-tap-h, 2.15rem);
+  flex-shrink: 0;
+  margin: 0;
+  pointer-events: none;
+  z-index: 7;
+  overflow: visible;
+}
+
+/* Dual: más vano bajo LCS (bajante) antes de la barra horizontal */
+.stree-lcs-rails--dual .stree-lcs-rails__fan {
+  height: calc(
+    var(--stree-lcs-tap-h, 2.15rem) + var(--stree-lcs-fan-drop, 0.9rem)
+  );
+}
+
+.stree-lcs-rails__fan-stem {
+  position: absolute;
+  top: calc(-1 * var(--stree-lcs-hub-gap, 0.5rem));
+  left: var(--stree-fan-stem-left, 50%);
+  transform: translateX(-50%);
+  width: 2px;
+  height: calc(100% + var(--stree-lcs-hub-gap, 0.5rem));
+  background: var(--wire-idle);
+  z-index: 2;
+}
+
+/* Una tensión: el cable QVS sube por el vano del fan (sin stem suelto) */
+.stree-node__lcs-hub .stree-lcs-rails--single .stree-lcs-rails__fan-stem {
+  display: none;
+}
+
+.stree-lcs-rails__fan-bar {
+  position: absolute;
+  bottom: 0;
+  left: var(--stree-fan-left, 0px);
+  width: var(--stree-fan-width, 0px);
+  height: 2px;
+  background: var(--wire-idle);
+  z-index: 3;
+}
+
+.stree-node__lcs-hub .stree-lcs-rails--dual .stree-lcs-rails__cols {
+  gap: var(--stree-lcs-dual-gap, 2.75rem);
+  margin-top: var(--stree-lcs-bar-qvs-gap, 0.85rem);
+}
+
+/*
+ * Dual: pata vertical barra → QVS (vanos bar-qvs-gap + bridge al chip).
+ * Single: cable QVS atraviesa hub-gap + fan hasta el LCS.
+ */
+.stree-node__lcs-hub .stree-lcs-rails--dual .lcs440-rail__qvs-leg__wire--from {
+  position: absolute;
+  top: calc(-1 * var(--stree-lcs-bar-qvs-gap, 0.85rem));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: calc(
+    var(--stree-lcs-bar-qvs-gap, 0.85rem) + var(--stree-lcs-bridge, 0.45rem)
+  );
+  min-height: unset;
+  margin: 0;
+  grid-row: auto;
+  z-index: 6;
+}
+
+.stree-node__lcs-hub .stree-lcs-rails--single .lcs440-rail__qvs-leg__wire--from {
+  position: absolute;
+  top: calc(
+    -1 * (var(--stree-lcs-tap-h, 2.15rem) + var(--stree-lcs-hub-gap, 0.5rem))
+  );
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: calc(
+    var(--stree-lcs-tap-h, 2.15rem) + var(--stree-lcs-hub-gap, 0.5rem) +
+      var(--stree-lcs-bridge, 0.45rem)
+  );
+  min-height: unset;
+  margin: 0;
+  grid-row: auto;
+  z-index: 6;
+}
+
+.stree-node__lcs-hub .stree-lcs-rails--single .stree-lcs-rails__cols {
+  margin-top: 0;
+}
+
+.stree-lcs-rails__cols {
+  position: relative;
+  margin: 0;
+}
+
+/* Cartel VM: separado del acoplador QVM */
+.stree-lcs-rail .lcs440-rail__vm-tag {
+  margin-left: 0.55rem;
+  margin-right: 0.15rem;
+}
+
+.stree-lcs-rail.lcs440-rail--mirror .lcs440-rail__vm-tag {
+  margin-left: auto;
+  margin-right: 0.55rem;
+}
+
 .stree-branch--down {
   min-width: 5.75rem;
 }
+
+/* Varias acometidas del mismo origen (no QVS LCS) */
+.stree-branch--fan {
+  min-width: auto;
+}
+
+.stree-fan {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  margin-inline: auto;
+}
+
+.stree-fan--split {
+  margin-top: -0.55rem;
+}
+
+.stree-fan__exit {
+  width: 2px;
+  height: 0.95rem;
+  margin: 0 auto;
+  background: var(--flow-wire, var(--line-normal));
+  flex-shrink: 0;
+  border-radius: 1px;
+}
+
+.stree-fan__legs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.75rem;
+  position: relative;
+}
+
+.stree-fan__legs::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(2.875rem);
+  right: calc(2.875rem);
+  height: 2px;
+  background: var(--flow-wire, var(--wire-idle));
+  opacity: 0.85;
+}
+
+.stree-fan--split .stree-fan__col .stree-branch__wire:first-child {
+  min-height: 0.55rem;
+}
+
+.stree-fan__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 5.75rem;
+}
+
+.stree-feed--single:has(.stree-branch--fan) + .stree-node__self {
+  margin-top: -1px;
+}
+
 
 .stree__group-caption {
   margin: 0 0 0.5rem;
