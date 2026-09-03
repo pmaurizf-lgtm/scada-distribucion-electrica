@@ -46,13 +46,7 @@ function originScopes(plant: HTMLElement, originId: string): Element[] {
   for (const drop of plant.querySelectorAll(
     `.hbus-drop[data-equip="${originId}"]`,
   )) {
-    if (
-      drop.classList.contains('hbus-drop--ssb-open') ||
-      drop.classList.contains('hbus-drop--lcs-open') ||
-      drop.querySelector('.ssb-board, .lcs-dual, .msb4sfs-rack')
-    ) {
-      add(drop)
-    }
+    add(drop)
   }
 
   return scopes

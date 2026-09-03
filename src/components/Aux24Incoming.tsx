@@ -7,7 +7,7 @@ import { dataFlowVoltageFromCircuit } from '../utils/flowVoltage'
 /**
  * AUX 24 V como pierna superior estilo alimentación remota (a la izquierda de ALT/NORM):
  * extremo libre → chip → mid + cartel «AUX 24 V» → bajante al equipo.
- * Clic en el interruptor → ir al receptor (destino).
+ * Clic en el interruptor → ir al origen 24 V (MSB-24PW…) desplegado.
  */
 export function Aux24Incoming({
   circuit,
@@ -47,17 +47,12 @@ export function Aux24Incoming({
         circuit={circuit}
         flowing={flowing}
         locked={lockedCircuits.has(circuit.id)}
-        title={/^MSB-/i.test(receptorId)
-          ? `AUX 24 V · ${circuit.protectionName} (desde ${circuit.originId})`
-          : `Ir al receptor ${receptorId} (AUX 24 V · ${circuit.protectionName})`}
+        title={`Ir a ${circuit.originId} (AUX 24 V · ${circuit.protectionName})`}
         onHoverInfo={onHoverInfo}
         onHoverInfoEnd={onHoverInfoEnd}
         onClick={(e) => {
           e.stopPropagation()
-          // Si el receptor es un MSB board (ya lo estamos viendo), no saltamos
-          if (!/^MSB-/i.test(receptorId)) {
-            onJumpToCircuit?.(circuit)
-          }
+          onJumpToCircuit?.(circuit)
         }}
       />
       <span className="hbus-drop__wire hbus-drop__wire--mid" aria-hidden />

@@ -21,6 +21,7 @@ import {
   isUnifilarLinkOnlyFeed,
   isAux24Feed,
   isPendingFeed,
+  msbIdFromAux24Panel,
   aux24FeedsForEquipment,
   nestableChildFeeders,
   type BoardId,
@@ -2212,7 +2213,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     pendingJumpScroll.current = {
       circuitId: circuit.id,
       originId: circuit.originId,
-      destinationId: circuit.destinationId,
+      destinationId: isAux24Feed(circuit)
+        ? (msbIdFromAux24Panel(circuit.destinationId) ?? circuit.destinationId)
+        : circuit.destinationId,
       boardIds: boardsToOpen,
       expandEquipIds: equipToOpen,
     }

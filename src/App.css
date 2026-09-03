@@ -2156,6 +2156,13 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-bottom: 0;
   position: relative;
   z-index: 2;
+  /* Dejar pasar clic/hover a AUX 24 V (.plant-msb__aux-tops) bajo las patas de gen */
+  pointer-events: none;
+}
+
+.plant-msb__outside .casc-gen,
+.plant-msb__outside .plant-msb__gen-leg {
+  pointer-events: auto;
 }
 
 .plant-msb__outside-gap {
@@ -2168,6 +2175,11 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   align-items: center;
   gap: 0;
   min-width: 8rem;
+  pointer-events: none;
+}
+
+.plant-msb__half-out .plant-msb__gen-leg {
+  pointer-events: auto;
 }
 
 .plant-msb__vwire--into-box {
@@ -3320,7 +3332,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   position: absolute;
   top: auto;
   bottom: 100%;
-  z-index: 5;
+  z-index: 6;
   display: flex;
   flex-direction: row;
   align-items: flex-end;
