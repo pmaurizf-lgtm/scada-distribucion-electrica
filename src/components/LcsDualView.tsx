@@ -397,13 +397,6 @@ function LcsOutletDrop({
           {...dataFlowVoltageForBoardFeed(feed, equipment)}
           data-circuit-id={kind === 'local' ? feed.id : undefined}
           data-remote-circuit={kind === 'remote' ? feed.id : undefined}
-          title={
-            kind === 'remote'
-              ? pending
-                ? `Alimentación ${lineBadge(feed.lineType)} · origen pendiente`
-                : `Alimentación ${lineBadge(feed.lineType)} desde ${feed.originId}`
-              : undefined
-          }
         >
           {kind === 'remote' ? (
             <span className="hbus-drop__free-end" aria-hidden />

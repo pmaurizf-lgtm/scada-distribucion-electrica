@@ -36,7 +36,6 @@ export function Aux24Incoming({
       className={`hbus-drop__leg hbus-drop__leg--remote hbus-drop__leg--aux${flowing ? ' hbus-drop__leg--flow' : ''}`}
       {...dataFlowVoltageFromCircuit(circuit)}
       data-circuit-id={circuit.id}
-      title={`AUX 24 V desde ${circuit.originId} → ${receptorId}`}
     >
       <span className="hbus-drop__free-end" aria-hidden />
       <BreakerChip

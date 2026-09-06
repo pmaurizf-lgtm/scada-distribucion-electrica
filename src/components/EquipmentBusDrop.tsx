@@ -110,7 +110,6 @@ function FoldedParallelCsbLeg({
       {...dataFlowVoltageFromCircuit(feed)}
       data-circuit-id={feed.id}
       data-equip={origin.id}
-      title={`${origin.id} → ${feed.protectionName} → ${feed.destinationId}`}
     >
       <div
         ref={eqWrapRef}
@@ -320,13 +319,6 @@ export function EquipmentBusDrop({
         {...dataFlowVoltageFromCircuit(feed)}
         data-circuit-id={kind === 'local' ? feed.id : undefined}
         data-remote-circuit={kind === 'remote' ? feed.id : undefined}
-        title={
-          kind === 'remote'
-            ? pending
-              ? `Alimentación ${lineBadge(feed.lineType)} · origen pendiente de identificar`
-              : `Alimentación ${lineBadge(feed.lineType)} desde ${feed.originId}. Pulsa el interruptor para ir a ese alimentador.`
-            : undefined
-        }
       >
         {kind === 'remote' ? (
           <span className="hbus-drop__free-end" aria-hidden />

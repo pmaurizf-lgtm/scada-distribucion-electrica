@@ -1,6 +1,7 @@
 import {
   useEffect,
   useRef,
+  useState,
   type MouseEvent as ReactMouseEvent,
 } from 'react'
 import type { Circuit, ProtectionState } from '../types'
@@ -45,6 +46,8 @@ export function BreakerChip({
 }) {
   const open = state !== 'cerrada'
   const hoverTimer = useRef<number | null>(null)
+  const nativeHintTimer = useRef<number | null>(null)
+  const [nativeHint, setNativeHint] = useState<string | undefined>()
   const isMotor =
     motorized ??
     isMotorizedProtectionModel(circuit?.protectionModel, name)
@@ -54,16 +57,18 @@ export function BreakerChip({
       window.clearTimeout(hoverTimer.current)
       hoverTimer.current = null
     }
+    if (nativeHintTimer.current != null) {
+      window.clearTimeout(nativeHintTimer.current)
+      nativeHintTimer.current = null
+    }
   }
 
   useEffect(() => () => clearHoverTimer(), [])
 
   const kindLabel = isMotor ? 'motorizado' : 'no motorizado'
   const aria = `Interruptor ${kindLabel} ${name} · ${open ? 'abierto' : 'cerrado'}${locked ? ' · bloqueado' : ''}`
-  // Con globo de info: sin title nativo (tapaba el globo). Sin globo: title corto.
-  const nativeTitle = onHoverInfo
-    ? undefined
-    : (title ?? aria)
+  /** Title nativo breve; se quita antes del globo de info para no taparlo. */
+  const nativeTitle = onHoverInfo ? nativeHint : (title ?? aria)
 
   return (
     <button
@@ -77,12 +82,23 @@ export function BreakerChip({
         if (!circuit || !onHoverInfo) return
         clearHoverTimer()
         const el = e.currentTarget
+        const hint = title ?? aria
+        el.setAttribute('title', hint)
+        setNativeHint(hint)
+        nativeHintTimer.current = window.setTimeout(() => {
+          el.removeAttribute('title')
+          setNativeHint(undefined)
+          nativeHintTimer.current = null
+        }, 1100)
         hoverTimer.current = window.setTimeout(() => {
+          el.removeAttribute('title')
+          setNativeHint(undefined)
           onHoverInfo(circuit, el.getBoundingClientRect())
         }, 1800)
       }}
       onMouseLeave={() => {
         clearHoverTimer()
+        setNativeHint(undefined)
         onHoverInfoEnd?.()
       }}
     >
