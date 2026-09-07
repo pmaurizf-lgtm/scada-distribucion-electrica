@@ -40,6 +40,10 @@ interface RawCircuit {
   voltage?: number | null
   pnKW?: number | null
   parallelCables?: number
+  cableSection?: string | null
+  cableType?: string | null
+  cableLengthM?: number | null
+  cableWeightKg?: number | null
   virtual?: boolean
 }
 
@@ -99,6 +103,10 @@ const base: DistributionData = {
       pnKW: c.pnKW ?? null,
       voltage: c.voltage != null ? `${c.voltage} V` : '690 V',
       parallelCables: c.parallelCables,
+      cableSection: c.cableSection || undefined,
+      cableType: c.cableType || undefined,
+      cableLengthM: c.cableLengthM ?? null,
+      cableWeightKg: c.cableWeightKg ?? null,
       virtual: c.virtual,
       excelRow: c.excelRow ?? null,
     }),

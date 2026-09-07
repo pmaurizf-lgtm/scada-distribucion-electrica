@@ -623,8 +623,8 @@ body {
 /* Baja hasta el borde de inner-top; el overlap con la barra lo da
  * el margin-bottom de .msb4sfs-rack__inner-top (sin atravesar el rail). */
 .msb4sfs-rack__vwire--to-rail {
-  flex: 1 1 auto;
-  min-height: 0.85rem;
+  flex: 1 1 0;
+  min-height: 0.35rem;
   margin-bottom: 0;
   padding-bottom: 2px;
   box-sizing: content-box;
@@ -778,12 +778,25 @@ body {
 
 .msb4sfs-rack__bustie-down {
   position: relative;
-  flex: 1 0 1rem;
+  flex: 1 1 0;
   width: 2px;
-  min-height: 1rem;
+  min-height: 0.35rem;
   background: var(--line-normal);
   margin-top: 0;
   margin-bottom: 0;
+}
+
+.msb4sfs-rack__bustie .casc-brk__lock-hit,
+.msb4sfs-rack__in-slot .casc-brk__lock-hit {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.35rem;
+  z-index: 6;
+  margin: 0;
+  padding: 1px;
+  background: color-mix(in srgb, var(--bg-elevated) 92%, #3a1010);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(214, 69, 69, 0.35);
 }
 
 .msb4sfs-rack__bustie--flow .msb4sfs-rack__bustie-down {
@@ -2038,6 +2051,68 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   display: none;
 }
 
+/*
+ * Leaf / JBX·SKT: el halo va en la tarjeta (`.hbus-drop__eq-wrap`), no en todo
+ * el drop (cables + hijos). Así no lo recorta el overflow de patas JBX y se ve entero.
+ */
+.hbus-drop--locate:not(.hbus-drop--ssb-open):not(.hbus-drop--lcs-open):not(
+    .hbus-drop--msb4sfs-open
+  ):not(.hbus-drop--ssb2209)::after {
+  content: none;
+  display: none;
+}
+
+.hbus-drop--locate:not(.hbus-drop--ssb-open):not(.hbus-drop--lcs-open):not(
+    .hbus-drop--msb4sfs-open
+  ):not(.hbus-drop--ssb2209)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap,
+.hbus-drop--locate:not(.hbus-drop--ssb-open):not(.hbus-drop--lcs-open):not(
+    .hbus-drop--msb4sfs-open
+  ):not(.hbus-drop--ssb2209)
+  > .hbus-drop__eq-wrap {
+  position: relative;
+  z-index: 8;
+  overflow: visible;
+}
+
+.hbus-drop--locate:not(.hbus-drop--ssb-open):not(.hbus-drop--lcs-open):not(
+    .hbus-drop--msb4sfs-open
+  ):not(.hbus-drop--ssb2209)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap::after,
+.hbus-drop--locate:not(.hbus-drop--ssb-open):not(.hbus-drop--lcs-open):not(
+    .hbus-drop--msb4sfs-open
+  ):not(.hbus-drop--ssb2209)
+  > .hbus-drop__eq-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 10px;
+  border: 2px solid rgba(45, 212, 168, 0.95);
+  box-shadow:
+    0 0 0 3px rgba(45, 212, 168, 0.2),
+    0 0 18px 3px rgba(45, 212, 168, 0.4);
+  pointer-events: none;
+  animation: locate-halo-pulse 1.4s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* Ancestros de cadena JBX: no recortar el halo del hijo localizado */
+.hbus-drop.hbus-drop--chain-open:has(.hbus-drop--locate)
+  > .hbus--chain-link.hbus--direct,
+.hbus--chain-link:has(.hbus-drop--locate),
+.hbus__drops:has(.hbus-drop--locate),
+.hbus__slot:has(.hbus-drop--locate) {
+  overflow: visible;
+}
+
+.hbus__slot:has(.hbus-drop--locate),
+.hbus-drop:has(> .hbus--chain-link .hbus-drop--locate) {
+  position: relative;
+  z-index: 7;
+}
+
 .hbus-drop--locate .hbus-drop__eq,
 .equip-chassis--locate .equip-chassis__label {
   border-color: rgba(45, 212, 168, 0.75);
@@ -2364,9 +2439,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .plant-msb__vwire--to-rail {
-  /* Llega al borde inferior de inner-top = inicio de la barra (top: 0) */
-  flex: 1 0 auto;
-  min-height: 0.85rem;
+  /* Llega al borde inferior de inner-top = inicio de la barra (top: 0).
+   * Debe poder encogerse si el chip (p. ej. con candado) ocupa más altura. */
+  flex: 1 1 0;
+  min-height: 0.35rem;
   height: auto;
   background: color-mix(in srgb, var(--v690-wire) 55%, #3d6b55);
   margin-bottom: 0;
@@ -2383,10 +2459,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   width: 3.4rem;
   z-index: 4;
   pointer-events: none;
+  overflow: visible;
 }
 
 .plant-msb__bustie .casc-brk {
   pointer-events: auto;
+  flex-shrink: 0;
 }
 
 .plant-msb__bustie--right {
@@ -2400,10 +2478,33 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .plant-msb__bustie-down {
   position: relative;
   width: 2px;
-  flex: 1 0 auto;
-  min-height: 1.15rem;
+  flex: 1 1 0;
+  min-height: 0.35rem;
   background: color-mix(in srgb, var(--v690-wire) 55%, #3d6b55);
   overflow: visible;
+}
+
+/*
+ * Candado en QT* / QG* (arriba de barra MSB): solapado al chip para no
+ * alargar la columna ni empujar la pata a través de 1SB/1SA.
+ */
+.plant-msb__bustie .casc-brk__lock-hit,
+.plant-msb__qg-slot .casc-brk__lock-hit {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.4rem;
+  z-index: 6;
+  margin: 0;
+  padding: 1px;
+  background: color-mix(in srgb, var(--bg-elevated) 92%, #3a1010);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(214, 69, 69, 0.35);
+}
+
+.plant-msb__bustie .casc-brk--compact,
+.plant-msb__qg-slot .casc-brk--compact {
+  /* Espacio fijo del chip sin el candado en el flujo flex */
+  gap: 0.1rem;
 }
 
 .plant-msb__bustie--flow .plant-msb__bustie-down {
@@ -2788,6 +2889,28 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .casc-brk__padlock {
   display: block;
   flex-shrink: 0;
+}
+
+.casc-brk__lock-hit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.casc-brk__lock-hit--clickable {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px;
+}
+
+.casc-brk__lock-hit--clickable:hover {
+  background: rgba(214, 69, 69, 0.18);
+  outline: 1px solid rgba(214, 69, 69, 0.55);
+}
+
+.lock-balloon .circuit-balloon__title {
+  letter-spacing: 0.02em;
 }
 
 .casc-brk--compact .casc-brk__name {
@@ -3272,8 +3395,68 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   .hbus-drop--link-only
   > .hbus-drop__tops--link-thru
   .hbus-drop__wire--thru {
-  flex: 0 0 0.85rem;
-  min-height: 0.85rem;
+  flex: 0 0 1.55rem;
+  min-height: 1.55rem;
+  margin-top: -1.45rem;
+  margin-bottom: -2px;
+}
+
+/*
+ * Cajas JBX anidadas (varios hijos link-only bajo un padre chain-open):
+ * - alargar patas hasta el borde inferior del padre (el 0.85rem anterior no cubría el padding 1.35rem);
+ * - ocultar el trazo gris central (::before del recuadro) que sobraba hacia abajo.
+ */
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus--direct
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before {
+  content: none;
+  display: none;
+  opacity: 0;
+  bottom: 0;
+}
+
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::after,
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::after {
+  display: none;
+  content: none;
+}
+
+/* Un solo stub central bajo el padre: sobra con varios hijos; cada hijo lleva su pata. */
+.hbus-drop.hbus-drop--chain-open:has(
+    > .hbus--chain-link > .hbus__drops > .hbus__slot:nth-child(2)
+  )
+  > .hbus--chain-link::before {
+  content: none;
+  display: none;
+}
+
+.hbus-drop.hbus-drop--chain-open
+  > .hbus--chain-link
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop--link-only
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru {
+  flex: 0 0 calc(var(--jbx-leg-gap, 1.35rem) + 2px);
+  min-height: calc(var(--jbx-leg-gap, 1.35rem) + 2px);
+  margin-top: calc(-1 * var(--jbx-leg-gap, 1.35rem) - 2px);
+  margin-bottom: -2px;
 }
 
 /* TRF→SSB (S01 interno): pata continua hasta el borde del chasis / INS */
@@ -4120,6 +4303,84 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-wrap .hbus-drop__eq::after,
 .hbus-drop.hbus-drop--chain-open:has(.hbus-drop--link-only) > .hbus-drop__eq-row > .hbus-drop__eq-wrap .hbus-drop__eq::after {
   display: none;
+}
+
+/*
+ * JBX / cadena multi-hijo: no trazo central gris a través del recuadro ni
+ * stub bajo el padre; cada hijo lleva su pata amarilla hasta el borde.
+ */
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus--direct
+  .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before,
+.hbus--direct
+  .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-row
+  > .hbus-drop__eq-wrap
+  .hbus-drop__eq::before {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+  bottom: 0 !important;
+}
+
+.hbus-drop.hbus-drop--chain-open:has(
+    > .hbus--chain-link > .hbus__drops > .hbus__slot:nth-child(2)
+  )
+  > .hbus--chain-link::before {
+  content: none !important;
+  display: none !important;
+}
+
+.hbus-drop.hbus-drop--chain-open
+  > .hbus--chain-link.hbus--direct
+  > .hbus__drops
+  > .hbus__slot
+  > .hbus-drop--link-only
+  > .hbus-drop__tops--link-thru
+  .hbus-drop__wire--thru {
+  /*
+   * Une al borde inferior del padre: el overshoot de 2px se recorta con
+   * overflow del .hbus--chain-link (no entra en el recuadro).
+   */
+  flex: 0 0 calc(var(--jbx-leg-gap, 1.35rem) + 2px);
+  min-height: calc(var(--jbx-leg-gap, 1.35rem) + 2px);
+  margin-top: calc(-1 * var(--jbx-leg-gap, 1.35rem) - 2px);
+  margin-bottom: -2px;
+}
+
+/* Hueco y recorte de patas JBX (multi-hijo link-only); no recortar si hay localizado */
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only):not(
+    :has(.hbus-drop--locate)
+  )
+  > .hbus--chain-link.hbus--direct {
+  --jbx-leg-gap: 1.35rem;
+  padding-top: var(--jbx-leg-gap);
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only):has(
+    .hbus-drop--locate
+  )
+  > .hbus--chain-link.hbus--direct {
+  --jbx-leg-gap: 1.35rem;
+  padding-top: var(--jbx-leg-gap);
+  margin-top: 0;
+  overflow: visible;
+}
+
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
+  > .hbus-drop__eq-row {
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 /* Thru link-only: cruza el hueco hasta el borde inferior del padre */
@@ -6124,6 +6385,42 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
+ * Enchufes SKT: misma altura de recuadro (texto multilínea acotado + hueco
+ * reservado para el control expand, aunque no exista).
+ */
+.hbus-drop__eq[data-equip^='SKT-'] {
+  box-sizing: border-box;
+  min-height: 5.85rem;
+  justify-content: flex-start;
+}
+
+.hbus-drop__eq[data-equip^='SKT-'] .hbus-drop__name {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  max-height: 2.35rem;
+  flex: 0 0 auto;
+}
+
+.hbus-drop__eq[data-equip^='SKT-'] .hbus-drop__more {
+  margin-top: auto;
+  min-height: 0.85rem;
+}
+
+.hbus-drop__eq[data-equip^='SKT-']:not(:has(.hbus-drop__more))::after {
+  content: '';
+  display: block;
+  margin-top: auto;
+  min-height: 0.85rem;
+  width: 1px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/*
  * Continuidad del unifilar a través del recuadro:
  * línea vertical tenue detrás del texto.
  */
@@ -6280,6 +6577,33 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   border: 1px solid var(--border);
   font-size: 0.7rem;
   font-weight: 600;
+  flex-shrink: 0;
+  color: #2a3532;
+  box-sizing: border-box;
+  padding: 1px;
+}
+
+.hbus-drop__sym:has(svg),
+.stree-eq__sym:has(svg) {
+  line-height: 0;
+}
+
+.hbus-drop__sym .equip-unifilar-sym,
+.stree-eq__sym .equip-unifilar-sym {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stree-eq__sym {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+  padding: 1px;
+  color: #2a3532;
   flex-shrink: 0;
 }
 
@@ -6746,8 +7070,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 .stree-eq--compact .stree-eq__sym {
+  width: 0.95rem;
+  height: 0.95rem;
   font-size: 0.72rem;
-  line-height: 1;
+  line-height: 0;
 }
 
 .stree-eq--compact .stree-eq__dcp {
@@ -6847,11 +7173,6 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   font-size: 0.65rem;
   padding: 0.25rem 0.4rem;
   min-width: auto;
-}
-
-.stree-eq__sym {
-  font-size: 0.85rem;
-  font-weight: 600;
 }
 
 .stree-eq__id {
@@ -8297,12 +8618,14 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .hbus-drop--locate::after,
 .equip-chassis--locate::after,
 .casc-gen--locate::after,
-.hbus-drop--jump-hl::after {
-  inset: -4px;
+.hbus-drop--jump-hl::after,
+.hbus-drop--locate > .hbus-drop__eq-row > .hbus-drop__eq-wrap::after,
+.hbus-drop--locate > .hbus-drop__eq-wrap::after {
+  inset: -5px;
   border-width: 1.5px;
   box-shadow:
     0 0 0 2px rgba(45, 212, 168, 0.12),
-    0 0 10px 1px rgba(45, 212, 168, 0.22);
+    0 0 12px 2px rgba(45, 212, 168, 0.28);
   animation: locate-halo-pulse 2s ease-in-out infinite;
 }
 

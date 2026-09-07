@@ -1,0 +1,30 @@
+---
+description: Producto paralelo unifilar geométrico (src/geo) — no sustituye CascadeView
+globs: src/geo/**
+alwaysApply: false
+---
+
+# Unifilar geométrico (`src/geo`) — producto paralelo β
+
+Convive con la cascada React/CSS (`CascadeView`). **No** reescribir ni sustituir el layout MSB congelado (`msb-690-frozen`, `msb-4sfs-frozen`) desde este producto.
+
+## Modelo
+
+- Fuente de **ids / topología**: `system690` (igual que cascada).
+- Fuente de **geometría**: `LayoutDocument` (`nodes` con x/y/width/height + `wires` polyline).
+- Persistencia propia: `geoPersistence` (`scada-f110-geo-layout-v1`), independiente de `simPersistence`.
+- Entrada UI: `?product=geo` o botón «Unifilar XY (β)» en cascada.
+
+## Reglas de edición
+
+1. Cambios de layout solo en `src/geo/**` y el conmutador mínimo en `App.tsx` / prop opcional de `ScadaCanvas`.
+2. No mover lógica de energía ni topología a coords; enlazar con `equipmentId` / `circuitId`.
+3. Semilla = `seedLayoutFromTopology` (aproximación); la precisión vendrá de edición JSON o import DXF futuro.
+4. DXF/DWG: mapear a/desde `LayoutDocument`, no al DOM de `CascadeView`.
+5. Desktop y móvil comparten el mismo visor SVG; solo chrome/inspector pueden diferir.
+
+## Extensión prevista
+
+- Editor de nodos (arrastrar, textos).
+- Capas ABT / 400 Hz / LCS en el mismo documento o hojas.
+- Export/import DXF como adaptador sobre `LayoutDocument`.

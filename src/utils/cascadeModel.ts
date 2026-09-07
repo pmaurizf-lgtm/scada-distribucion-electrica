@@ -355,6 +355,12 @@ export function isLinkOnlyOutgoingFeed(circuit: Circuit): boolean {
   ) {
     return true
   }
+  // Cajas de conexiones → JBX anidada / SKT: solo cable (sin interruptor).
+  if (!circuit.virtual && /^JBX-/i.test(circuit.originId)) return true
+  // Terminal box 24 V (misma lógica de cadena).
+  if (!circuit.virtual && /^TBX-/i.test(circuit.originId)) return true
+  // Enchufe dedicado → equipo (Sockets col. M/N): solo cable.
+  if (!circuit.virtual && /^SKT-/i.test(circuit.originId)) return true
   return false
 }
 

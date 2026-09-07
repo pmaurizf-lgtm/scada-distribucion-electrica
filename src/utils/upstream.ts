@@ -19,7 +19,9 @@ export interface UpstreamTrace {
 export function normalizeLcsBusVoltage(
   voltage?: string | null,
 ): '440' | '230' | null {
-  const v = (voltage ?? '').replace(/\s*V$/i, '').trim()
+  const v = String(voltage ?? '')
+    .replace(/\s*V$/i, '')
+    .trim()
   if (v === '440' || v.startsWith('440')) return '440'
   if (v === '230' || v.startsWith('230')) return '230'
   return null
@@ -29,6 +31,9 @@ export function normalizeLcsBusVoltage(
  * Si se llega por un tramo 440/230, excluye la barra opuesta del mismo LCS
  * (p. ej. QVS-230 al subir desde un outlet 440). Conserva NORM/ALT de la
  * misma tensión y alimentaciones a otras tensiones (690, etc.).
+ *
+ * Solo debe usarse cuando el nodo actual es un LCS. En TRF/SSB/JBX/SKT el
+ * cambio 440↔230 es conversión legítima y no debe cortar el camino al MSB.
  */
 export function filterFeedsByBusVoltage(
   feeds: Circuit[],
@@ -41,6 +46,16 @@ export function filterFeedsByBusVoltage(
     if (v && v !== want) return false
     return true
   })
+}
+
+/** Filtra por barra LCS solo si `equipmentId` es un LCS. */
+export function filterUpstreamIncoming(
+  equipmentId: string,
+  feeds: Circuit[],
+  viaVoltage?: string | null,
+): Circuit[] {
+  if (!equipmentId.startsWith('LCS-')) return feeds
+  return filterFeedsByBusVoltage(feeds, viaVoltage)
 }
 
 /**
@@ -91,7 +106,7 @@ export function getUpstreamTrace(
     if (!atTarget && !capAtMsb24) {
       incoming = incoming.filter((c) => !isAux24Feed(c))
     }
-    const feeds = filterFeedsByBusVoltage(incoming, viaVoltage)
+    const feeds = filterUpstreamIncoming(current, incoming, viaVoltage)
     for (const circuit of feeds) {
       if (circuitIds.has(circuit.id)) continue
       circuitIds.add(circuit.id)
@@ -205,9 +220,9 @@ export function getPlantRevealPath(
     /^MSB-4SFS/i.test(destId) &&
     originId !== destId
 
-  /** Cadena desplegable aguas abajo del MSB 690 (incl. RCT / MSB-24 / 400 Hz). */
+  /** Cadena desplegable aguas abajo del MSB 690 (incl. RCT / MSB-24 / 400 Hz / JBX·SKT). */
   const isExpandableLink = (id: string) =>
-    /^(ABT|TRF|LCS|SSB|CCM|UPS|BUS|RCT|FAC|FCP|FUP|UCP|FAP|SCV|SBT|FIU)-/i.test(
+    /^(ABT|TRF|LCS|SSB|CCM|UPS|BUS|RCT|FAC|FCP|FUP|UCP|FAP|SCV|SBT|FIU|JBX|SKT|TBX)-/i.test(
       id,
     ) ||
     /^MSB-24PW/i.test(id) ||

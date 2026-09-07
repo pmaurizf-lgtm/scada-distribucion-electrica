@@ -45,7 +45,7 @@ const VIEW_PAD = 10
 /** Coloca el globo en viewport sin salir por bordes (ni statusbar). */
 export function placeCircuitBalloon(
   anchor: DOMRect,
-  size = { w: 280, h: 420 },
+  size = { w: 280, h: 480 },
 ): { x: number; y: number } {
   const vw = window.innerWidth
   const vh = window.innerHeight
@@ -169,16 +169,41 @@ export function CircuitBalloon({
             <dd>{circuit.circuitRef}</dd>
           </>
         )}
-        {(circuit.parallelCables != null || circuit.cableSection) && (
+        {(circuit.parallelCables != null ||
+          circuit.cableSection ||
+          circuit.cableType ||
+          circuit.cableLengthM != null) && (
           <>
             <dt>Cable</dt>
             <dd>
-              {circuit.parallelCables != null ? `${circuit.parallelCables}×` : ''}
-              {circuit.cableSection ?? '—'}
-              {circuit.cableSection && !String(circuit.cableSection).includes('mm')
+              {circuit.parallelCables != null
+                ? `${circuit.parallelCables}×`
+                : ''}
+              {circuit.cableSection ??
+                (circuit.parallelCables != null ? '' : '—')}
+              {circuit.cableSection &&
+              !String(circuit.cableSection).includes('mm')
                 ? ' mm²'
                 : ''}
             </dd>
+          </>
+        )}
+        {circuit.cableType && (
+          <>
+            <dt>Tipo cable</dt>
+            <dd>{circuit.cableType}</dd>
+          </>
+        )}
+        {circuit.cableLengthM != null && (
+          <>
+            <dt>Longitud</dt>
+            <dd>{fmt(circuit.cableLengthM, 'm', 1)}</dd>
+          </>
+        )}
+        {circuit.cableWeightKg != null && (
+          <>
+            <dt>Peso cable</dt>
+            <dd>{fmt(circuit.cableWeightKg, 'kg', 1)}</dd>
           </>
         )}
         {state && (

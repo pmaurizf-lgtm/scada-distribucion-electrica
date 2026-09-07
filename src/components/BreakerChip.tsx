@@ -5,7 +5,9 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react'
 import type { Circuit, ProtectionState } from '../types'
+import type { CircuitLockInfo } from '../utils/parseLocksExcel'
 import { isMotorizedProtectionModel } from '../abtDownstream/ssbBoard'
+import { useCircuitLockInfo } from '../locks/LockInfoContext'
 import {
   LockBadge,
   ManualBreakerSymbol,
@@ -22,11 +24,13 @@ export function BreakerChip({
   circuit,
   flowing,
   locked,
+  lockInfo,
   title,
   orientation = 'vertical',
   motorized,
   onHoverInfo,
   onHoverInfoEnd,
+  onLockInfo,
 }: {
   name: string
   state?: ProtectionState
@@ -37,13 +41,24 @@ export function BreakerChip({
   circuit?: Circuit
   flowing?: boolean
   locked?: boolean
+  /** Meta LOTO (nº candado); si no, se toma del contexto de candados. */
+  lockInfo?: CircuitLockInfo | null
   title?: string
   orientation?: 'vertical' | 'horizontal'
   /** Forzar motorizado / manual; por defecto se deduce del modelo Excel. */
   motorized?: boolean
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
+  /** Clic en el símbolo de candado → globo con nº LOTO. */
+  onLockInfo?: (info: CircuitLockInfo, rect: DOMRect) => void
 }) {
+  const lockCtx = useCircuitLockInfo()
+  const resolvedLockInfo =
+    lockInfo ??
+    (circuitId ? lockCtx.byCircuitId[circuitId] : undefined) ??
+    null
+  const resolvedOnLockInfo = onLockInfo ?? lockCtx.onLockInfo
+
   const open = state !== 'cerrada'
   const hoverTimer = useRef<number | null>(null)
   const nativeHintTimer = useRef<number | null>(null)
@@ -66,7 +81,13 @@ export function BreakerChip({
   useEffect(() => () => clearHoverTimer(), [])
 
   const kindLabel = isMotor ? 'motorizado' : 'no motorizado'
-  const aria = `Interruptor ${kindLabel} ${name} · ${open ? 'abierto' : 'cerrado'}${locked ? ' · bloqueado' : ''}`
+  const lockHint =
+    locked && resolvedLockInfo?.lockNumber
+      ? ` · candado nº ${resolvedLockInfo.lockNumber}`
+      : locked
+        ? ' · bloqueado'
+        : ''
+  const aria = `Interruptor ${kindLabel} ${name} · ${open ? 'abierto' : 'cerrado'}${lockHint}`
   /** Title nativo breve; se quita antes del globo de info para no taparlo. */
   const nativeTitle = onHoverInfo ? nativeHint : (title ?? aria)
 
@@ -109,7 +130,31 @@ export function BreakerChip({
           <ManualBreakerSymbol state={state} orientation={orientation} />
         )}
       </span>
-      {locked && <LockBadge />}
+      {locked && (
+        <span
+          className={`casc-brk__lock-hit${resolvedLockInfo && resolvedOnLockInfo ? ' casc-brk__lock-hit--clickable' : ''}`}
+          title={
+            resolvedLockInfo?.lockNumber
+              ? `Candado nº ${resolvedLockInfo.lockNumber} — pulsa para ver ficha`
+              : 'Candado'
+          }
+          onClick={(e) => {
+            if (!resolvedLockInfo || !resolvedOnLockInfo) return
+            e.preventDefault()
+            e.stopPropagation()
+            onHoverInfoEnd?.()
+            resolvedOnLockInfo(
+              resolvedLockInfo,
+              e.currentTarget.getBoundingClientRect(),
+            )
+          }}
+          onMouseDown={(e) => {
+            if (resolvedLockInfo && resolvedOnLockInfo) e.stopPropagation()
+          }}
+        >
+          <LockBadge />
+        </span>
+      )}
       <span className="casc-brk__name">{name}</span>
     </button>
   )

@@ -58,4 +58,10 @@ export default defineConfig({
     }),
   ],
   base: './',
+  server: {
+    watch: {
+      // Evita EBUSY al descomprimir Excel en .tmp durante imports
+      ignored: ['**/.tmp/**'],
+    },
+  },
 })

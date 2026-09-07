@@ -24,7 +24,15 @@
             "pKWe": "AJ",
             "qKVAr": "AK",
             "sKVA": "AL",
-            "ibA": "AM"
+            "ibA": "AM",
+            "parallelCables": "X",
+            "cableSection": "Y",
+            "cableType": "W",
+            "cableLengthEstM": "Z",
+            "cableLengthForcM": "AA",
+            "cableLengthRouteM": "AB",
+            "cableLengthRealM": "AC",
+            "cableWeightKg": "BF"
         }
     },
     "stats": {
@@ -1590,7 +1598,10 @@
             "voltage": 690,
             "pnKW": 2923,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 38
         },
         {
             "id": "690-0002",
@@ -1611,7 +1622,10 @@
             "voltage": 690,
             "pnKW": 2923,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 38
         },
         {
             "id": "690-0003",
@@ -1632,7 +1646,10 @@
             "voltage": 690,
             "pnKW": 2923,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 12
         },
         {
             "id": "690-0004",
@@ -1653,7 +1670,10 @@
             "voltage": 690,
             "pnKW": 2923,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 12
         },
         {
             "id": "690-0005",
@@ -1674,7 +1694,10 @@
             "voltage": 690,
             "pnKW": 880.3,
             "parallelCables": 5,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 62.686099999999996
         },
         {
             "id": "690-0006",
@@ -1695,7 +1718,10 @@
             "voltage": 690,
             "pnKW": 305.5,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 55.3447
         },
         {
             "id": "690-0007",
@@ -1716,7 +1742,10 @@
             "voltage": 690,
             "pnKW": 100.18000000000002,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 36.71
         },
         {
             "id": "690-0008",
@@ -1737,7 +1766,10 @@
             "voltage": 690,
             "pnKW": 56.06,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 73.3
         },
         {
             "id": "690-0009",
@@ -1758,7 +1790,10 @@
             "voltage": 690,
             "pnKW": 103.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 76
         },
         {
             "id": "690-0010",
@@ -1779,7 +1814,10 @@
             "voltage": 690,
             "pnKW": 561,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 71.12
         },
         {
             "id": "690-0011",
@@ -1800,7 +1838,10 @@
             "voltage": 690,
             "pnKW": 561,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 106.69
         },
         {
             "id": "690-0012",
@@ -1821,7 +1862,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 64.9928
         },
         {
             "id": "690-0013",
@@ -1842,7 +1886,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 76
         },
         {
             "id": "690-0014",
@@ -1863,7 +1910,10 @@
             "voltage": 690,
             "pnKW": 156.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 54.6275
         },
         {
             "id": "690-0015",
@@ -1884,7 +1934,10 @@
             "voltage": 690,
             "pnKW": 156.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 85
         },
         {
             "id": "690-0016",
@@ -1905,7 +1958,10 @@
             "voltage": 690,
             "pnKW": 1083.75,
             "parallelCables": 6,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 42.89
         },
         {
             "id": "690-0017",
@@ -1926,7 +1982,10 @@
             "voltage": 690,
             "pnKW": null,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 64.27
         },
         {
             "id": "690-0018",
@@ -1947,7 +2006,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 61
         },
         {
             "id": "690-0019",
@@ -1968,7 +2030,10 @@
             "voltage": 690,
             "pnKW": 156.8,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 38
         },
         {
             "id": "690-0020",
@@ -1989,7 +2054,10 @@
             "voltage": 690,
             "pnKW": 3400,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "VFD-P2RI-10-3PX",
+            "cableLengthM": 40.0107
         },
         {
             "id": "690-0021",
@@ -2010,7 +2078,10 @@
             "voltage": 690,
             "pnKW": 305.5,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 76
         },
         {
             "id": "690-0022",
@@ -2031,7 +2102,10 @@
             "voltage": 690,
             "pnKW": 207.87,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 50.6
         },
         {
             "id": "690-0023",
@@ -2052,7 +2126,10 @@
             "voltage": 690,
             "pnKW": 208.74999999999997,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 38.29
         },
         {
             "id": "690-0024",
@@ -2073,7 +2150,10 @@
             "voltage": 690,
             "pnKW": 2923,
             "parallelCables": 17,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 56.6
         },
         {
             "id": "690-0025",
@@ -2094,7 +2174,10 @@
             "voltage": 690,
             "pnKW": 3400,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "VFD-P2RI-10-3PX",
+            "cableLengthM": 56.6339
         },
         {
             "id": "690-0026",
@@ -2115,7 +2198,10 @@
             "voltage": 690,
             "pnKW": 202.54999999999998,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 36.85
         },
         {
             "id": "690-0027",
@@ -2136,7 +2222,10 @@
             "voltage": 690,
             "pnKW": 305.5,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 61
         },
         {
             "id": "690-0028",
@@ -2157,7 +2246,10 @@
             "voltage": 690,
             "pnKW": 250,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 72.19
         },
         {
             "id": "690-0029",
@@ -2178,7 +2270,10 @@
             "voltage": 690,
             "pnKW": 1083.75,
             "parallelCables": 6,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 61.48
         },
         {
             "id": "690-0030",
@@ -2199,7 +2294,10 @@
             "voltage": 690,
             "pnKW": 51.480000000000004,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 90.13
         },
         {
             "id": "690-0031",
@@ -2220,7 +2318,10 @@
             "voltage": 690,
             "pnKW": 112.75,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 61.56
         },
         {
             "id": "690-0032",
@@ -2241,7 +2342,10 @@
             "voltage": 690,
             "pnKW": 250,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 56.87
         },
         {
             "id": "690-0033",
@@ -2262,7 +2366,10 @@
             "voltage": 690,
             "pnKW": 88.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "50",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 47.010000000000005
         },
         {
             "id": "690-0034",
@@ -2283,7 +2390,10 @@
             "voltage": 690,
             "pnKW": 1083.75,
             "parallelCables": 6,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 15.49
         },
         {
             "id": "690-0035",
@@ -2304,7 +2414,10 @@
             "voltage": 690,
             "pnKW": 175.17,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 27.65
         },
         {
             "id": "690-0036",
@@ -2325,7 +2438,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 59.2728
         },
         {
             "id": "690-0037",
@@ -2346,7 +2462,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 62
         },
         {
             "id": "690-0038",
@@ -2367,7 +2486,10 @@
             "voltage": 690,
             "pnKW": 59.68000000000001,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 35.43
         },
         {
             "id": "690-0039",
@@ -2388,7 +2510,10 @@
             "voltage": 690,
             "pnKW": 110.73000000000002,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 14.55
         },
         {
             "id": "690-0040",
@@ -2409,7 +2534,10 @@
             "voltage": 690,
             "pnKW": 179.75,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 29.81
         },
         {
             "id": "690-0041",
@@ -2430,7 +2558,10 @@
             "voltage": 690,
             "pnKW": 103.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 38
         },
         {
             "id": "690-0042",
@@ -2451,7 +2582,10 @@
             "voltage": 690,
             "pnKW": 2923,
             "parallelCables": 17,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 53.5
         },
         {
             "id": "690-0043",
@@ -2472,7 +2606,10 @@
             "voltage": 690,
             "pnKW": 1083.75,
             "parallelCables": 6,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 76.29
         },
         {
             "id": "690-0044",
@@ -2493,7 +2630,10 @@
             "voltage": 690,
             "pnKW": 110.73000000000002,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 75.88
         },
         {
             "id": "690-0045",
@@ -2514,7 +2654,10 @@
             "voltage": 690,
             "pnKW": 112.75,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 80.78
         },
         {
             "id": "690-0046",
@@ -2535,7 +2678,10 @@
             "voltage": 690,
             "pnKW": 250,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 13.76
         },
         {
             "id": "690-0047",
@@ -2556,7 +2702,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 101.2675
         },
         {
             "id": "690-0048",
@@ -2577,7 +2726,10 @@
             "voltage": 690,
             "pnKW": 3400,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "VFD-P2RI-10-3PX",
+            "cableLengthM": 13.3676
         },
         {
             "id": "690-0049",
@@ -2598,7 +2750,10 @@
             "voltage": 690,
             "pnKW": 59.68000000000001,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 77.15
         },
         {
             "id": "690-0050",
@@ -2619,7 +2774,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 93.4762
         },
         {
             "id": "690-0051",
@@ -2640,7 +2798,10 @@
             "voltage": 690,
             "pnKW": 103.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 12
         },
         {
             "id": "690-0052",
@@ -2661,7 +2822,10 @@
             "voltage": 690,
             "pnKW": 1083.75,
             "parallelCables": 6,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 6.73
         },
         {
             "id": "690-0053",
@@ -2682,7 +2846,10 @@
             "voltage": 690,
             "pnKW": 208.74999999999997,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 25.14
         },
         {
             "id": "690-0054",
@@ -2703,7 +2870,10 @@
             "voltage": 690,
             "pnKW": 305.5,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 28
         },
         {
             "id": "690-0055",
@@ -2724,7 +2894,10 @@
             "voltage": 690,
             "pnKW": null,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 72.91
         },
         {
             "id": "690-0056",
@@ -2745,7 +2918,10 @@
             "voltage": 690,
             "pnKW": 207.87,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 27.35
         },
         {
             "id": "690-0057",
@@ -2766,7 +2942,10 @@
             "voltage": 690,
             "pnKW": 51.480000000000004,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 27.53
         },
         {
             "id": "690-0058",
@@ -2787,7 +2966,10 @@
             "voltage": 690,
             "pnKW": 179.75,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 105.49
         },
         {
             "id": "690-0059",
@@ -2808,7 +2990,10 @@
             "voltage": 690,
             "pnKW": 67,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "50",
+            "cableType": "P2RI-10-3PFX",
+            "cableLengthM": 29.34
         },
         {
             "id": "690-0060",
@@ -2829,7 +3014,10 @@
             "voltage": 690,
             "pnKW": 3400,
             "parallelCables": 18,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "VFD-P2RI-10-3PX",
+            "cableLengthM": 12.5239
         },
         {
             "id": "690-0061",
@@ -2850,7 +3038,10 @@
             "voltage": 690,
             "pnKW": 100.18000000000002,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 68.88
         },
         {
             "id": "690-0062",
@@ -2871,7 +3062,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 111.1499
         },
         {
             "id": "690-0063",
@@ -2892,7 +3086,10 @@
             "voltage": 690,
             "pnKW": 156.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 109.56259999999999
         },
         {
             "id": "690-0064",
@@ -2913,7 +3110,10 @@
             "voltage": 690,
             "pnKW": 88.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "50",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 12
         },
         {
             "id": "690-0065",
@@ -2934,7 +3134,10 @@
             "voltage": 690,
             "pnKW": 880.3,
             "parallelCables": 5,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 107.19539999999999
         },
         {
             "id": "690-0066",
@@ -2955,7 +3158,10 @@
             "voltage": 690,
             "pnKW": 202.54999999999998,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 35.26
         },
         {
             "id": "690-0067",
@@ -2976,7 +3182,10 @@
             "voltage": 690,
             "pnKW": 305.5,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 102.87459999999999
         },
         {
             "id": "690-0068",
@@ -2997,7 +3206,10 @@
             "voltage": 690,
             "pnKW": 305.5,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 12
         },
         {
             "id": "690-0069",
@@ -3018,7 +3230,10 @@
             "voltage": 690,
             "pnKW": 156.8,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 54
         },
         {
             "id": "690-0070",
@@ -3039,7 +3254,10 @@
             "voltage": 690,
             "pnKW": 1083.75,
             "parallelCables": 6,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 89.06
         },
         {
             "id": "690-0071",
@@ -3060,7 +3278,10 @@
             "voltage": 690,
             "pnKW": 175.17,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 29.53
         },
         {
             "id": "690-0072",
@@ -3081,7 +3302,10 @@
             "voltage": 690,
             "pnKW": 56.06,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 27.03
         },
         {
             "id": "690-0073",
@@ -3102,7 +3326,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 28
         },
         {
             "id": "690-0074",
@@ -3123,7 +3350,10 @@
             "voltage": 690,
             "pnKW": 156.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 22
         },
         {
             "id": "690-0075",
@@ -3144,7 +3374,10 @@
             "voltage": 690,
             "pnKW": 561,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 106.93
         },
         {
             "id": "690-0076",
@@ -3165,7 +3398,10 @@
             "voltage": 690,
             "pnKW": 561,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 55.49
         },
         {
             "id": "690-0077",
@@ -3186,7 +3422,10 @@
             "voltage": 690,
             "pnKW": 561,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 6.52
         },
         {
             "id": "690-0078",
@@ -3207,7 +3446,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 12
         },
         {
             "id": "690-0079",
@@ -3228,7 +3470,10 @@
             "voltage": 690,
             "pnKW": 103.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 54
         },
         {
             "id": "690-0080",
@@ -3249,7 +3494,10 @@
             "voltage": 690,
             "pnKW": 40.75,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 70.64
         },
         {
             "id": "690-0081",
@@ -3270,7 +3518,10 @@
             "voltage": 690,
             "pnKW": 36,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 37.52
         },
         {
             "id": "690-0082",
@@ -3291,7 +3542,10 @@
             "voltage": 690,
             "pnKW": 36,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 59.32
         },
         {
             "id": "690-0083",
@@ -3312,7 +3566,10 @@
             "voltage": 690,
             "pnKW": 40.75,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 74.15
         },
         {
             "id": "690-0084",
@@ -3333,7 +3590,10 @@
             "voltage": 690,
             "pnKW": 36,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 47.32
         },
         {
             "id": "690-0085",
@@ -3354,7 +3614,10 @@
             "voltage": 690,
             "pnKW": 36,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2FI-10-3PX",
+            "cableLengthM": 52.21
         },
         {
             "id": "690-0086",
@@ -3375,7 +3638,10 @@
             "voltage": 690,
             "pnKW": 67,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "50",
+            "cableType": "P2RI-10-3PFX",
+            "cableLengthM": 88.01
         },
         {
             "id": "690-0087",
@@ -3396,7 +3662,10 @@
             "voltage": 690,
             "pnKW": 7.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0088",
@@ -3417,7 +3686,10 @@
             "voltage": 690,
             "pnKW": 7.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0089",
@@ -3438,7 +3710,10 @@
             "voltage": 690,
             "pnKW": 2.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0090",
@@ -3459,7 +3734,10 @@
             "voltage": 690,
             "pnKW": 1.29,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0091",
@@ -3480,7 +3758,10 @@
             "voltage": 690,
             "pnKW": 0.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0092",
@@ -3501,7 +3782,10 @@
             "voltage": 690,
             "pnKW": 0.55,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0093",
@@ -3522,7 +3806,10 @@
             "voltage": 690,
             "pnKW": 9.3,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0094",
@@ -3543,7 +3830,10 @@
             "voltage": 690,
             "pnKW": 7.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0095",
@@ -3564,7 +3854,10 @@
             "voltage": 690,
             "pnKW": 2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0096",
@@ -3585,7 +3878,10 @@
             "voltage": 690,
             "pnKW": 6.94,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0097",
@@ -3606,7 +3902,10 @@
             "voltage": 690,
             "pnKW": 3.6,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0098",
@@ -3627,7 +3926,10 @@
             "voltage": 690,
             "pnKW": 3.6,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0099",
@@ -3648,7 +3950,10 @@
             "voltage": 690,
             "pnKW": 2.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0100",
@@ -3669,7 +3974,10 @@
             "voltage": 690,
             "pnKW": 2.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0101",
@@ -3690,7 +3998,10 @@
             "voltage": 690,
             "pnKW": 3.35,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0102",
@@ -3711,7 +4022,10 @@
             "voltage": 690,
             "pnKW": 12.35,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0103",
@@ -3732,7 +4046,10 @@
             "voltage": 690,
             "pnKW": 54,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0104",
@@ -3753,7 +4070,10 @@
             "voltage": 690,
             "pnKW": 3,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0105",
@@ -3774,7 +4094,10 @@
             "voltage": 690,
             "pnKW": 9.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0106",
@@ -3795,7 +4118,10 @@
             "voltage": 690,
             "pnKW": 13,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0107",
@@ -3815,8 +4141,11 @@
             "ibA": 6.086330250089145,
             "voltage": 690,
             "pnKW": 5.58,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0108",
@@ -3836,8 +4165,11 @@
             "ibA": 7.859031293316811,
             "voltage": 690,
             "pnKW": 7.15,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0109",
@@ -3858,7 +4190,10 @@
             "voltage": 690,
             "pnKW": 9.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0110",
@@ -3879,7 +4214,10 @@
             "voltage": 690,
             "pnKW": 5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0111",
@@ -3900,7 +4238,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0112",
@@ -3921,7 +4262,10 @@
             "voltage": 690,
             "pnKW": 0.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0113",
@@ -3942,7 +4286,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0114",
@@ -3963,7 +4310,10 @@
             "voltage": 690,
             "pnKW": 3,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0115",
@@ -3984,7 +4334,10 @@
             "voltage": 690,
             "pnKW": 13,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0116",
@@ -4004,8 +4357,11 @@
             "ibA": 5.759108193632748,
             "voltage": 690,
             "pnKW": 5.28,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0117",
@@ -4026,7 +4382,10 @@
             "voltage": 690,
             "pnKW": 23,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0118",
@@ -4047,7 +4406,10 @@
             "voltage": 690,
             "pnKW": 30,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0119",
@@ -4068,7 +4430,10 @@
             "voltage": 690,
             "pnKW": 3.4,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0120",
@@ -4089,7 +4454,10 @@
             "voltage": 690,
             "pnKW": 2.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0121",
@@ -4110,7 +4478,10 @@
             "voltage": 690,
             "pnKW": 5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0122",
@@ -4131,7 +4502,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0123",
@@ -4152,7 +4526,10 @@
             "voltage": 690,
             "pnKW": 0.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0124",
@@ -4173,7 +4550,10 @@
             "voltage": 690,
             "pnKW": 9.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0125",
@@ -4194,7 +4574,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0126",
@@ -4215,7 +4598,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0127",
@@ -4236,7 +4622,10 @@
             "voltage": 690,
             "pnKW": 21.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0128",
@@ -4257,7 +4646,10 @@
             "voltage": 690,
             "pnKW": 32.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0129",
@@ -4278,7 +4670,10 @@
             "voltage": 690,
             "pnKW": 8.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0130",
@@ -4299,7 +4694,10 @@
             "voltage": 690,
             "pnKW": 18.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0131",
@@ -4319,8 +4717,11 @@
             "ibA": 9.121264699369547,
             "voltage": 690,
             "pnKW": 9.02,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0132",
@@ -4340,8 +4741,11 @@
             "ibA": 6.044217708307999,
             "voltage": 690,
             "pnKW": 6.05,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0133",
@@ -4361,8 +4765,11 @@
             "ibA": 3.894327438956473,
             "voltage": 690,
             "pnKW": 3.6,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0134",
@@ -4383,7 +4790,10 @@
             "voltage": 690,
             "pnKW": 26.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0135",
@@ -4404,7 +4814,10 @@
             "voltage": 690,
             "pnKW": 45.3,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "25",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0136",
@@ -4425,7 +4838,10 @@
             "voltage": 690,
             "pnKW": 2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0137",
@@ -4446,7 +4862,10 @@
             "voltage": 690,
             "pnKW": 2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0138",
@@ -4467,7 +4886,10 @@
             "voltage": 690,
             "pnKW": 46.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "25",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0139",
@@ -4488,7 +4910,10 @@
             "voltage": 690,
             "pnKW": 8.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0140",
@@ -4509,7 +4934,10 @@
             "voltage": 690,
             "pnKW": 32.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0141",
@@ -4530,7 +4958,10 @@
             "voltage": 690,
             "pnKW": 18.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0142",
@@ -4551,7 +4982,10 @@
             "voltage": 690,
             "pnKW": 28.87,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0143",
@@ -4572,7 +5006,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0144",
@@ -4593,7 +5030,10 @@
             "voltage": 690,
             "pnKW": 26.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0145",
@@ -4614,7 +5054,10 @@
             "voltage": 690,
             "pnKW": 45.3,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "25",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0146",
@@ -4635,7 +5078,10 @@
             "voltage": 690,
             "pnKW": 18.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0147",
@@ -4656,7 +5102,10 @@
             "voltage": 690,
             "pnKW": 52.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "25",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0148",
@@ -4677,7 +5126,10 @@
             "voltage": 690,
             "pnKW": 52.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "25",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0149",
@@ -4698,7 +5150,10 @@
             "voltage": 690,
             "pnKW": 8.7,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0150",
@@ -4719,7 +5174,10 @@
             "voltage": 690,
             "pnKW": 12.8,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0151",
@@ -4740,7 +5198,10 @@
             "voltage": 690,
             "pnKW": 1.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 38
         },
         {
             "id": "690-0152",
@@ -4761,7 +5222,10 @@
             "voltage": 690,
             "pnKW": 5.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0153",
@@ -4781,8 +5245,11 @@
             "ibA": 6.701117365268138,
             "voltage": 690,
             "pnKW": 6.7,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0154",
@@ -4802,8 +5269,11 @@
             "ibA": 5.2958197504093345,
             "voltage": 690,
             "pnKW": 4.95,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0155",
@@ -4824,7 +5294,10 @@
             "voltage": 690,
             "pnKW": 23,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0156",
@@ -4845,7 +5318,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0157",
@@ -4866,7 +5342,10 @@
             "voltage": 690,
             "pnKW": 7.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0158",
@@ -4887,7 +5366,10 @@
             "voltage": 690,
             "pnKW": 5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0159",
@@ -4908,7 +5390,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0160",
@@ -4929,7 +5414,10 @@
             "voltage": 690,
             "pnKW": 18.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "10",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0161",
@@ -4950,7 +5438,10 @@
             "voltage": 690,
             "pnKW": 52.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "25",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0162",
@@ -4971,7 +5462,10 @@
             "voltage": 690,
             "pnKW": 52.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "25",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0163",
@@ -4992,7 +5486,10 @@
             "voltage": 690,
             "pnKW": 8.7,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0164",
@@ -5013,7 +5510,10 @@
             "voltage": 690,
             "pnKW": 12.8,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0165",
@@ -5034,7 +5534,10 @@
             "voltage": 690,
             "pnKW": 1.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 41
         },
         {
             "id": "690-0166",
@@ -5055,7 +5558,10 @@
             "voltage": 690,
             "pnKW": 5.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0167",
@@ -5075,8 +5581,11 @@
             "ibA": 6.701117365268138,
             "voltage": 690,
             "pnKW": 6.7,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0168",
@@ -5096,8 +5605,11 @@
             "ibA": 5.2958197504093345,
             "voltage": 690,
             "pnKW": 4.95,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0169",
@@ -5118,7 +5630,10 @@
             "voltage": 690,
             "pnKW": 30,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0170",
@@ -5139,7 +5654,10 @@
             "voltage": 690,
             "pnKW": 7.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0171",
@@ -5160,7 +5678,10 @@
             "voltage": 690,
             "pnKW": 2.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0172",
@@ -5181,7 +5702,10 @@
             "voltage": 690,
             "pnKW": 5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0173",
@@ -5202,7 +5726,10 @@
             "voltage": 690,
             "pnKW": 13,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0174",
@@ -5222,8 +5749,11 @@
             "ibA": 4.658670206109943,
             "voltage": 690,
             "pnKW": 4.4,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0175",
@@ -5244,7 +5774,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0176",
@@ -5265,7 +5798,10 @@
             "voltage": 690,
             "pnKW": 1.38,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0177",
@@ -5286,7 +5822,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0178",
@@ -5307,7 +5846,10 @@
             "voltage": 690,
             "pnKW": 3.6,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0179",
@@ -5328,7 +5870,10 @@
             "voltage": 690,
             "pnKW": 14.08,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0180",
@@ -5349,7 +5894,10 @@
             "voltage": 690,
             "pnKW": 5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0181",
@@ -5370,7 +5918,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0182",
@@ -5391,7 +5942,10 @@
             "voltage": 690,
             "pnKW": 0.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0183",
@@ -5412,7 +5966,10 @@
             "voltage": 690,
             "pnKW": 9.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0184",
@@ -5433,7 +5990,10 @@
             "voltage": 690,
             "pnKW": 13,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0185",
@@ -5453,8 +6013,11 @@
             "ibA": 4.658670206109943,
             "voltage": 690,
             "pnKW": 4.4,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0186",
@@ -5474,8 +6037,11 @@
             "ibA": 6.536147096666824,
             "voltage": 690,
             "pnKW": 5.8,
-            "parallelCables": 2,
-            "virtual": false
+            "parallelCables": 1,
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0187",
@@ -5496,7 +6062,10 @@
             "voltage": 690,
             "pnKW": 1.38,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0188",
@@ -5517,7 +6086,10 @@
             "voltage": 690,
             "pnKW": 2.3,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0189",
@@ -5538,7 +6110,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0190",
@@ -5559,7 +6134,10 @@
             "voltage": 690,
             "pnKW": 3.6,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0191",
@@ -5580,7 +6158,10 @@
             "voltage": 690,
             "pnKW": 5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0192",
@@ -5601,7 +6182,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0193",
@@ -5622,7 +6206,10 @@
             "voltage": 690,
             "pnKW": 0.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0194",
@@ -5643,7 +6230,10 @@
             "voltage": 690,
             "pnKW": 2.9,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0195",
@@ -5664,7 +6254,10 @@
             "voltage": 690,
             "pnKW": 9.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "6",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0196",
@@ -5685,7 +6278,10 @@
             "voltage": 690,
             "pnKW": 250,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 4.77
         },
         {
             "id": "690-0197",
@@ -5706,7 +6302,10 @@
             "voltage": 690,
             "pnKW": 250,
             "parallelCables": 2,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 5.68
         },
         {
             "id": "690-0198",
@@ -5726,8 +6325,11 @@
             "ibA": 318.8405797101445,
             "voltage": 690,
             "pnKW": 187,
-            "parallelCables": 3,
-            "virtual": false
+            "parallelCables": 2,
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-2PX",
+            "cableLengthM": 5.76
         },
         {
             "id": "690-0199",
@@ -5748,7 +6350,10 @@
             "voltage": 690,
             "pnKW": 361.25,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-2PX",
+            "cableLengthM": 3.44
         },
         {
             "id": "690-0200",
@@ -5769,7 +6374,10 @@
             "voltage": 690,
             "pnKW": 361.25,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-2PX",
+            "cableLengthM": 4.98
         },
         {
             "id": "690-0201",
@@ -5790,7 +6398,10 @@
             "voltage": 690,
             "pnKW": 361.25,
             "parallelCables": 3,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "P2RI-10-2PX",
+            "cableLengthM": 6.85
         },
         {
             "id": "690-0202",
@@ -5810,8 +6421,11 @@
             "ibA": 318.8405797101445,
             "voltage": 690,
             "pnKW": 187,
-            "parallelCables": 3,
-            "virtual": false
+            "parallelCables": 2,
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-2PX",
+            "cableLengthM": 2.43
         },
         {
             "id": "690-0203",
@@ -5831,8 +6445,11 @@
             "ibA": 318.8405797101445,
             "voltage": 690,
             "pnKW": 187,
-            "parallelCables": 3,
-            "virtual": false
+            "parallelCables": 2,
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-2PX",
+            "cableLengthM": 6.69
         },
         {
             "id": "690-0204",
@@ -5853,7 +6470,10 @@
             "voltage": 690,
             "pnKW": 156.8,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0205",
@@ -5874,7 +6494,10 @@
             "voltage": 690,
             "pnKW": 103.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0206",
@@ -5895,7 +6518,10 @@
             "voltage": 690,
             "pnKW": 103.2,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0207",
@@ -5916,7 +6542,10 @@
             "voltage": 690,
             "pnKW": 850,
             "parallelCables": 12,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "95",
+            "cableType": "FLEX-P2RI-10-1X",
+            "cableLengthM": 15
         },
         {
             "id": "690-0208",
@@ -5937,7 +6566,10 @@
             "voltage": 690,
             "pnKW": 14.4,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "4",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0209",
@@ -5958,7 +6590,10 @@
             "voltage": 690,
             "pnKW": 14.4,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "4",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0210",
@@ -5979,7 +6614,10 @@
             "voltage": 690,
             "pnKW": 1.5,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "1.5",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0211",
@@ -6000,7 +6638,10 @@
             "voltage": 690,
             "pnKW": 1700,
             "parallelCables": 11,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "VFD-P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0212",
@@ -6021,7 +6662,10 @@
             "voltage": 690,
             "pnKW": 1700,
             "parallelCables": 11,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "120",
+            "cableType": "VFD-P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0213",
@@ -6042,7 +6686,10 @@
             "voltage": 690,
             "pnKW": 40.75,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 27
         },
         {
             "id": "690-0214",
@@ -6063,7 +6710,10 @@
             "voltage": 690,
             "pnKW": 40.75,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "16",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 27
         },
         {
             "id": "690-0215",
@@ -6084,7 +6734,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "VFD-P2FI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0216",
@@ -6105,7 +6758,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "VFD-P2FI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0217",
@@ -6126,7 +6782,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "VFD-P2FI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0218",
@@ -6147,7 +6806,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "VFD-P2FI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0219",
@@ -6168,7 +6830,10 @@
             "voltage": 690,
             "pnKW": 110,
             "parallelCables": 1,
-            "virtual": false
+            "virtual": false,
+            "cableSection": "70",
+            "cableType": "VFD-P2FI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-BUS-220",
@@ -6944,10 +7609,12 @@
             "ibA": 1.4785758596,
             "voltage": 690,
             "pnKW": 1.32,
-            "parallelCables": 1,
-            "cableSection": "6",
+            "parallelCables": 17,
+            "cableSection": "120",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 56.6
         },
         {
             "id": "690-0221",
@@ -6967,10 +7634,12 @@
             "ibA": 2.8391196539,
             "voltage": 690,
             "pnKW": 1.95,
-            "parallelCables": 1,
-            "cableSection": "6",
+            "parallelCables": 2,
+            "cableSection": "95",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 36.85
         },
         {
             "id": "690-0222",
@@ -6990,10 +7659,12 @@
             "ibA": 1.4785758596,
             "voltage": 690,
             "pnKW": 1.32,
-            "parallelCables": 1,
-            "cableSection": "6",
+            "parallelCables": 17,
+            "cableSection": "120",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3X",
+            "cableLengthM": 53.5
         },
         {
             "id": "690-0223",
@@ -7014,9 +7685,11 @@
             "voltage": 690,
             "pnKW": 2.42,
             "parallelCables": 1,
-            "cableSection": "6",
+            "cableSection": "50",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 12
         },
         {
             "id": "690-0224",
@@ -7036,10 +7709,12 @@
             "ibA": 1.7122060284,
             "voltage": 690,
             "pnKW": 1.65,
-            "parallelCables": 1,
-            "cableSection": "6",
+            "parallelCables": 2,
+            "cableSection": "95",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 35.26
         },
         {
             "id": "690-0225",
@@ -7062,7 +7737,9 @@
             "parallelCables": 1,
             "cableSection": "6",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0226",
@@ -7085,7 +7762,9 @@
             "parallelCables": 1,
             "cableSection": "6",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0227",
@@ -7131,7 +7810,9 @@
             "parallelCables": 1,
             "cableSection": "6",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0229",
@@ -7154,7 +7835,9 @@
             "parallelCables": 1,
             "cableSection": "6",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         },
         {
             "id": "690-0230",
@@ -7177,7 +7860,9 @@
             "parallelCables": 1,
             "cableSection": "6",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 10
         },
         {
             "id": "690-0231",
@@ -7200,7 +7885,9 @@
             "parallelCables": 1,
             "cableSection": "6",
             "virtual": false,
-            "notes": "fan-dual-speed"
+            "notes": "fan-dual-speed",
+            "cableType": "P2RI-10-3PX",
+            "cableLengthM": 15
         }
     ]
 }

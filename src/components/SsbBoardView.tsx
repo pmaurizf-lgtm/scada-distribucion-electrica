@@ -22,6 +22,7 @@ import {
   childFeeders,
   feedScopedChildFeeders,
   isAux24Feed,
+  isUnifilarLinkOnlyFeed,
   nestableChildFeeders,
 } from '../utils/cascadeModel'
 import { dataFlowVoltageAlum, dataFlowVoltageProps, isLightingBoard } from '../utils/flowVoltage'
@@ -297,6 +298,9 @@ function SsbOutletDrop({
   nextAncestors.add(equipment.id)
 
   const nestCount = kids.length + (bus115Feed ? 1 : 0)
+  const linkOnly = isUnifilarLinkOnlyFeed(circuit)
+  const kidsLinkChain =
+    kids.length > 0 && kids.every((k) => isUnifilarLinkOnlyFeed(k.circuit))
 
   return (
     <EquipmentBusDrop
@@ -320,10 +324,16 @@ function SsbOutletDrop({
       }
       equipFam={equipFamOf(equipment)}
       located={locateEquipmentId === equipment.id}
+      linkOnlyFromParent={linkOnly}
       rootClassName={
-        hasSsbBoardLayout(equipment) && expanded
-          ? 'hbus-drop--ssb-open'
-          : undefined
+        [
+          hasSsbBoardLayout(equipment) && expanded
+            ? 'hbus-drop--ssb-open'
+            : '',
+          expanded && kidsLinkChain ? 'hbus-drop--chain-open' : '',
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined
       }
     >
       {expanded && hasSsbBoardLayout(equipment) && (
@@ -365,7 +375,9 @@ function SsbOutletDrop({
         />
       )}
       {expanded && !hasSsbBoardLayout(equipment) && kids.length > 0 && (
-        <div className="hbus hbus--nested hbus--direct">
+        <div
+          className={`hbus hbus--nested hbus--direct${kidsLinkChain ? ' hbus--chain-link' : ''}`}
+        >
           <div className="hbus__drops">
             {kids.map(({ circuit: c, equipment: eq }) => (
               <div key={c.id} className="hbus__slot">

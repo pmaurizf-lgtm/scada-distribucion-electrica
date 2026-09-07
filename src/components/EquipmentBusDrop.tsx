@@ -32,11 +32,25 @@ import {
 } from '../utils/flowVoltage'
 import { Aux24Incoming } from './Aux24Incoming'
 import { BreakerChip } from './BreakerChip'
+import {
+  JbxUnifilarSymbol,
+  SktUnifilarSymbol,
+} from './BreakerSymbols'
 import { EquipmentBalloon } from './EquipmentBalloon'
 
 export type EquipFam = 'abt' | 'trf' | 'lcs' | 'sec' | 'eq'
 
-export function symbolFor(kind: Equipment['kind']): ReactNode {
+/** Símbolo unifilar del chip; JBX/SKT según plano Navantia (no «M» genérica). */
+export function symbolFor(
+  kind: Equipment['kind'],
+  equipment?: Pick<Equipment, 'id' | 'name'>,
+): ReactNode {
+  const id = equipment?.id ?? ''
+  if (/^JBX-/i.test(id)) return <JbxUnifilarSymbol />
+  if (/^SKT-/i.test(id)) {
+    const crossed = /IP\s*56/i.test(equipment?.name ?? '')
+    return <SktUnifilarSymbol crossed={crossed} />
+  }
   switch (kind) {
     case 'generador':
       return 'G'
@@ -118,7 +132,7 @@ function FoldedParallelCsbLeg({
         onMouseEnter={() => setEqHover(true)}
         onMouseLeave={() => setEqHover(false)}
       >
-        <span className="hbus-drop__sym">{symbolFor(origin.kind)}</span>
+        <span className="hbus-drop__sym">{symbolFor(origin.kind, origin)}</span>
         <span className="hbus-drop__id">{origin.id}</span>
         {secondary && (
           <span className="hbus-drop__dcp" title={secondary.title}>
@@ -494,7 +508,7 @@ export function EquipmentBusDrop({
             disabled={!canExpand}
           >
             <span className="hbus-drop__sym">
-              {spare ? 'R' : symbolFor(equipment.kind)}
+              {spare ? 'R' : symbolFor(equipment.kind, equipment)}
             </span>
             <span className="hbus-drop__id">
               {spare ? localFeed.protectionName : equipment.id}

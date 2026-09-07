@@ -21,9 +21,16 @@ import {
   savePersistedSim,
 } from '../utils/simPersistence'
 import {
+  applyLocksToProtectionStatus,
+  parseLockEntriesFromWorkbook,
   parseLockTargetsFromWorkbook,
   resolveLockCircuitIds,
+  resolveLockEntries,
+  type CircuitLockInfo,
 } from '../utils/parseLocksExcel'
+import lockListSeed from '../data/lockList.json'
+import { LockInfoProvider } from '../locks/LockInfoContext'
+import { LockBalloon, placeLockBalloon } from './LockBalloon'
 import { useIsMobileUi } from '../hooks/useIsMobileUi'
 import {
   CascadeView,
@@ -52,6 +59,17 @@ const searchableEquipment = system690.equipment.filter(
 
 const REST_STATUS_SOURCE = 'reposo · todos abiertos · gens parados'
 
+const SEED_LOCKS: Record<string, CircuitLockInfo> = (
+  lockListSeed as { locks?: Record<string, CircuitLockInfo> }
+).locks ?? {}
+
+function withSeedLocksOpen(
+  base: ProtectionStatusMap,
+  locks: Record<string, CircuitLockInfo>,
+): ProtectionStatusMap {
+  return applyLocksToProtectionStatus(base, Object.keys(locks))
+}
+
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
@@ -64,17 +82,34 @@ export function ScadaCanvas() {
   const isMobile = useIsMobileUi()
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatusMap>(
-    () => toProtectionStatusMap(sampleProtectionStatus),
+    () =>
+      withSeedLocksOpen(
+        toProtectionStatusMap(sampleProtectionStatus),
+        SEED_LOCKS,
+      ),
   )
   const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(
-    () => new Set(),
+    () => new Set(Object.keys(SEED_LOCKS)),
   )
+  const [lockInfoByCircuit, setLockInfoByCircuit] = useState<
+    Record<string, CircuitLockInfo>
+  >(() => ({ ...SEED_LOCKS }))
+  const [lockBalloon, setLockBalloon] = useState<{
+    info: CircuitLockInfo
+    protectionName?: string
+    x: number
+    y: number
+  } | null>(null)
   const [runningGenerators, setRunningGenerators] = useState<Set<string>>(
     () => new Set(),
   )
   const [lockTool, setLockTool] = useState<LockTool>('none')
   const [zoom, setZoom] = useState(1)
-  const [statusSource, setStatusSource] = useState(REST_STATUS_SOURCE)
+  const [statusSource, setStatusSource] = useState(
+    Object.keys(SEED_LOCKS).length
+      ? `reposo · ${Object.keys(SEED_LOCKS).length} candados LOTO · gens parados`
+      : REST_STATUS_SOURCE,
+  )
   const [locateQuery, setLocateQuery] = useState('')
   const [feedsQuery, setFeedsQuery] = useState('')
   const [searchHint, setSearchHint] = useState<string | null>(null)
@@ -169,11 +204,22 @@ export function ScadaCanvas() {
   )
 
   const resetToRestState = useCallback(() => {
-    setProtectionStatus(toProtectionStatusMap(sampleProtectionStatus))
+    setProtectionStatus(
+      withSeedLocksOpen(
+        toProtectionStatusMap(sampleProtectionStatus),
+        SEED_LOCKS,
+      ),
+    )
     setRunningGenerators(new Set())
-    setLockedCircuits(new Set())
+    setLockedCircuits(new Set(Object.keys(SEED_LOCKS)))
+    setLockInfoByCircuit({ ...SEED_LOCKS })
+    setLockBalloon(null)
     setLockTool('none')
-    setStatusSource(REST_STATUS_SOURCE)
+    setStatusSource(
+      Object.keys(SEED_LOCKS).length
+        ? `reposo · ${Object.keys(SEED_LOCKS).length} candados LOTO · gens parados`
+        : REST_STATUS_SOURCE,
+    )
     clearPersistedSim()
   }, [])
 
@@ -242,8 +288,31 @@ export function ScadaCanvas() {
       next.delete(circuitId)
       return next
     })
+    setLockInfoByCircuit((prev) => {
+      if (!(circuitId in prev)) return prev
+      const next = { ...prev }
+      delete next[circuitId]
+      return next
+    })
+    setLockBalloon(null)
     setStatusSource('candado retirado · interruptor manipulable')
   }, [simulationActive])
+
+  const showLockInfo = useCallback(
+    (info: CircuitLockInfo, rect: DOMRect) => {
+      const { x, y } = placeLockBalloon(rect)
+      const circuitId = Object.entries(lockInfoByCircuit).find(
+        ([, v]) =>
+          v.lockNumber === info.lockNumber &&
+          v.interruptor === info.interruptor,
+      )?.[0]
+      const protectionName = circuitId
+        ? system690.circuits.find((c) => c.id === circuitId)?.protectionName
+        : info.comment || info.shortName
+      setLockBalloon({ info, protectionName, x, y })
+    },
+    [lockInfoByCircuit],
+  )
 
   const zoomIn = () => {
     const next = Math.min(ZOOM_MAX, Math.round((zoom + ZOOM_STEP) * 100) / 100)
@@ -285,10 +354,44 @@ export function ScadaCanvas() {
       }
       try {
         const buf = await file.arrayBuffer()
+        const entries = parseLockEntriesFromWorkbook(buf)
+        if (entries.length > 0) {
+          const { locks, unresolved } = resolveLockEntries(
+            system690,
+            entries,
+            searchableEquipment,
+          )
+          const circuitIds = Object.keys(locks)
+          if (!circuitIds.length) {
+            setSearchHint(
+              `Ningún candado aplicable (${unresolved.slice(0, 3).join(', ') || 'sin coincidencias'}).`,
+            )
+            return
+          }
+          setLockInfoByCircuit(locks)
+          setLockedCircuits(new Set(circuitIds))
+          setProtectionStatus((prev) =>
+            applyLocksToProtectionStatus(prev, circuitIds),
+          )
+          setLockTool('none')
+          const extra =
+            unresolved.length > 0
+              ? ` · ${unresolved.length} no resueltos`
+              : ''
+          setStatusSource(
+            `candados Excel: ${file.name} · ${circuitIds.length} interruptores${extra}`,
+          )
+          setSearchHint(
+            `Candados cargados: ${circuitIds.length} interruptores (nº LOTO en col. L)${extra}. Pulsa el candado para ver el número.`,
+          )
+          closeCandadosMenu()
+          return
+        }
+
         const targets = parseLockTargetsFromWorkbook(buf)
         if (!targets.length) {
           setSearchHint(
-            'El Excel no contiene IDs de equipo (PUMA/DCP-10) ni circuitos reconocibles.',
+            'El Excel no contiene IDs de interruptor (col. D) ni lista de equipos reconocible.',
           )
           return
         }
@@ -304,6 +407,18 @@ export function ScadaCanvas() {
           return
         }
         setLockedCircuits(new Set(circuitIds))
+        setLockInfoByCircuit((prev) => {
+          const next = { ...prev }
+          for (const id of circuitIds) {
+            if (!next[id]) {
+              next[id] = {
+                lockNumber: '—',
+                interruptor: id,
+              }
+            }
+          }
+          return next
+        })
         setProtectionStatus((prev) => {
           const next = { ...prev }
           for (const id of circuitIds) next[id] = 'abierta'
@@ -323,7 +438,7 @@ export function ScadaCanvas() {
         closeCandadosMenu()
       } catch {
         setSearchHint(
-          'No se pudo leer el Excel de candados (columna con PUMA / DCP-10 o id de circuito).',
+          'No se pudo leer el Excel de candados (col. D interruptor, L nº candado; CCM: cruzar D con N).',
         )
       }
       e.target.value = ''
@@ -551,7 +666,7 @@ export function ScadaCanvas() {
                           type="button"
                           role="menuitem"
                           className="candados-menu__item"
-                          title="Excel con IDs PUMA / DCP-10 (o circuitos) a bloquear"
+                          title="Excel LOTO: col. D interruptor, L nº candado; CCM cruza D con N (p. ej. 41Q1)"
                           onClick={() => fileInputRef.current?.click()}
                         >
                           Cargar Excel…
@@ -801,33 +916,48 @@ export function ScadaCanvas() {
       </div>
 
       <main className="workspace workspace--cascade">
-        <CascadeView
-          ref={cascadeRef}
-          protectionStatus={protectionStatus}
-          energizedCircuitIds={energizedCircuitIds}
-          energizedEquipmentIds={energizedEquipmentIds}
-          energizedBusHalves={energizedBusHalves}
-          runningGenerators={runningGenerators}
-          lockedCircuits={lockedCircuits}
-          lockTool={lockTool}
-          zoom={zoom}
-          onZoomChange={setZoom}
-          focus={focus}
-          locateEquipmentId={locateEquipmentId}
-          onToggleProtection={handleToggleProtection}
-          onLockCircuit={handleLockCircuit}
-          onUnlockCircuit={handleUnlockCircuit}
-          onToggleGenerator={toggleGenerator}
-          onClearFocus={() => {
-            setFocus(null)
-            setSearchHint(null)
-          }}
-          onClearLocate={() => {
-            setLocateEquipmentId(null)
-            setSearchHint(null)
-          }}
-        />
+        <LockInfoProvider
+          byCircuitId={lockInfoByCircuit}
+          onLockInfo={showLockInfo}
+        >
+          <CascadeView
+            ref={cascadeRef}
+            protectionStatus={protectionStatus}
+            energizedCircuitIds={energizedCircuitIds}
+            energizedEquipmentIds={energizedEquipmentIds}
+            energizedBusHalves={energizedBusHalves}
+            runningGenerators={runningGenerators}
+            lockedCircuits={lockedCircuits}
+            lockTool={lockTool}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            focus={focus}
+            locateEquipmentId={locateEquipmentId}
+            onToggleProtection={handleToggleProtection}
+            onLockCircuit={handleLockCircuit}
+            onUnlockCircuit={handleUnlockCircuit}
+            onToggleGenerator={toggleGenerator}
+            onClearFocus={() => {
+              setFocus(null)
+              setSearchHint(null)
+            }}
+            onClearLocate={() => {
+              setLocateEquipmentId(null)
+              setSearchHint(null)
+            }}
+          />
+        </LockInfoProvider>
       </main>
+
+      {lockBalloon && (
+        <LockBalloon
+          info={lockBalloon.info}
+          protectionName={lockBalloon.protectionName}
+          x={lockBalloon.x}
+          y={lockBalloon.y}
+          onClose={() => setLockBalloon(null)}
+        />
+      )}
 
       <footer className="statusbar">
         <span>

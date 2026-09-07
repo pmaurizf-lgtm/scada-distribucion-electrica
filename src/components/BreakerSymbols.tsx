@@ -245,6 +245,80 @@ export function TrifasicSocketSymbol({
   )
 }
 
+/**
+ * Caja de conexiones (JBX) según unifilar Navantia:
+ * cuadrado con diagonal inferior-izq → superior-der.
+ * El marco del chip (`.hbus-drop__sym`) hace de cuadrado exterior.
+ */
+export function JbxUnifilarSymbol() {
+  return (
+    <svg
+      className="equip-unifilar-sym equip-unifilar-sym--jbx"
+      viewBox="0 0 20 20"
+      width="100%"
+      height="100%"
+      aria-hidden
+    >
+      <line
+        x1="2.5"
+        y1="17.5"
+        x2="17.5"
+        y2="2.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="square"
+      />
+    </svg>
+  )
+}
+
+/**
+ * Base de enchufe (SKT) según unifilar: cuadrado con círculo interior.
+ * `crossed` = variante IP 56 (X dentro del círculo).
+ */
+export function SktUnifilarSymbol({ crossed = false }: { crossed?: boolean }) {
+  return (
+    <svg
+      className={`equip-unifilar-sym equip-unifilar-sym--skt${crossed ? ' equip-unifilar-sym--skt-ip56' : ''}`}
+      viewBox="0 0 20 20"
+      width="100%"
+      height="100%"
+      aria-hidden
+    >
+      <circle
+        cx="10"
+        cy="10"
+        r="6.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      {crossed ? (
+        <>
+          <line
+            x1="5.8"
+            y1="5.8"
+            x2="14.2"
+            y2="14.2"
+            stroke="currentColor"
+            strokeWidth="1.35"
+            strokeLinecap="round"
+          />
+          <line
+            x1="14.2"
+            y1="5.8"
+            x2="5.8"
+            y2="14.2"
+            stroke="currentColor"
+            strokeWidth="1.35"
+            strokeLinecap="round"
+          />
+        </>
+      ) : null}
+    </svg>
+  )
+}
+
 /** Candado rojo = protección bloqueada en abierto (no manipulable) */
 export function LockBadge() {
   return (

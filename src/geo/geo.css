@@ -1,0 +1,147 @@
+/* Producto paralelo: unifilar con coordenadas (SVG). */
+
+.geo-shell .topbar__brand-title {
+  letter-spacing: 0.01em;
+}
+
+.geo-workspace {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.geo-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  cursor: grab;
+  background: #0e141c;
+  touch-action: none;
+}
+
+.geo-stage:active {
+  cursor: grabbing;
+}
+
+.geo-svg {
+  display: block;
+  overflow: visible;
+}
+
+.geo-wire {
+  stroke: #c9a227;
+  stroke-width: 2.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.geo-wire--alt {
+  stroke: #5b9fd4;
+  stroke-dasharray: 8 5;
+}
+
+.geo-node {
+  cursor: pointer;
+}
+
+.geo-node__shape--frame {
+  fill: rgba(30, 42, 58, 0.55);
+  stroke: rgba(160, 180, 200, 0.45);
+  stroke-width: 1.5;
+}
+
+.geo-node__shape--bus {
+  fill: #d4af37;
+  stroke: #f0d060;
+  stroke-width: 1;
+}
+
+.geo-node__shape--breaker {
+  fill: #1a2433;
+  stroke: #e8eef6;
+  stroke-width: 1.5;
+}
+
+.geo-node__shape--equipment {
+  fill: #243044;
+  stroke: #8fa3bc;
+  stroke-width: 1.25;
+}
+
+.geo-node--selected .geo-node__shape {
+  stroke: #6ee7b7;
+  stroke-width: 2.25;
+}
+
+.geo-node__label {
+  fill: #e8eef6;
+  font-size: 11px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  pointer-events: none;
+  user-select: none;
+}
+
+.geo-node__label--frame,
+.geo-node__label--text {
+  font-size: 13px;
+  font-weight: 600;
+  fill: #c5d4e8;
+}
+
+.geo-node__label--bus {
+  font-size: 9px;
+  fill: #1a1408;
+  font-weight: 600;
+}
+
+.geo-node__label--breaker {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.geo-zoom {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+
+.geo-inspector {
+  width: min(280px, 40vw);
+  flex-shrink: 0;
+  padding: 0.75rem 1rem;
+  border-left: 1px solid var(--border, #2a3544);
+  background: rgba(12, 18, 26, 0.92);
+  overflow: auto;
+}
+
+.geo-inspector__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.geo-inspector__dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.6rem;
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+.geo-inspector__dl dt {
+  color: var(--muted, #8a9bb0);
+}
+
+.geo-inspector__dl dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.app-shell--mobile .geo-inspector {
+  display: none;
+}

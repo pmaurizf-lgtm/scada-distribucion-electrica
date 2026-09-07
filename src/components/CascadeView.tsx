@@ -121,7 +121,7 @@ function allPlantExpandEquipIds(): string[] {
     if (
       hasSsbBoardLayout(e) ||
       isSsb115InternalBus(e) ||
-      /^(ABT|TRF|LCS|SSB|CCM|FAC|FCP|FUP|UCP|UPS)-/i.test(e.id)
+      /^(ABT|TRF|LCS|SSB|CCM|FAC|FCP|FUP|UCP|UPS|JBX|SKT|TBX)-/i.test(e.id)
     ) {
       ids.add(e.id)
     }

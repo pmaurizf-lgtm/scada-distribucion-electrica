@@ -74,12 +74,22 @@ export interface Circuit {
   /** Pn [kW] col. O */
   pnKW?: number | null
   voltage?: string
+  /** Nº cables en paralelo (Excel col. X) */
   parallelCables?: number
   virtual?: boolean
   /** Circuito RESPETO (Excel col. L) */
   spare?: boolean
   excelRow?: number | null
+  /** Sección [mm²] (Excel col. Y) */
   cableSection?: string
+  /** Tipo de cable (Excel col. W) */
+  cableType?: string
+  /**
+   * Longitud de cable [m]: preferencia Lreal (AC), si no Lroute/Lforc/Lest (AB/AA/Z).
+   */
+  cableLengthM?: number | null
+  /** Peso de cable [kg] (Excel col. BF) */
+  cableWeightKg?: number | null
   notes?: string
 }
 

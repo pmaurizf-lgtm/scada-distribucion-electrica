@@ -934,7 +934,7 @@ function ParallelFeedLeg({
         onMouseEnter={() => setEqHover(true)}
         onMouseLeave={() => setEqHover(false)}
       >
-        <span className="hbus-drop__sym">{symbolFor(equipment.kind)}</span>
+        <span className="hbus-drop__sym">{symbolFor(equipment.kind, equipment)}</span>
         <span className="hbus-drop__id">{equipment.id}</span>
         {secondary && (
           <span className="hbus-drop__dcp" title={secondary.title}>

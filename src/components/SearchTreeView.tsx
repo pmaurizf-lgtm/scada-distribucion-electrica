@@ -6,7 +6,6 @@ import {
   useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
-  type ReactNode,
 } from 'react'
 import { buildLcsBoardModel, isLcsEquipment } from '../abtDownstream/model'
 import { isMotorizedProtectionModel } from '../abtDownstream/ssbBoard'
@@ -27,10 +26,7 @@ import {
 } from '../utils/cascadeModel'
 import type { StartupDestination } from '../startupFeeds/types'
 import type { UpstreamTrace } from '../utils/upstream'
-import {
-  filterFeedsByBusVoltage,
-  normalizeLcsBusVoltage,
-} from '../utils/upstream'
+import { filterUpstreamIncoming, normalizeLcsBusVoltage } from '../utils/upstream'
 import {
   dataFlowVoltageFromCircuit,
   dataFlowVoltageFromLcsBus,
@@ -38,11 +34,13 @@ import {
   type FlowVoltage,
 } from '../utils/flowVoltage'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
+import { symbolFor } from './EquipmentBusDrop'
 import {
   LockBadge,
   ManualBreakerSymbol,
   MotorizedBreakerSymbol,
 } from './BreakerSymbols'
+import { useCircuitLockInfo } from '../locks/LockInfoContext'
 import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 
@@ -150,7 +148,7 @@ function upstreamEdges(
   if (!includeAuxFeeds && !capAtMsb24) {
     base = base.filter((c) => !isAux24Feed(c))
   }
-  return filterFeedsByBusVoltage(base, viaVoltage)
+  return filterUpstreamIncoming(equipmentId, base, viaVoltage)
 }
 
 /** Padre efectivo de una acometida (AUX → MSB-24). */
@@ -305,6 +303,9 @@ function BreakerMini({
     circuit.protectionModel,
     circuit.protectionName,
   )
+  const lockCtx = useCircuitLockInfo()
+  const lockInfo = lockCtx.byCircuitId[circuit.id]
+  const onLockInfo = lockCtx.onLockInfo
 
   const clearHoverTimer = () => {
     if (hoverTimer.current != null) {
@@ -321,7 +322,7 @@ function BreakerMini({
       className={`casc-brk casc-brk--compact${state ? ` casc-brk--${state}` : ''}${flowing ? ' casc-brk--flow' : ''}${locked ? ' casc-brk--locked' : ''}${isMotor ? '' : ' casc-brk--manual'}${orientation === 'horizontal' ? ' casc-brk--horizontal' : ''}`}
       data-circuit-id={circuit.id}
       onClick={onClick}
-      aria-label={`${circuit.protectionName} · ${isMotor ? 'motorizado' : 'manual'} · ${circuit.lineType}`}
+      aria-label={`${circuit.protectionName} · ${isMotor ? 'motorizado' : 'manual'} · ${circuit.lineType}${locked && lockInfo ? ` · candado nº ${lockInfo.lockNumber}` : ''}`}
       title={
         onHoverInfo
           ? undefined
@@ -347,7 +348,28 @@ function BreakerMini({
           <ManualBreakerSymbol state={state} orientation={orientation} />
         )}
       </span>
-      {locked && <LockBadge />}
+      {locked && (
+        <span
+          className={`casc-brk__lock-hit${lockInfo && onLockInfo ? ' casc-brk__lock-hit--clickable' : ''}`}
+          title={
+            lockInfo?.lockNumber
+              ? `Candado nº ${lockInfo.lockNumber} — pulsa para ver ficha`
+              : 'Candado'
+          }
+          onClick={(e) => {
+            if (!lockInfo || !onLockInfo) return
+            e.preventDefault()
+            e.stopPropagation()
+            onHoverInfoEnd?.()
+            onLockInfo(lockInfo, e.currentTarget.getBoundingClientRect())
+          }}
+          onMouseDown={(e) => {
+            if (lockInfo && onLockInfo) e.stopPropagation()
+          }}
+        >
+          <LockBadge />
+        </span>
+      )}
       <span className="casc-brk__name">{circuit.protectionName}</span>
     </button>
   )
@@ -420,7 +442,7 @@ function EquipCard({
         onToggleCapExpand()
       }}
     >
-      <span className="stree-eq__sym">{symbolFor(equipment.kind)}</span>
+      <span className="stree-eq__sym">{symbolFor(equipment.kind, equipment)}</span>
       <strong className="stree-eq__id">{equipment.id}</strong>
       {(() => {
         const secondary = labelSecondaryDenom(equipment)
@@ -446,21 +468,6 @@ function EquipCard({
       )}
     </div>
   )
-}
-
-function symbolFor(kind: Equipment['kind']): ReactNode {
-  switch (kind) {
-    case 'generador':
-      return 'G'
-    case 'conversion':
-      return 'T'
-    case 'cuadro_principal':
-      return '▣'
-    case 'cuadro_secundario':
-      return '▦'
-    default:
-      return 'M'
-  }
 }
 
 type BreakerHandlers = {

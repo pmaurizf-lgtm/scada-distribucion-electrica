@@ -198,17 +198,41 @@ export function EquipmentBalloon({
             <dd>{primary.circuitRef}</dd>
           </>
         )}
-        {(primary?.parallelCables != null || primary?.cableSection) && (
+        {(primary?.parallelCables != null ||
+          primary?.cableSection ||
+          primary?.cableType ||
+          primary?.cableLengthM != null) && (
           <>
             <dt>Cable</dt>
             <dd>
-              {primary.parallelCables != null ? `${primary.parallelCables}×` : ''}
-              {primary.cableSection ?? '—'}
+              {primary.parallelCables != null
+                ? `${primary.parallelCables}×`
+                : ''}
+              {primary.cableSection ??
+                (primary.parallelCables != null ? '' : '—')}
               {primary.cableSection &&
               !String(primary.cableSection).includes('mm')
                 ? ' mm²'
                 : ''}
             </dd>
+          </>
+        )}
+        {primary?.cableType && (
+          <>
+            <dt>Tipo cable</dt>
+            <dd>{primary.cableType}</dd>
+          </>
+        )}
+        {primary?.cableLengthM != null && (
+          <>
+            <dt>Longitud</dt>
+            <dd>{fmt(primary.cableLengthM, 'm', 1)}</dd>
+          </>
+        )}
+        {primary?.cableWeightKg != null && (
+          <>
+            <dt>Peso cable</dt>
+            <dd>{fmt(primary.cableWeightKg, 'kg', 1)}</dd>
           </>
         )}
         {equipment.description && (

@@ -53,9 +53,13 @@ interface RawCircuit {
   voltage?: string | null
   parallelCables?: number | null
   cableSection?: string | null
+  cableType?: string | null
+  cableLengthM?: number | null
+  cableWeightKg?: number | null
   spare?: boolean
   virtual?: boolean
   notes?: string | null
+  excelRow?: number | null
 }
 
 interface RawChain {
@@ -127,6 +131,9 @@ function cleanCircuit(c: RawCircuit): Circuit {
   }
   if (c.parallelCables != null) out.parallelCables = c.parallelCables
   if (c.cableSection) out.cableSection = c.cableSection
+  if (c.cableType) out.cableType = c.cableType
+  if (c.cableLengthM != null) out.cableLengthM = c.cableLengthM
+  if (c.cableWeightKg != null) out.cableWeightKg = c.cableWeightKg
   if (c.spare) out.spare = true
   if (c.virtual) out.virtual = true
   if (c.notes) out.notes = c.notes

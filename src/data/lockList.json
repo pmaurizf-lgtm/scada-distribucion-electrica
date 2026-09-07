@@ -1,0 +1,2436 @@
+{
+  "source": "Prueba 1 candados.xlsx",
+  "generatedAt": "2026-09-07T11:14:31.810Z",
+  "count": 332,
+  "locks": {
+    "690-0060": {
+      "lockNumber": "1163",
+      "interruptor": "MSB-6PWS0002-Q2B01-A",
+      "shortName": "Q2B01-A",
+      "siteEquipment": "PNL-MSB2002B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0045": {
+      "lockNumber": "1106",
+      "interruptor": "MSB-6PWS0002-Q2A03-A",
+      "shortName": "Q2A03-A",
+      "siteEquipment": "PNL-MSB2003A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0046": {
+      "lockNumber": "1107",
+      "interruptor": "MSB-6PWS0002-Q2A04-A",
+      "shortName": "Q2A04-A",
+      "siteEquipment": "PNL-MSB2003A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0047": {
+      "lockNumber": "1105",
+      "interruptor": "MSB-6PWS0002-Q2A05",
+      "shortName": "Q2A05",
+      "siteEquipment": "PNL-MSB2003A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0062": {
+      "lockNumber": "1161",
+      "interruptor": "MSB-6PWS0002-Q2B03",
+      "shortName": "Q2B03",
+      "siteEquipment": "PNL-MSB2003B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0063": {
+      "lockNumber": "1162",
+      "interruptor": "MSB-6PWS0002-Q2B04",
+      "shortName": "Q2B04",
+      "siteEquipment": "PNL-MSB2003B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0064": {
+      "lockNumber": "1159",
+      "interruptor": "MSB-6PWS0002-Q2B05",
+      "shortName": "Q2B05",
+      "siteEquipment": "PNL-MSB2003B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0048": {
+      "lockNumber": "1104",
+      "interruptor": "MSB-6PWS0002-Q2A06-A",
+      "shortName": "Q2A06-A",
+      "siteEquipment": "PNL-MSB2004A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0065": {
+      "lockNumber": "1144",
+      "interruptor": "MSB-6PWS0002-Q2B06-A",
+      "shortName": "Q2B06-A",
+      "siteEquipment": "PNL-MSB2004B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0049": {
+      "lockNumber": "1111",
+      "interruptor": "MSB-6PWS0002-Q2A07-A",
+      "shortName": "Q2A07-A",
+      "siteEquipment": "PNL-MSB2005A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0050": {
+      "lockNumber": "1114",
+      "interruptor": "MSB-6PWS0002-Q2A09",
+      "shortName": "Q2A09",
+      "siteEquipment": "PNL-MSB2005A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0051": {
+      "lockNumber": "1112",
+      "interruptor": "MSB-6PWS0002-Q2A10",
+      "shortName": "Q2A10",
+      "siteEquipment": "PNL-MSB2005A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0066": {
+      "lockNumber": "1142",
+      "interruptor": "MSB-6PWS0002-Q2B07-A",
+      "shortName": "Q2B07-A",
+      "siteEquipment": "PNL-MSB2005B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0067": {
+      "lockNumber": "1158",
+      "interruptor": "MSB-6PWS0002-Q2B08-A",
+      "shortName": "Q2B08-A",
+      "siteEquipment": "PNL-MSB2005B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0068": {
+      "lockNumber": "1141",
+      "interruptor": "MSB-6PWS0002-Q2B09-A",
+      "shortName": "Q2B09-A",
+      "siteEquipment": "PNL-MSB2005B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0069": {
+      "lockNumber": "1145",
+      "interruptor": "MSB-6PWS0002-Q2B10",
+      "shortName": "Q2B10",
+      "siteEquipment": "PNL-MSB2005B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0053": {
+      "lockNumber": "1147",
+      "interruptor": "MSB-6PWS0002-Q2A12-A",
+      "shortName": "Q2A12-A",
+      "siteEquipment": "PNL-MSB2007A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0054": {
+      "lockNumber": "1110",
+      "interruptor": "MSB-6PWS0002-Q2A13-A",
+      "shortName": "Q2A13-A",
+      "siteEquipment": "PNL-MSB2007A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0055": {
+      "lockNumber": "1113",
+      "interruptor": "MSB-6PWS0002-Q2A14-A",
+      "shortName": "Q2A14-A",
+      "siteEquipment": "PNL-MSB2007A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0071": {
+      "lockNumber": "1125",
+      "interruptor": "MSB-6PWS0002-Q2B12-A",
+      "shortName": "Q2B12-A",
+      "siteEquipment": "PNL-MSB2007B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0073": {
+      "lockNumber": "1127",
+      "interruptor": "MSB-6PWS0002-Q2B14",
+      "shortName": "Q2B14",
+      "siteEquipment": "PNL-MSB2007B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0074": {
+      "lockNumber": "1143",
+      "interruptor": "MSB-6PWS0002-Q2B15",
+      "shortName": "Q2B15",
+      "siteEquipment": "PNL-MSB2007B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0075": {
+      "lockNumber": "1124",
+      "interruptor": "MSB-6PWS0002-Q2B16-A",
+      "shortName": "Q2B16-A",
+      "siteEquipment": "PNL-MSB2008B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0056": {
+      "lockNumber": "1151",
+      "interruptor": "MSB-6PWS0002-Q2A16-A",
+      "shortName": "Q2A16-A",
+      "siteEquipment": "PNL-MSB2009A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0058": {
+      "lockNumber": "1148",
+      "interruptor": "MSB-6PWS0002-Q2A18-A",
+      "shortName": "Q2A18-A",
+      "siteEquipment": "PNL-MSB2009A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0059": {
+      "lockNumber": "1149",
+      "interruptor": "MSB-6PWS0002-Q2A19",
+      "shortName": "Q2A19",
+      "siteEquipment": "PNL-MSB2009A",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0077": {
+      "lockNumber": "1139",
+      "interruptor": "MSB-6PWS0002-Q2B19-A",
+      "shortName": "Q2B19-A",
+      "siteEquipment": "PNL-MSB2009B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0078": {
+      "lockNumber": "1138",
+      "interruptor": "MSB-6PWS0002-Q2B21",
+      "shortName": "Q2B21",
+      "siteEquipment": "PNL-MSB2009B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0079": {
+      "lockNumber": "1123",
+      "interruptor": "MSB-6PWS0002-Q2B22",
+      "shortName": "Q2B22",
+      "siteEquipment": "PNL-MSB2009B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0024": {
+      "lockNumber": "1146",
+      "interruptor": "MSB-6PWS0001-QT1B-A",
+      "shortName": "QT1B-A",
+      "siteEquipment": "PNL-MSB1008B",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "candado 1146 - QT2A"
+    },
+    "690-0034": {
+      "lockNumber": "1134",
+      "interruptor": "MSB-6PWS0001-Q1B11-A",
+      "shortName": "Q1B11-A",
+      "siteEquipment": "PNL-MSB1006B",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "candado 1134 - QBT2"
+    },
+    "abt-440-207": {
+      "lockNumber": "276",
+      "interruptor": "LCS-4PWS0003-1Q01",
+      "shortName": "1Q01",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-208": {
+      "lockNumber": "277",
+      "interruptor": "LCS-4PWS0003-1Q02",
+      "shortName": "1Q02",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-209": {
+      "lockNumber": "278",
+      "interruptor": "LCS-4PWS0003-1Q03",
+      "shortName": "1Q03",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-210": {
+      "lockNumber": "279",
+      "interruptor": "LCS-4PWS0003-1Q04",
+      "shortName": "1Q04",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-211": {
+      "lockNumber": "280",
+      "interruptor": "LCS-4PWS0003-1Q05",
+      "shortName": "1Q05",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-212": {
+      "lockNumber": "281",
+      "interruptor": "LCS-4PWS0003-1Q06",
+      "shortName": "1Q06",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-213": {
+      "lockNumber": "282",
+      "interruptor": "LCS-4PWS0003-1Q07",
+      "shortName": "1Q07",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-217": {
+      "lockNumber": "283",
+      "interruptor": "LCS-4PWS0003-2Q01",
+      "shortName": "2Q01",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-218": {
+      "lockNumber": "284",
+      "interruptor": "LCS-4PWS0003-2Q02",
+      "shortName": "2Q02",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-219": {
+      "lockNumber": "285",
+      "interruptor": "LCS-4PWS0003-2Q03",
+      "shortName": "2Q03",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-220": {
+      "lockNumber": "286",
+      "interruptor": "LCS-4PWS0003-2Q04",
+      "shortName": "2Q04",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-221": {
+      "lockNumber": "287",
+      "interruptor": "LCS-4PWS0003-2Q05",
+      "shortName": "2Q05",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-222": {
+      "lockNumber": "288",
+      "interruptor": "LCS-4PWS0003-2Q06",
+      "shortName": "2Q06",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-226": {
+      "lockNumber": "289",
+      "interruptor": "LCS-4PWS0003-3Q01",
+      "shortName": "3Q01",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "Panel 440v No vitales"
+    },
+    "abt-440-227": {
+      "lockNumber": "290",
+      "interruptor": "LCS-4PWS0003-3Q02",
+      "shortName": "3Q02",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "Panel 440v No vitales"
+    },
+    "abt-440-228": {
+      "lockNumber": "291",
+      "interruptor": "LCS-4PWS0003-3Q03",
+      "shortName": "3Q03",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "Panel 440v No vitales"
+    },
+    "abt-440-229": {
+      "lockNumber": "292",
+      "interruptor": "LCS-4PWS0003-3Q04",
+      "shortName": "3Q04",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "Panel 440v No vitales"
+    },
+    "abt-440-230": {
+      "lockNumber": "293",
+      "interruptor": "LCS-4PWS0003-3Q05-A",
+      "shortName": "3Q05-A",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "LCS-4PWS0003-3Q05_Panel 440v No vitales"
+    },
+    "abt-230-240": {
+      "lockNumber": "1094",
+      "interruptor": "LCS-4PWS0003-4Q01",
+      "shortName": "4Q01",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-241": {
+      "lockNumber": "1278",
+      "interruptor": "LCS-4PWS0003-4Q02",
+      "shortName": "4Q02",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-244": {
+      "lockNumber": "1474",
+      "interruptor": "LCS-4PWS0003-4Q05",
+      "shortName": "4Q05",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-246": {
+      "lockNumber": "1479",
+      "interruptor": "LCS-4PWS0003-4Q07",
+      "shortName": "4Q07",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)",
+      "comment": "NOTA: Dentro de  los LCS-4PWS0003 nos faltan 230 vit.seg QVM230-CANDADO 1118 Y QNV 230- CANDADO 1320"
+    },
+    "abt-230-250": {
+      "lockNumber": "1178",
+      "interruptor": "LCS-4PWS0003-5Q01",
+      "shortName": "5Q01",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-251": {
+      "lockNumber": "1225",
+      "interruptor": "LCS-4PWS0003-5Q02",
+      "shortName": "5Q02",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-252": {
+      "lockNumber": "1374",
+      "interruptor": "LCS-4PWS0003-5Q03",
+      "shortName": "5Q03",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-253": {
+      "lockNumber": "1384",
+      "interruptor": "LCS-4PWS0003-5Q04",
+      "shortName": "5Q04",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-256": {
+      "lockNumber": "1409",
+      "interruptor": "LCS-4PWS0003-6Q01",
+      "shortName": "6Q01",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-230-257": {
+      "lockNumber": "1169",
+      "interruptor": "LCS-4PWS0003-6Q02",
+      "shortName": "6Q02",
+      "siteEquipment": "LCS-4PWS0003",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "abt-440-307": {
+      "lockNumber": "402",
+      "interruptor": "LCS-4PWS0004-1Q01",
+      "shortName": "1Q01",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-1Q01_CANDADO CERRADO"
+    },
+    "abt-440-308": {
+      "lockNumber": "386",
+      "interruptor": "LCS-4PWS0004-1Q02",
+      "shortName": "1Q02",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-1Q02_CANDADO CERRADO"
+    },
+    "abt-440-309": {
+      "lockNumber": "293",
+      "interruptor": "LCS-4PWS0004-1Q03",
+      "shortName": "1Q03",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-1Q03_CANDADO CERRADO"
+    },
+    "abt-440-312": {
+      "lockNumber": "298",
+      "interruptor": "LCS-4PWS0004-1Q06",
+      "shortName": "1Q06",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-1Q06_CANDADO CERRADO"
+    },
+    "abt-440-313": {
+      "lockNumber": "292",
+      "interruptor": "LCS-4PWS0004-1Q07",
+      "shortName": "1Q07",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-1Q07_CANDADO CERRADO"
+    },
+    "abt-440-316": {
+      "lockNumber": "415",
+      "interruptor": "LCS-4PWS0004-2Q01-D",
+      "shortName": "2Q01-D",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q01_CANDADO CERRADO"
+    },
+    "abt-440-317": {
+      "lockNumber": "416",
+      "interruptor": "LCS-4PWS0004-2Q02",
+      "shortName": "2Q02",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q02_CANDADO CERRADO"
+    },
+    "abt-440-318": {
+      "lockNumber": "420",
+      "interruptor": "LCS-4PWS0004-2Q03",
+      "shortName": "2Q03",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q03_CANDADO CERRADO"
+    },
+    "abt-440-319": {
+      "lockNumber": "387",
+      "interruptor": "LCS-4PWS0004-2Q04",
+      "shortName": "2Q04",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q04_CANDADO CERRADO"
+    },
+    "abt-440-320": {
+      "lockNumber": "412",
+      "interruptor": "LCS-4PWS0004-2Q05-D",
+      "shortName": "2Q05-D",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q05_CANDADO CERRADO"
+    },
+    "abt-440-321": {
+      "lockNumber": "414",
+      "interruptor": "LCS-4PWS0004-2Q06",
+      "shortName": "2Q06",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q06_CANDADO CERRADO"
+    },
+    "abt-440-322": {
+      "lockNumber": "418",
+      "interruptor": "LCS-4PWS0004-2Q07",
+      "shortName": "2Q07",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q07_CANDADO CERRADO"
+    },
+    "abt-440-323": {
+      "lockNumber": "411",
+      "interruptor": "LCS-4PWS0004-2Q08-B",
+      "shortName": "2Q08-B",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q08_CANDADO CERRADO"
+    },
+    "abt-440-324": {
+      "lockNumber": "413",
+      "interruptor": "LCS-4PWS0004-2Q09",
+      "shortName": "2Q09",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q09_CANDADO CERRADO"
+    },
+    "abt-440-325": {
+      "lockNumber": "382",
+      "interruptor": "LCS-4PWS0004-2Q10",
+      "shortName": "2Q10",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q10_CANDADO CERRADO"
+    },
+    "abt-440-326": {
+      "lockNumber": "417",
+      "interruptor": "LCS-4PWS0004-2Q11",
+      "shortName": "2Q11",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-2Q11_CANDADO CERRADO"
+    },
+    "abt-440-330": {
+      "lockNumber": "226",
+      "interruptor": "LCS-4PWS0004-3Q01",
+      "shortName": "3Q01",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-3Q01_CANDADO CERRADO"
+    },
+    "abt-440-331": {
+      "lockNumber": "227",
+      "interruptor": "LCS-4PWS0004-3Q02-B",
+      "shortName": "3Q02-B",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-3Q02_CANDADO CERRADO"
+    },
+    "abt-440-332": {
+      "lockNumber": "224",
+      "interruptor": "LCS-4PWS0004-3Q03",
+      "shortName": "3Q03",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-3Q03_CANDADO CERRADO"
+    },
+    "abt-440-333": {
+      "lockNumber": "228",
+      "interruptor": "LCS-4PWS0004-3Q04",
+      "shortName": "3Q04",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-3Q04_CANDADO CERRADO"
+    },
+    "abt-230-340": {
+      "lockNumber": "1497",
+      "interruptor": "LCS-4PWS0004-4Q01",
+      "shortName": "4Q01",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-4Q01_CANDADO CERRADO"
+    },
+    "abt-230-341": {
+      "lockNumber": "1387",
+      "interruptor": "LCS-4PWS0004-4Q02",
+      "shortName": "4Q02",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-4Q02_CANDADO CERRADO"
+    },
+    "abt-230-342": {
+      "lockNumber": "1348",
+      "interruptor": "LCS-4PWS0004-4Q03",
+      "shortName": "4Q03",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-4Q03_CANDADO CERRADO"
+    },
+    "abt-230-343": {
+      "lockNumber": "1265",
+      "interruptor": "LCS-4PWS0004-4Q04",
+      "shortName": "4Q04",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-4Q04_CANDADO CERRADO"
+    },
+    "abt-230-347": {
+      "lockNumber": "1335",
+      "interruptor": "LCS-4PWS0004-4Q08",
+      "shortName": "4Q08",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-4Q08_CANDADO CERRADO"
+    },
+    "abt-230-349": {
+      "lockNumber": "1038",
+      "interruptor": "LCS-4PWS0004-4Q10",
+      "shortName": "4Q10",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-4Q10_CANDADO CERRADO"
+    },
+    "abt-230-353": {
+      "lockNumber": "1109",
+      "interruptor": "LCS-4PWS0004-5Q01",
+      "shortName": "5Q01",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-5Q01_CANDADO CERRADO"
+    },
+    "abt-230-354": {
+      "lockNumber": "1425",
+      "interruptor": "LCS-4PWS0004-5Q02",
+      "shortName": "5Q02",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-5Q02_CANDADO CERRADO"
+    },
+    "abt-230-355": {
+      "lockNumber": "1054",
+      "interruptor": "LCS-4PWS0004-5Q03-B",
+      "shortName": "5Q03-B",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-5Q03_CANDADO CERRADO"
+    },
+    "abt-230-356": {
+      "lockNumber": "1404",
+      "interruptor": "LCS-4PWS0004-5Q04",
+      "shortName": "5Q04",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-5Q04_CANDADO CERRADO"
+    },
+    "abt-230-357": {
+      "lockNumber": "1398",
+      "interruptor": "LCS-4PWS0004-5Q05",
+      "shortName": "5Q05",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-5Q05_CANDADO CERRADO"
+    },
+    "abt-230-359": {
+      "lockNumber": "1290",
+      "interruptor": "LCS-4PWS0004-5Q07",
+      "shortName": "5Q07",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-5Q07_CANDADO CERRADO"
+    },
+    "abt-230-363": {
+      "lockNumber": "1354",
+      "interruptor": "LCS-4PWS0004-6Q01",
+      "shortName": "6Q01",
+      "siteEquipment": "LCS-4PWS0004",
+      "local": "2-72-3-Q CENTRO CARGA N-4 (V)",
+      "comment": "LCS-4PWS0004-6Q02_CANDADO CERRADO"
+    },
+    "abt-440-507": {
+      "lockNumber": "294",
+      "interruptor": "LCS-4PWS0006-1Q02",
+      "shortName": "1Q02",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-1Q02_CANDADO CERRADO"
+    },
+    "abt-440-508": {
+      "lockNumber": "406",
+      "interruptor": "LCS-4PWS0006-1Q03",
+      "shortName": "1Q03",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-1Q03_CANDADO CERRADO"
+    },
+    "abt-440-509": {
+      "lockNumber": "388",
+      "interruptor": "LCS-4PWS0006-1Q04",
+      "shortName": "1Q04",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-1Q04_CANDADO CERRADO"
+    },
+    "abt-440-513": {
+      "lockNumber": "389",
+      "interruptor": "LCS-4PWS0006-2Q01",
+      "shortName": "2Q01",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-2Q01_CANDADO CERRADO"
+    },
+    "abt-440-515": {
+      "lockNumber": "423",
+      "interruptor": "LCS-4PWS0006-2Q03",
+      "shortName": "2Q03",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-2Q03_CANDADO CERRADO"
+    },
+    "abt-440-517": {
+      "lockNumber": "410",
+      "interruptor": "LCS-4PWS0006-2Q05-B",
+      "shortName": "2Q05-B",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-2Q05_CANDADO CERRADO"
+    },
+    "abt-440-521": {
+      "lockNumber": "408",
+      "interruptor": "LCS-4PWS0006-3Q01",
+      "shortName": "3Q01",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-3Q01_CANDADO CERRADO"
+    },
+    "abt-440-522": {
+      "lockNumber": "427",
+      "interruptor": "LCS-4PWS0006-3Q02",
+      "shortName": "3Q02",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-3Q02_CANDADO CERRADO"
+    },
+    "abt-230-529": {
+      "lockNumber": "1213",
+      "interruptor": "LCS-4PWS0006-4Q01",
+      "shortName": "4Q01",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-4Q01_CANDADO CERRADO"
+    },
+    "abt-230-530": {
+      "lockNumber": "1061",
+      "interruptor": "LCS-4PWS0006-4Q02",
+      "shortName": "4Q02",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-4Q02_CANDADO CERRADO"
+    },
+    "abt-230-531": {
+      "lockNumber": "1234",
+      "interruptor": "LCS-4PWS0006-4Q03",
+      "shortName": "4Q03",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-4Q03_CANDADO CERRADO"
+    },
+    "abt-230-532": {
+      "lockNumber": "1092",
+      "interruptor": "LCS-4PWS0006-4Q04",
+      "shortName": "4Q04",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-4Q04_CANDADO CERRADO"
+    },
+    "abt-230-535": {
+      "lockNumber": "1003",
+      "interruptor": "LCS-4PWS0006-5Q01",
+      "shortName": "5Q01",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-5Q01_CANDADO CERRADO"
+    },
+    "abt-230-536": {
+      "lockNumber": "1192",
+      "interruptor": "LCS-4PWS0006-5Q02",
+      "shortName": "5Q02",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-5Q02_CANDADO CERRADO"
+    },
+    "abt-230-537": {
+      "lockNumber": "1430",
+      "interruptor": "LCS-4PWS0006-5Q03",
+      "shortName": "5Q03",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-5Q03_CANDADO CERRADO"
+    },
+    "abt-230-540": {
+      "lockNumber": "1424",
+      "interruptor": "LCS-4PWS0006-6Q01",
+      "shortName": "6Q01",
+      "siteEquipment": "LCS-4PWS0006",
+      "local": "2-14-3-Q CENTRO CARGA N-6 (V)",
+      "comment": "LCS-4PWS0006-6Q01_CANDADO CERRADO"
+    },
+    "690-0187": {
+      "lockNumber": "1168",
+      "interruptor": "CCM-6PWS0009-06",
+      "shortName": "06",
+      "siteEquipment": "CCM-6PWS0009",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "41Q1"
+    },
+    "690-0188": {
+      "lockNumber": "1169",
+      "interruptor": "CCM-6PWS0009-07",
+      "shortName": "07",
+      "siteEquipment": "CCM-6PWS0009",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "43Q1"
+    },
+    "690-0189": {
+      "lockNumber": "1167",
+      "interruptor": "CCM-6PWS0009-08",
+      "shortName": "08",
+      "siteEquipment": "CCM-6PWS0009",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "46Q1"
+    },
+    "690-0190": {
+      "lockNumber": "1166",
+      "interruptor": "CCM-6PWS0009-09",
+      "shortName": "09",
+      "siteEquipment": "CCM-6PWS0009",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "51Q1"
+    },
+    "690-0191": {
+      "lockNumber": "1164",
+      "interruptor": "CCM-6PWS0009-10",
+      "shortName": "10",
+      "siteEquipment": "CCM-6PWS0009",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "56Q1"
+    },
+    "690-0194": {
+      "lockNumber": "1165",
+      "interruptor": "CCM-6PWS0009-13",
+      "shortName": "13",
+      "siteEquipment": "CCM-6PWS0009",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "61Q1"
+    },
+    "690-0175": {
+      "lockNumber": "1424",
+      "interruptor": "CCM-6PWS0008-04",
+      "shortName": "04",
+      "siteEquipment": "CCM-6PWS0008",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "36Q1"
+    },
+    "690-0176": {
+      "lockNumber": "1425",
+      "interruptor": "CCM-6PWS0008-05",
+      "shortName": "05",
+      "siteEquipment": "CCM-6PWS0008",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "41Q1"
+    },
+    "690-0177": {
+      "lockNumber": "1426",
+      "interruptor": "CCM-6PWS0008-07",
+      "shortName": "07",
+      "siteEquipment": "CCM-6PWS0008",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "44Q1"
+    },
+    "690-0178": {
+      "lockNumber": "1427",
+      "interruptor": "CCM-6PWS0008-08",
+      "shortName": "08",
+      "siteEquipment": "CCM-6PWS0008",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "49Q1"
+    },
+    "690-0179": {
+      "lockNumber": "1429",
+      "interruptor": "CCM-6PWS0008-09",
+      "shortName": "09",
+      "siteEquipment": "CCM-6PWS0008",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "54Q1"
+    },
+    "690-0180": {
+      "lockNumber": "1428",
+      "interruptor": "CCM-6PWS0008-10",
+      "shortName": "10",
+      "siteEquipment": "CCM-6PWS0008",
+      "local": "4-62-0-E CAMARA DIESEL GENERADORES POPA (V)",
+      "comment": "56Q1"
+    },
+    "690-0104": {
+      "lockNumber": "1374",
+      "interruptor": "CCM-6PWS0002-02",
+      "shortName": "02",
+      "siteEquipment": "CCM-6PWS0002",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "8Q1_CANDADO CERRADO"
+    },
+    "690-0105": {
+      "lockNumber": "1376",
+      "interruptor": "CCM-6PWS0002-03",
+      "shortName": "03",
+      "siteEquipment": "CCM-6PWS0002",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "13Q1_CANDADO CERRADO"
+    },
+    "690-0103": {
+      "lockNumber": "1254",
+      "interruptor": "CCM-6PWS0002-01",
+      "shortName": "01",
+      "siteEquipment": "CCM-6PWS0002",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "6Q1_CANDADO CERRADO"
+    },
+    "690-0110": {
+      "lockNumber": "1259",
+      "interruptor": "CCM-6PWS0002-12",
+      "shortName": "12",
+      "siteEquipment": "CCM-6PWS0002",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "58Q1_CANDADO CERRADO"
+    },
+    "690-0113": {
+      "lockNumber": "1257",
+      "interruptor": "CCM-6PWS0002-15",
+      "shortName": "15",
+      "siteEquipment": "CCM-6PWS0002",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "53Q1_CANDADO CERRADO"
+    },
+    "690-0114": {
+      "lockNumber": "1261",
+      "interruptor": "CCM-6PWS0003-01",
+      "shortName": "01",
+      "siteEquipment": "CCM-6PWS0003",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "6Q1_CANDADO CERRADO"
+    },
+    "690-0118": {
+      "lockNumber": "1354",
+      "interruptor": "CCM-6PWS0003-06",
+      "shortName": "06",
+      "siteEquipment": "CCM-6PWS0003",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "20Q1_CANDADO CERRADO"
+    },
+    "690-0119": {
+      "lockNumber": "1350",
+      "interruptor": "CCM-6PWS0003-07",
+      "shortName": "07",
+      "siteEquipment": "CCM-6PWS0003",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "50Q1_CANDADO CERRADO"
+    },
+    "690-0120": {
+      "lockNumber": "1263",
+      "interruptor": "CCM-6PWS0003-08",
+      "shortName": "08",
+      "siteEquipment": "CCM-6PWS0003",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "58Q1_CANDADO CERRADO"
+    },
+    "690-0121": {
+      "lockNumber": "1264",
+      "interruptor": "CCM-6PWS0003-10",
+      "shortName": "10",
+      "siteEquipment": "CCM-6PWS0003",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "63Q1_CANDADO CERRADO"
+    },
+    "690-0125": {
+      "lockNumber": "1265",
+      "interruptor": "CCM-6PWS0003-14",
+      "shortName": "14",
+      "siteEquipment": "CCM-6PWS0003",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "52Q1_CANDADO CERRADO"
+    },
+    "690-0126": {
+      "lockNumber": "1358",
+      "interruptor": "CCM-6PWS0003-15",
+      "shortName": "15",
+      "siteEquipment": "CCM-6PWS0003",
+      "local": "4-119-0-E CAMARA MAQUINAS PROA (V)",
+      "comment": "44Q1_CANDADO CERRADO"
+    },
+    "abt-440-105": {
+      "lockNumber": "404",
+      "interruptor": "CPNE-0011",
+      "shortName": "0011",
+      "siteEquipment": "TBX-CPNE0004",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-440-107": {
+      "lockNumber": "474",
+      "interruptor": "LCS-4PWS0002-1Q02",
+      "shortName": "1Q02",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-108": {
+      "lockNumber": "424",
+      "interruptor": "LCS-4PWS0002-1Q03",
+      "shortName": "1Q03",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-109": {
+      "lockNumber": "442",
+      "interruptor": "LCS-4PWS0002-1Q04",
+      "shortName": "1Q04",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-111": {
+      "lockNumber": "449",
+      "interruptor": "LCS-4PWS0002-1Q06",
+      "shortName": "1Q06",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-114": {
+      "lockNumber": "479",
+      "interruptor": "LCS-4PWS0002-2Q01",
+      "shortName": "2Q01",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-115": {
+      "lockNumber": "448",
+      "interruptor": "LCS-4PWS0002-2Q02-A",
+      "shortName": "2Q02-A",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-116": {
+      "lockNumber": "472",
+      "interruptor": "LCS-4PWS0002-2Q03",
+      "shortName": "2Q03",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-117": {
+      "lockNumber": "473",
+      "interruptor": "LCS-4PWS0002-2Q04-A",
+      "shortName": "2Q04-A",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-118": {
+      "lockNumber": "478",
+      "interruptor": "LCS-4PWS0002-2Q05",
+      "shortName": "2Q05",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-119": {
+      "lockNumber": "477",
+      "interruptor": "LCS-4PWS0002-2Q06-A",
+      "shortName": "2Q06-A",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-123": {
+      "lockNumber": "450",
+      "interruptor": "LCS-4PWS0002-3Q01",
+      "shortName": "3Q01",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-124": {
+      "lockNumber": "441",
+      "interruptor": "LCS-4PWS0002-3Q02",
+      "shortName": "3Q02",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-125": {
+      "lockNumber": "447",
+      "interruptor": "LCS-4PWS0002-3Q03",
+      "shortName": "3Q03",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-440-127": {
+      "lockNumber": "428",
+      "interruptor": "LCS-4PWS0002-3Q05",
+      "shortName": "3Q05",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-134": {
+      "lockNumber": "1372",
+      "interruptor": "LCS-4PWS0002-4Q01",
+      "shortName": "4Q01",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-135": {
+      "lockNumber": "1205",
+      "interruptor": "LCS-4PWS0002-4Q02",
+      "shortName": "4Q02",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-136": {
+      "lockNumber": "1214",
+      "interruptor": "LCS-4PWS0002-4Q03",
+      "shortName": "4Q03",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-137": {
+      "lockNumber": "1319",
+      "interruptor": "LCS-4PWS0002-4Q04",
+      "shortName": "4Q04",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-138": {
+      "lockNumber": "1333",
+      "interruptor": "LCS-4PWS0002-4Q05",
+      "shortName": "4Q05",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-139": {
+      "lockNumber": "1293",
+      "interruptor": "LCS-4PWS0002-4Q06",
+      "shortName": "4Q06",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-140": {
+      "lockNumber": "1042",
+      "interruptor": "LCS-4PWS0002-4Q07",
+      "shortName": "4Q07",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-141": {
+      "lockNumber": "1466",
+      "interruptor": "LCS-4PWS0002-4Q08",
+      "shortName": "4Q08",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-142": {
+      "lockNumber": "1220",
+      "interruptor": "LCS-4PWS0002-4Q09",
+      "shortName": "4Q09",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-143": {
+      "lockNumber": "1350",
+      "interruptor": "LCS-4PWS0002-4Q10",
+      "shortName": "4Q10",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-147": {
+      "lockNumber": "1193",
+      "interruptor": "LCS-4PWS0002-5Q02",
+      "shortName": "5Q02",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-148": {
+      "lockNumber": "1400",
+      "interruptor": "LCS-4PWS0002-5Q03",
+      "shortName": "5Q03",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-149": {
+      "lockNumber": "1196",
+      "interruptor": "LCS-4PWS0002-5Q04-A",
+      "shortName": "5Q04-A",
+      "siteEquipment": "SSB-2PWS2231",
+      "local": "03-169-0-C LOCAL EQUIPOS ELECTRONICOS N.03 BR (V)"
+    },
+    "abt-230-150": {
+      "lockNumber": "1137",
+      "interruptor": "LCS-4PWS0002-5Q05",
+      "shortName": "5Q05",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-151": {
+      "lockNumber": "1419",
+      "interruptor": "LCS-4PWS0002-5Q06",
+      "shortName": "5Q06",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-152": {
+      "lockNumber": "1386",
+      "interruptor": "LCS-4PWS0002-5Q07",
+      "shortName": "5Q07",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-153": {
+      "lockNumber": "1445",
+      "interruptor": "LCS-4PWS0002-5Q08",
+      "shortName": "5Q08",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-154": {
+      "lockNumber": "1448",
+      "interruptor": "LCS-4PWS0002-5Q09",
+      "shortName": "5Q09",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-156": {
+      "lockNumber": "1004",
+      "interruptor": "LCS-4PWS0002-6Q01",
+      "shortName": "6Q01",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-157": {
+      "lockNumber": "1275",
+      "interruptor": "LCS-4PWS0002-6Q02",
+      "shortName": "6Q02",
+      "siteEquipment": "LCS-4PWS0002",
+      "local": "1-143-6-Q CENTRO CARGA N-2 (V)"
+    },
+    "abt-230-1127": {
+      "lockNumber": "715",
+      "interruptor": "SSB-2PWS2301-Q04",
+      "shortName": "Q04",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1128": {
+      "lockNumber": "717",
+      "interruptor": "SSB-2PWS2301-Q05",
+      "shortName": "Q05",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1136": {
+      "lockNumber": "725",
+      "interruptor": "SSB-2PWS2301-Q13",
+      "shortName": "Q13",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1137": {
+      "lockNumber": "677",
+      "interruptor": "SSB-2PWS2301-Q14",
+      "shortName": "Q14",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1138": {
+      "lockNumber": "678",
+      "interruptor": "SSB-2PWS2301-Q15",
+      "shortName": "Q15",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1139": {
+      "lockNumber": "679",
+      "interruptor": "SSB-2PWS2301-Q16",
+      "shortName": "Q16",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1140": {
+      "lockNumber": "680",
+      "interruptor": "SSB-2PWS2301-Q17",
+      "shortName": "Q17",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1141": {
+      "lockNumber": "681",
+      "interruptor": "SSB-2PWS2301-Q18",
+      "shortName": "Q18",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1142": {
+      "lockNumber": "682",
+      "interruptor": "SSB-2PWS2301-Q19",
+      "shortName": "Q19",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1143": {
+      "lockNumber": "683",
+      "interruptor": "SSB-2PWS2301-Q20",
+      "shortName": "Q20",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1144": {
+      "lockNumber": "684",
+      "interruptor": "SSB-2PWS2301-Q21",
+      "shortName": "Q21",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1145": {
+      "lockNumber": "685",
+      "interruptor": "SSB-2PWS2301-Q22",
+      "shortName": "Q22",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1146": {
+      "lockNumber": "686",
+      "interruptor": "SSB-2PWS2301-Q23",
+      "shortName": "Q23",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1147": {
+      "lockNumber": "687",
+      "interruptor": "SSB-2PWS2301-Q24",
+      "shortName": "Q24",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1150": {
+      "lockNumber": "690",
+      "interruptor": "SSB-2PWS2301-Q27",
+      "shortName": "Q27",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1154": {
+      "lockNumber": "694",
+      "interruptor": "SSB-2PWS2301-Q31",
+      "shortName": "Q31",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1155": {
+      "lockNumber": "695",
+      "interruptor": "SSB-2PWS2301-Q32",
+      "shortName": "Q32",
+      "siteEquipment": "SSB-2PWS2301",
+      "local": "3-102-1-T TRONCO DE ACCESO"
+    },
+    "abt-230-1157": {
+      "lockNumber": "728",
+      "interruptor": "SSB-2PWS2302-Q02",
+      "shortName": "Q02",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1158": {
+      "lockNumber": "729",
+      "interruptor": "SSB-2PWS2302-Q03",
+      "shortName": "Q03",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1159": {
+      "lockNumber": "730",
+      "interruptor": "SSB-2PWS2302-Q04",
+      "shortName": "Q04",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1161": {
+      "lockNumber": "732",
+      "interruptor": "SSB-2PWS2302-Q06",
+      "shortName": "Q06",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1162": {
+      "lockNumber": "733",
+      "interruptor": "SSB-2PWS2302-Q07",
+      "shortName": "Q07",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1163": {
+      "lockNumber": "734",
+      "interruptor": "SSB-2PWS2302-Q08",
+      "shortName": "Q08",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1165": {
+      "lockNumber": "736",
+      "interruptor": "SSB-2PWS2302-Q10",
+      "shortName": "Q10",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1166": {
+      "lockNumber": "737",
+      "interruptor": "SSB-2PWS2302-Q11",
+      "shortName": "Q11",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1167": {
+      "lockNumber": "738",
+      "interruptor": "SSB-2PWS2302-Q12",
+      "shortName": "Q12",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1169": {
+      "lockNumber": "740",
+      "interruptor": "SSB-2PWS2302-Q14",
+      "shortName": "Q14",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1170": {
+      "lockNumber": "741",
+      "interruptor": "SSB-2PWS2302-Q15",
+      "shortName": "Q15",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1171": {
+      "lockNumber": "742",
+      "interruptor": "SSB-2PWS2302-Q16",
+      "shortName": "Q16",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1172": {
+      "lockNumber": "743",
+      "interruptor": "SSB-2PWS2302-Q17",
+      "shortName": "Q17",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1173": {
+      "lockNumber": "744",
+      "interruptor": "SSB-2PWS2302-Q18",
+      "shortName": "Q18",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1174": {
+      "lockNumber": "745",
+      "interruptor": "SSB-2PWS2302-Q19",
+      "shortName": "Q19",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1178": {
+      "lockNumber": "749",
+      "interruptor": "SSB-2PWS2302-Q23",
+      "shortName": "Q23",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1179": {
+      "lockNumber": "750",
+      "interruptor": "SSB-2PWS2302-Q24",
+      "shortName": "Q24",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1180": {
+      "lockNumber": "701",
+      "interruptor": "SSB-2PWS2302-Q25",
+      "shortName": "Q25",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1181": {
+      "lockNumber": "702",
+      "interruptor": "SSB-2PWS2302-Q26",
+      "shortName": "Q26",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1182": {
+      "lockNumber": "703",
+      "interruptor": "SSB-2PWS2302-Q27",
+      "shortName": "Q27",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1183": {
+      "lockNumber": "704",
+      "interruptor": "SSB-2PWS2302-Q28",
+      "shortName": "Q28",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1184": {
+      "lockNumber": "705",
+      "interruptor": "SSB-2PWS2302-Q29",
+      "shortName": "Q29",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1185": {
+      "lockNumber": "706",
+      "interruptor": "SSB-2PWS2302-Q30",
+      "shortName": "Q30",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1186": {
+      "lockNumber": "707",
+      "interruptor": "SSB-2PWS2302-Q31",
+      "shortName": "Q31",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1188": {
+      "lockNumber": "710",
+      "interruptor": "SSB-2PWS2302-Q33",
+      "shortName": "Q33",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1189": {
+      "lockNumber": "711",
+      "interruptor": "SSB-2PWS2302-Q34",
+      "shortName": "Q34",
+      "siteEquipment": "SSB-2PWS2302",
+      "local": "2-119-0-L PASILLO"
+    },
+    "abt-230-1868": {
+      "lockNumber": "700",
+      "interruptor": "SSB-2PWS4501-Q05",
+      "shortName": "Q05",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1869": {
+      "lockNumber": "626",
+      "interruptor": "SSB-2PWS4501-Q06",
+      "shortName": "Q06",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1870": {
+      "lockNumber": "627",
+      "interruptor": "SSB-2PWS4501-Q07",
+      "shortName": "Q07",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1874": {
+      "lockNumber": "632",
+      "interruptor": "SSB-2PWS4501-Q11",
+      "shortName": "Q11",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1875": {
+      "lockNumber": "633",
+      "interruptor": "SSB-2PWS4501-Q12",
+      "shortName": "Q12",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1877": {
+      "lockNumber": "635",
+      "interruptor": "SSB-2PWS4501-Q14",
+      "shortName": "Q14",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1878": {
+      "lockNumber": "636",
+      "interruptor": "SSB-2PWS4501-Q15",
+      "shortName": "Q15",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1879": {
+      "lockNumber": "637",
+      "interruptor": "SSB-2PWS4501-Q16",
+      "shortName": "Q16",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1880": {
+      "lockNumber": "638",
+      "interruptor": "SSB-2PWS4501-Q17",
+      "shortName": "Q17",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1881": {
+      "lockNumber": "639",
+      "interruptor": "SSB-2PWS4501-Q18",
+      "shortName": "Q18",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1882": {
+      "lockNumber": "640",
+      "interruptor": "SSB-2PWS4501-Q19",
+      "shortName": "Q19",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1883": {
+      "lockNumber": "641",
+      "interruptor": "SSB-2PWS4501-Q20",
+      "shortName": "Q20",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1884": {
+      "lockNumber": "642",
+      "interruptor": "SSB-2PWS4501-Q21",
+      "shortName": "Q21",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1885": {
+      "lockNumber": "643",
+      "interruptor": "SSB-2PWS4501-Q22",
+      "shortName": "Q22",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1894": {
+      "lockNumber": "652",
+      "interruptor": "SSB-2PWS4501-Q31",
+      "shortName": "Q31",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1895": {
+      "lockNumber": "653",
+      "interruptor": "SSB-2PWS4501-Q32",
+      "shortName": "Q32",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1896": {
+      "lockNumber": "654",
+      "interruptor": "SSB-2PWS4501-Q33",
+      "shortName": "Q33",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1897": {
+      "lockNumber": "655",
+      "interruptor": "SSB-2PWS4501-Q34",
+      "shortName": "Q34",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1900": {
+      "lockNumber": "658",
+      "interruptor": "SSB-2PWS4501-Q37",
+      "shortName": "Q37",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1901": {
+      "lockNumber": "659",
+      "interruptor": "SSB-2PWS4501-Q38",
+      "shortName": "Q38",
+      "siteEquipment": "SSB-2PWS4501",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "abt-230-1557": {
+      "lockNumber": "1441",
+      "interruptor": "SSB-2PWS3402-Q02",
+      "shortName": "Q02",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1558": {
+      "lockNumber": "1014",
+      "interruptor": "SSB-2PWS3402-Q03",
+      "shortName": "Q03",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1559": {
+      "lockNumber": "1056",
+      "interruptor": "SSB-2PWS3402-Q04",
+      "shortName": "Q04",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1560": {
+      "lockNumber": "1421",
+      "interruptor": "SSB-2PWS3402-Q05",
+      "shortName": "Q05",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1561": {
+      "lockNumber": "1104",
+      "interruptor": "SSB-2PWS3402-Q06",
+      "shortName": "Q06",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1562": {
+      "lockNumber": "1052",
+      "interruptor": "SSB-2PWS3402-Q07",
+      "shortName": "Q07",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1563": {
+      "lockNumber": "1238",
+      "interruptor": "SSB-2PWS3402-Q08",
+      "shortName": "Q08",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1564": {
+      "lockNumber": "1481",
+      "interruptor": "SSB-2PWS3402-Q09",
+      "shortName": "Q09",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1565": {
+      "lockNumber": "1447",
+      "interruptor": "SSB-2PWS3402-Q10",
+      "shortName": "Q10",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1566": {
+      "lockNumber": "1145",
+      "interruptor": "SSB-2PWS3402-Q11",
+      "shortName": "Q11",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1567": {
+      "lockNumber": "1087",
+      "interruptor": "SSB-2PWS3402-Q12",
+      "shortName": "Q12",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1568": {
+      "lockNumber": "1413",
+      "interruptor": "SSB-2PWS3402-Q13",
+      "shortName": "Q13",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1569": {
+      "lockNumber": "1368",
+      "interruptor": "SSB-2PWS3402-Q14",
+      "shortName": "Q14",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1570": {
+      "lockNumber": "1428",
+      "interruptor": "SSB-2PWS3402-Q15",
+      "shortName": "Q15",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1571": {
+      "lockNumber": "1486",
+      "interruptor": "SSB-2PWS3402-Q16",
+      "shortName": "Q16",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1572": {
+      "lockNumber": "1160",
+      "interruptor": "SSB-2PWS3402-Q17",
+      "shortName": "Q17",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1574": {
+      "lockNumber": "1390",
+      "interruptor": "SSB-2PWS3402-Q19",
+      "shortName": "Q19",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1575": {
+      "lockNumber": "1495",
+      "interruptor": "SSB-2PWS3402-Q20",
+      "shortName": "Q20",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1576": {
+      "lockNumber": "1232",
+      "interruptor": "SSB-2PWS3402-Q21",
+      "shortName": "Q21",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1577": {
+      "lockNumber": "1494",
+      "interruptor": "SSB-2PWS3402-Q22",
+      "shortName": "Q22",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1578": {
+      "lockNumber": "1200",
+      "interruptor": "SSB-2PWS3402-Q23",
+      "shortName": "Q23",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1579": {
+      "lockNumber": "1028",
+      "interruptor": "SSB-2PWS3402-Q24",
+      "shortName": "Q24",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1580": {
+      "lockNumber": "1382",
+      "interruptor": "SSB-2PWS3402-Q25",
+      "shortName": "Q25",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1581": {
+      "lockNumber": "1083",
+      "interruptor": "SSB-2PWS3402-Q26",
+      "shortName": "Q26",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1582": {
+      "lockNumber": "1055",
+      "interruptor": "SSB-2PWS3402-Q27",
+      "shortName": "Q27",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1583": {
+      "lockNumber": "1138",
+      "interruptor": "SSB-2PWS3402-Q28",
+      "shortName": "Q28",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1588": {
+      "lockNumber": "1206",
+      "interruptor": "SSB-2PWS3402-Q33",
+      "shortName": "Q33",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "abt-230-1589": {
+      "lockNumber": "1463",
+      "interruptor": "SSB-2PWS3402-Q34",
+      "shortName": "Q34",
+      "siteEquipment": "SSB-2PWS3402",
+      "local": "2-97-01-C CAMARA CONTROL CENTRAL (V)"
+    },
+    "690-0153": {
+      "lockNumber": "1048",
+      "interruptor": "CCM-6PWS0006-08",
+      "shortName": "08",
+      "siteEquipment": "CCM-6PWS0006",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 26Q1"
+    },
+    "690-0225": {
+      "lockNumber": "1047",
+      "interruptor": "CCM-6PWS0006-09",
+      "shortName": "09",
+      "siteEquipment": "CCM-6PWS0006",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 26Q2"
+    },
+    "690-0154": {
+      "lockNumber": "1043",
+      "interruptor": "CCM-6PWS0006-10",
+      "shortName": "10",
+      "siteEquipment": "CCM-6PWS0006",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruprtor 31Q1"
+    },
+    "690-0226": {
+      "lockNumber": "1044",
+      "interruptor": "CCM-6PWS0006-11",
+      "shortName": "11",
+      "siteEquipment": "CCM-6PWS0006",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 31Q2"
+    },
+    "690-0158": {
+      "lockNumber": "1362",
+      "interruptor": "CCM-6PWS0006-15",
+      "shortName": "15",
+      "siteEquipment": "CCM-6PWS0006",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 62Q1"
+    },
+    "690-0159": {
+      "lockNumber": "1367",
+      "interruptor": "CCM-6PWS0006-16",
+      "shortName": "16",
+      "siteEquipment": "CCM-6PWS0006",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 67Q1"
+    },
+    "690-0167": {
+      "lockNumber": "1056",
+      "interruptor": "CCM-6PWS0007-08",
+      "shortName": "08",
+      "siteEquipment": "CCM-6PWS0007",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 26Q1"
+    },
+    "690-0227": {
+      "lockNumber": "1058",
+      "interruptor": "CCM-6PWS0007-09",
+      "shortName": "09",
+      "siteEquipment": "CCM-6PWS0007",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 26Q2"
+    },
+    "690-0168": {
+      "lockNumber": "1175",
+      "interruptor": "CCM-6PWS0007-10",
+      "shortName": "10",
+      "siteEquipment": "CCM-6PWS0007",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 31Q2"
+    },
+    "690-0228": {
+      "lockNumber": "1365",
+      "interruptor": "CCM-6PWS0007-11",
+      "shortName": "11",
+      "siteEquipment": "CCM-6PWS0007",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 31Q2"
+    },
+    "690-0169": {
+      "lockNumber": "1057",
+      "interruptor": "CCM-6PWS0007-12",
+      "shortName": "12",
+      "siteEquipment": "CCM-6PWS0007",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 36Q1"
+    },
+    "690-0171": {
+      "lockNumber": "1060",
+      "interruptor": "CCM-6PWS0007-15",
+      "shortName": "15",
+      "siteEquipment": "CCM-6PWS0007",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 57Q1"
+    },
+    "690-0172": {
+      "lockNumber": "1061",
+      "interruptor": "CCM-6PWS0007-16",
+      "shortName": "16",
+      "siteEquipment": "CCM-6PWS0007",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "interruptor 62Q1"
+    },
+    "abt-230-1536": {
+      "lockNumber": "1304",
+      "interruptor": "SSB-2PWS3401-Q02",
+      "shortName": "Q02",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1538": {
+      "lockNumber": "1358",
+      "interruptor": "SSB-2PWS3401-Q04",
+      "shortName": "Q04",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1539": {
+      "lockNumber": "1401",
+      "interruptor": "SSB-2PWS3401-Q05",
+      "shortName": "Q05",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1540": {
+      "lockNumber": "1158",
+      "interruptor": "SSB-2PWS3401-Q06",
+      "shortName": "Q06",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "Identificar y retirar"
+    },
+    "abt-230-1541": {
+      "lockNumber": "1103",
+      "interruptor": "SSB-2PWS3401-Q07",
+      "shortName": "Q07",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "Identificar y retirar"
+    },
+    "abt-230-1542": {
+      "lockNumber": "1286",
+      "interruptor": "SSB-2PWS3401-Q08",
+      "shortName": "Q08",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "Identificar y retirar"
+    },
+    "abt-230-1543": {
+      "lockNumber": "1156",
+      "interruptor": "SSB-2PWS3401-Q09",
+      "shortName": "Q09",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "Identificar y retirar"
+    },
+    "abt-230-1544": {
+      "lockNumber": "1267",
+      "interruptor": "SSB-2PWS3401-Q10",
+      "shortName": "Q10",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "Identificar y retirar"
+    },
+    "abt-230-1545": {
+      "lockNumber": "1435",
+      "interruptor": "SSB-2PWS3401-Q11",
+      "shortName": "Q11",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)",
+      "comment": "Identificar y retirar"
+    },
+    "abt-230-1546": {
+      "lockNumber": "1440",
+      "interruptor": "SSB-2PWS3401-Q12",
+      "shortName": "Q12",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1547": {
+      "lockNumber": "1159",
+      "interruptor": "SSB-2PWS3401-Q13",
+      "shortName": "Q13",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1548": {
+      "lockNumber": "1355",
+      "interruptor": "SSB-2PWS3401-Q14",
+      "shortName": "Q14",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1550": {
+      "lockNumber": "1230",
+      "interruptor": "SSB-2PWS3401-Q16",
+      "shortName": "Q16",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1551": {
+      "lockNumber": "1296",
+      "interruptor": "SSB-2PWS3401-Q17",
+      "shortName": "Q17",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1553": {
+      "lockNumber": "1021",
+      "interruptor": "SSB-2PWS3401-Q19",
+      "shortName": "Q19",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1554": {
+      "lockNumber": "1288",
+      "interruptor": "SSB-2PWS3401-Q20",
+      "shortName": "Q20",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1555": {
+      "lockNumber": "1344",
+      "interruptor": "SSB-2PWS3401-Q21",
+      "shortName": "Q21",
+      "siteEquipment": "SSB-2PWS3401",
+      "local": "4-83-0-E CAMARA MAQUINAS POPA (V)"
+    },
+    "abt-230-1602": {
+      "lockNumber": "1112",
+      "interruptor": "SSB-2PWS3404-Q01",
+      "shortName": "Q01",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1603": {
+      "lockNumber": "1037",
+      "interruptor": "SSB-2PWS3404-Q02",
+      "shortName": "Q02",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1604": {
+      "lockNumber": "1459",
+      "interruptor": "SSB-2PWS3404-Q03",
+      "shortName": "Q03",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1605": {
+      "lockNumber": "1289",
+      "interruptor": "SSB-2PWS3404-Q04",
+      "shortName": "Q04",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1606": {
+      "lockNumber": "1108",
+      "interruptor": "SSB-2PWS3404-Q05",
+      "shortName": "Q05",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1607": {
+      "lockNumber": "1283",
+      "interruptor": "SSB-2PWS3404-Q06",
+      "shortName": "Q06",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1608": {
+      "lockNumber": "1086",
+      "interruptor": "SSB-2PWS3404-Q07",
+      "shortName": "Q07",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1609": {
+      "lockNumber": "1450",
+      "interruptor": "SSB-2PWS3404-Q08",
+      "shortName": "Q08",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1611": {
+      "lockNumber": "1051",
+      "interruptor": "SSB-2PWS3404-Q10",
+      "shortName": "Q10",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1612": {
+      "lockNumber": "1389",
+      "interruptor": "SSB-2PWS3404-Q11",
+      "shortName": "Q11",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1613": {
+      "lockNumber": "1317",
+      "interruptor": "SSB-2PWS3404-Q12",
+      "shortName": "Q12",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1614": {
+      "lockNumber": "1146",
+      "interruptor": "SSB-2PWS3404-Q13",
+      "shortName": "Q13",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1615": {
+      "lockNumber": "1240",
+      "interruptor": "SSB-2PWS3404-Q14",
+      "shortName": "Q14",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO",
+      "comment": "identificar y retirar"
+    },
+    "abt-230-1618": {
+      "lockNumber": "1182",
+      "interruptor": "SSB-2PWS3404-Q17",
+      "shortName": "Q17",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1619": {
+      "lockNumber": "1144",
+      "interruptor": "SSB-2PWS3404-Q18",
+      "shortName": "Q18",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1620": {
+      "lockNumber": "1071",
+      "interruptor": "SSB-2PWS3404-Q19",
+      "shortName": "Q19",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO"
+    },
+    "abt-230-1621": {
+      "lockNumber": "1292",
+      "interruptor": "SSB-2PWS3404-Q20",
+      "shortName": "Q20",
+      "siteEquipment": "SSB-2PWS3404",
+      "local": "01-92-1-L PASILLO",
+      "comment": "identificar y retirar"
+    },
+    "abt-230-1680": {
+      "lockNumber": "1252",
+      "interruptor": "SSB-2PWS3430-Q01",
+      "shortName": "Q01",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO",
+      "comment": "identificar y retirar"
+    },
+    "abt-230-1681": {
+      "lockNumber": "1301",
+      "interruptor": "SSB-2PWS3430-Q02",
+      "shortName": "Q02",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO",
+      "comment": "identificar y retirar"
+    },
+    "abt-230-1682": {
+      "lockNumber": "1239",
+      "interruptor": "SSB-2PWS3430-Q03",
+      "shortName": "Q03",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1683": {
+      "lockNumber": "1098",
+      "interruptor": "SSB-2PWS3430-Q04",
+      "shortName": "Q04",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1685": {
+      "lockNumber": "1291",
+      "interruptor": "SSB-2PWS3430-Q06",
+      "shortName": "Q06",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1686": {
+      "lockNumber": "1080",
+      "interruptor": "SSB-2PWS3430-Q07",
+      "shortName": "Q07",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1689": {
+      "lockNumber": "1199",
+      "interruptor": "SSB-2PWS3430-Q10",
+      "shortName": "Q10",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1691": {
+      "lockNumber": "1342",
+      "interruptor": "SSB-2PWS3430-Q12",
+      "shortName": "Q12",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1692": {
+      "lockNumber": "1133",
+      "interruptor": "SSB-2PWS3430-Q13",
+      "shortName": "Q13",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1693": {
+      "lockNumber": "1075",
+      "interruptor": "SSB-2PWS3430-Q14",
+      "shortName": "Q14",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1694": {
+      "lockNumber": "1486",
+      "interruptor": "SSB-2PWS3430-Q15",
+      "shortName": "Q15",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1695": {
+      "lockNumber": "1160",
+      "interruptor": "SSB-2PWS3430-Q16",
+      "shortName": "Q16",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1696": {
+      "lockNumber": "1228",
+      "interruptor": "SSB-2PWS3430-Q17",
+      "shortName": "Q17",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1697": {
+      "lockNumber": "1421",
+      "interruptor": "SSB-2PWS3430-Q18",
+      "shortName": "Q18",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1698": {
+      "lockNumber": "1452",
+      "interruptor": "SSB-2PWS3430-Q19",
+      "shortName": "Q19",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1699": {
+      "lockNumber": "1294",
+      "interruptor": "SSB-2PWS3430-Q20",
+      "shortName": "Q20",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1701": {
+      "lockNumber": "1353",
+      "interruptor": "SSB-2PWS3430-Q22",
+      "shortName": "Q22",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1702": {
+      "lockNumber": "1020",
+      "interruptor": "SSB-2PWS3430-Q23",
+      "shortName": "Q23",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1703": {
+      "lockNumber": "1364",
+      "interruptor": "SSB-2PWS3430-Q24",
+      "shortName": "Q24",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "abt-230-1704": {
+      "lockNumber": "1434",
+      "interruptor": "SSB-2PWS3430-Q25",
+      "shortName": "Q25",
+      "siteEquipment": "SSB-2PWS3430",
+      "local": "2-83-2-T TRONCO DE ACCESO"
+    },
+    "690-0011": {
+      "lockNumber": "1154",
+      "interruptor": "MSB-6PWS0001-Q1A07-C",
+      "shortName": "Q1A07-C",
+      "siteEquipment": "PNL-MSB1004A",
+      "local": "2-117-2-E LOCAL CUADRO PRINCIPAL PROA (V)"
+    },
+    "690-0076": {
+      "lockNumber": "1138",
+      "interruptor": "MSB-6PWS0002-Q2B17-C",
+      "shortName": "Q2B17-C",
+      "siteEquipment": "PNL-MSB2008B",
+      "local": "2-62-0-E LOCAL CUADRO PRINCIPAL POPA (V)"
+    },
+    "690-0081": {
+      "lockNumber": "1136",
+      "interruptor": "SSB-6PWS0001-4Q2",
+      "shortName": "4Q2",
+      "siteEquipment": "SSB-6PWS0001",
+      "local": "1-153-5-L PASILLO"
+    },
+    "690-0082": {
+      "lockNumber": "1163",
+      "interruptor": "SSB-6PWS0001-4Q3",
+      "shortName": "4Q3",
+      "siteEquipment": "SSB-6PWS0001",
+      "local": "1-153-5-L PASILLO"
+    },
+    "690-0084": {
+      "lockNumber": "1352",
+      "interruptor": "SSB-6PWS0002-4Q2",
+      "shortName": "4Q2",
+      "siteEquipment": "SSB-6PWS0002",
+      "local": "2-153-2-L PASILLO"
+    },
+    "690-0085": {
+      "lockNumber": "1137",
+      "interruptor": "SSB-6PWS0002-4Q3",
+      "shortName": "4Q3",
+      "siteEquipment": "SSB-6PWS0002",
+      "local": "2-153-2-L PASILLO"
+    },
+    "690-0086": {
+      "lockNumber": "1339",
+      "interruptor": "SSB-6PWS0002-4Q4",
+      "shortName": "4Q4",
+      "siteEquipment": "SSB-6PWS0002",
+      "local": "2-153-2-L PASILLO"
+    }
+  },
+  "unresolved": []
+}
