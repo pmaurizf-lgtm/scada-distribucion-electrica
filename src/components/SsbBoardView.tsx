@@ -41,7 +41,7 @@ type SharedProps = {
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
   expandedEquip: Set<string>
-  onToggleEquip: (id: string) => void
+  onToggleEquip: (id: string, circuitId?: string) => void
   focusCircuitIds?: Set<string> | null
   locateEquipmentId?: string | null
   /** Cadena ya abierta por encima (rompe ciclos al anidar). */
@@ -320,7 +320,7 @@ function SsbOutletDrop({
         canExpand ? `${nestCount || ''} ${expanded ? '▴' : '▾'}`.trim() : undefined
       }
       onToggleExpand={
-        canExpand ? () => onToggleEquip(equipment.id) : undefined
+        canExpand ? () => onToggleEquip(equipment.id, circuit.id) : undefined
       }
       equipFam={equipFamOf(equipment)}
       located={locateEquipmentId === equipment.id}

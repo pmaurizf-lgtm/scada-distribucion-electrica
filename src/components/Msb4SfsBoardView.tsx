@@ -37,7 +37,7 @@ type SharedProps = {
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
   expandedEquip: Set<string>
-  onToggleEquip: (id: string) => void
+  onToggleEquip: (id: string, circuitId?: string) => void
   locateEquipmentId?: string | null
   ancestorIds?: ReadonlySet<string>
 }
@@ -123,7 +123,9 @@ function OutletDrop({
       canExpand={canExpand}
       expanded={expanded}
       expandLabel={expanded ? '▴' : '▾'}
-      onToggleExpand={() => shared.onToggleEquip(equipment.id)}
+      onToggleExpand={() =>
+        shared.onToggleEquip(equipment.id, circuit.id)
+      }
       equipFam={equipFamOf(equipment)}
       located={shared.locateEquipmentId === equipment.id}
       linkOnlyFromParent={linkOnly}

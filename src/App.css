@@ -3131,10 +3131,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   margin-top: 0;
 }
 
-/* En planta MSB: stub libre (T); altura alineada con NORM más abajo */
+/* En planta MSB: stub libre (T) visible; no aplastar contra la barra */
 .plant-rack__half-drops .hbus-drop__free-end {
-  flex: 0 0 0.45rem;
-  height: 0.45rem;
+  flex: 0 0 0.9rem;
+  height: 0.9rem;
   margin-top: 0;
 }
 
@@ -5726,8 +5726,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   flex: 0 0 calc(2.35rem + 0.85rem);
 }
 
-/* Solape extra to-eq ↔ chasis en 2209 */
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops .hbus-drop__wire--to-eq {
+/* Solape extra to-eq ↔ chasis en 2209 (solo el drop 2209, no el SSB padre) */
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops .hbus-drop__wire--to-eq {
   margin-bottom: -6px;
 }
 
@@ -5743,13 +5743,16 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 /*
  * CONGELADO — tops dual 2209: NORM→QN + ALT(Q03)→QA fuera del chasis.
  * Ancho/margen del tops lo escribe JS (= chasis). Piernas absolutas en ejes.
+ * IMPORTANT: clase .hbus-drop--ssb2209 (no :has(.ssb-board--2209) genérico):
+ * si el 2209 cuelga de 2410-Q03, el padre también :has board-2209 y el INS
+ * del 2410 acababa en absolute descolocado.
  */
-.hbus-drop--ssb-open:has(.ssb-board--2209) {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 {
   align-items: flex-start;
   position: relative;
 }
 
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops {
   justify-content: flex-start;
   align-self: flex-start;
   position: relative;
@@ -5762,31 +5765,31 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   min-height: 11.5rem;
 }
 
-.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops > .hbus-drop__leg,
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops > .hbus-drop__leg {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops > .hbus-drop__leg {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
   z-index: 4;
 }
 
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops > .hbus-drop__leg--norm {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops > .hbus-drop__leg--norm {
   left: var(--ssb2209-qn-axis, calc(0.55rem + 1px + 1.8rem));
 }
 
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops > .hbus-drop__leg--alt {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops > .hbus-drop__leg--alt {
   left: var(--ssb2209-qa-axis, 50%);
 }
 
 /* Dual genérico no debe forzar min-width:100% sobre el tops 2209 */
-.hbus-drop--ssb-open.hbus-drop--dual:has(.ssb-board--2209) > .hbus-drop__tops {
+.hbus-drop--ssb-open.hbus-drop--ssb2209.hbus-drop--dual > .hbus-drop__tops {
   min-width: 0;
   width: auto;
   justify-content: flex-start;
 }
 
 /* Rótulo a la izquierda; hilos en ejes QN/QA */
-.equip-chassis--ssb:has(.ssb-board--2209) > .equip-chassis__label {
+.hbus-drop--ssb2209 > .hbus-drop__eq-row > .equip-chassis--ssb > .equip-chassis__label,
+.hbus-drop--ssb2209 > .equip-chassis--ssb > .equip-chassis__label {
   left: 0.55rem;
   right: auto;
   max-width: min(18rem, calc(100% - 1.2rem));
@@ -5798,7 +5801,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
  *   ALT:  to-eq → .ssb2209-chassis-alt-riser → riser QA
  *   (::after del chasis queda libre para el halo de localizar)
  */
-.equip-chassis--ssb:has(.ssb-board--2209)::before {
+.hbus-drop--ssb2209 > .hbus-drop__eq-row > .equip-chassis--ssb::before,
+.hbus-drop--ssb2209 > .equip-chassis--ssb::before {
   left: var(--ssb2209-axis, calc(0.55rem + 1px + 1.8rem));
   transform: translateX(-50%);
   z-index: 4;
@@ -5817,11 +5821,15 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   pointer-events: none;
 }
 
-.equip-chassis--ssb.equip-chassis--feed-flow:has(.ssb-board--2209) > .ssb2209-chassis-alt-riser {
+.hbus-drop--ssb2209
+  > .hbus-drop__eq-row
+  > .equip-chassis--ssb.equip-chassis--feed-flow
+  > .ssb2209-chassis-alt-riser,
+.hbus-drop--ssb2209 > .equip-chassis--ssb.equip-chassis--feed-flow > .ssb2209-chassis-alt-riser {
   opacity: 1;
 }
 
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__eq-row {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__eq-row {
   justify-content: flex-start;
   align-self: flex-start;
   width: max-content;
@@ -5835,7 +5843,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 /*
  * Bajante LCS→SSB 2209: fallback; la altura real la escribe JS hasta QN/QA.
  */
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__tops .hbus-drop__wire--to-eq {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__tops .hbus-drop__wire--to-eq {
   flex: 0 0 7.25rem !important;
   flex-grow: 0 !important;
   flex-shrink: 0 !important;
@@ -5849,8 +5857,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 /*
  * Bajante LCS→SSB genérico al desplegar (no 2209): empuja el cuadro bajo vecinos.
  */
-.hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb) > .hbus-drop__tops .hbus-drop__wire--to-eq,
-.lcs-out--dual .hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb) > .hbus-drop__tops .hbus-drop__wire--to-eq {
+.hbus-drop--ssb-open:not(.hbus-drop--ssb2209):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb) > .hbus-drop__tops .hbus-drop__wire--to-eq,
+.lcs-out--dual .hbus-drop--ssb-open:not(.hbus-drop--ssb2209):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb) > .hbus-drop__tops .hbus-drop__wire--to-eq {
   flex: 0 0 7.25rem;
   min-height: 7.25rem;
   margin-bottom: -2px;
@@ -5862,14 +5870,14 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .hbus--lcs-section:has(
     .hbus__slot:has(.hbus-drop--ssb-open) ~ .hbus__slot:has(.hbus-drop--ssb-open)
   )
-  .hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb)
+  .hbus-drop--ssb-open:not(.hbus-drop--ssb2209):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb)
   > .hbus-drop__tops
   .hbus-drop__wire--to-eq,
 .lcs-out--dual
   .hbus--lcs-section:has(
     .hbus__slot:has(.hbus-drop--ssb-open) ~ .hbus__slot:has(.hbus-drop--ssb-open)
   )
-  .hbus-drop--ssb-open:not(:has(.ssb-board--2209)):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb)
+  .hbus-drop--ssb-open:not(.hbus-drop--ssb2209):has(> .equip-chassis--ssb, > .hbus-drop__eq-row > .equip-chassis--ssb)
   > .hbus-drop__tops
   .hbus-drop__wire--to-eq {
   flex: 0 0 1.15rem;
@@ -5884,8 +5892,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /* 2209: chasis a la izquierda */
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .equip-chassis--ssb,
-.hbus-drop--ssb-open:has(.ssb-board--2209) > .hbus-drop__eq-row > .equip-chassis--ssb {
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .equip-chassis--ssb,
+.hbus-drop--ssb-open.hbus-drop--ssb2209 > .hbus-drop__eq-row > .equip-chassis--ssb {
   align-self: flex-start;
   width: max-content;
   max-width: none;
@@ -6073,38 +6081,60 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
- * ALT/AUX (stub en T): misma cota de chip que NORM.
- * Cota in-flow del --from-bus = altura flex + margen negativo a la barra.
- * No tocar piernas --local ni --from-bus.
+ * ALT/AUX (stub en T): pata vertical + barrita horizontal libre.
+ * No aplastar a ~0 para igualar cota con NORM: se pierde el aspecto remoto.
+ * La cota del chip se acerca con alturas de stub ~iguales al tramo visible
+ * del --from-bus bajo la barra (sin solapar la barra).
  */
 .plant-rack__half-drops .hbus-drop__free-end {
-  /* (rail-label-h + 0.45rem) + (−rail-label-h) = 0.45rem */
-  flex: 0 0 0.45rem !important;
-  height: 0.45rem !important;
-  min-height: 0.45rem !important;
+  flex: 0 0 0.9rem !important;
+  height: 0.9rem !important;
+  min-height: 0.9rem !important;
   margin-top: 0 !important;
   margin-bottom: -2px;
   width: 2px;
+  overflow: visible;
 }
 
-.hbus--lcs-section:not(.hbus--ssb-section) .hbus-drop__free-end {
-  /* (gap + 0.35rem) + (−gap − 4px) = 0.35rem − 4px */
-  flex: 0 0 calc(0.35rem - 4px) !important;
-  height: calc(0.35rem - 4px) !important;
-  min-height: calc(0.35rem - 4px) !important;
-  margin-top: 0 !important;
+.hbus--lcs-section:not(.hbus--ssb-section) .hbus-drop__free-end,
+.hbus--lcs-section .hbus-drop__leg--remote .hbus-drop__free-end {
+  flex: 0 0 0.9rem !important;
+  height: 0.9rem !important;
+  min-height: 0.9rem !important;
+  margin-top: 0.15rem !important;
   margin-bottom: -2px;
   width: 2px;
+  overflow: visible;
 }
 
-.hbus--ssb-section .hbus-drop__free-end {
-  /* 1.15rem + (−4px) */
-  flex: 0 0 calc(1.15rem - 4px) !important;
-  height: calc(1.15rem - 4px) !important;
-  min-height: calc(1.15rem - 4px) !important;
-  margin-top: 0 !important;
+.hbus--ssb-section .hbus-drop__free-end,
+.hbus--ssb-section .hbus-drop__leg--remote .hbus-drop__free-end {
+  flex: 0 0 1.0rem !important;
+  height: 1.0rem !important;
+  min-height: 1.0rem !important;
+  margin-top: 0.1rem !important;
   margin-bottom: -2px;
   width: 2px;
+  overflow: visible;
+}
+
+/* Barrita horizontal del stub remoto (cierre en T) siempre visible */
+.hbus-drop__leg--remote .hbus-drop__free-end::after,
+.hbus-drop__leg--aux .hbus-drop__free-end::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: inherit;
+  z-index: 2;
+}
+
+.hbus-drop__leg--remote {
+  overflow: visible;
 }
 
 /* Cartel NORM/ALT/AUX a la derecha del cable (no encima) */

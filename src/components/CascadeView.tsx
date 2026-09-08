@@ -240,7 +240,7 @@ function HorizontalBus({
   energizedEquipmentIds: Set<string>
   lockedCircuits: Set<string>
   expandedEquip: Set<string>
-  onToggleEquip: (id: string) => void
+  onToggleEquip: (id: string, circuitId?: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
@@ -331,7 +331,7 @@ function BusDrop({
   lockedCircuits: Set<string>
   expanded: boolean
   expandedEquip: Set<string>
-  onToggleEquip: (id: string) => void
+  onToggleEquip: (id: string, circuitId?: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
@@ -474,7 +474,7 @@ function BusDrop({
     if (!canExpand) return
     e.preventDefault()
     e.stopPropagation()
-    onToggleEquip(equipment.id)
+    onToggleEquip(equipment.id, localFeed.id)
   }
 
   const lcsOpen =
@@ -869,7 +869,7 @@ function BusDrop({
       canExpand={canExpand}
       expanded={expanded}
       expandLabel={expandLabel}
-      onToggleExpand={() => onToggleEquip(equipment.id)}
+      onToggleExpand={() => onToggleEquip(equipment.id, localFeed.id)}
       equipFam={equipFam}
       bankNote={trfBankNote}
       conversionNote={conversionNote}
@@ -1136,9 +1136,16 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     kind: 'board' | 'equip'
     id: string
     opening: boolean
+    /** Instancia del drop (p. ej. 2209 bajo LCS vs bajo 2410-Q03). */
+    circuitId?: string
   } | null>(null)
   /** Tras localizar: centrar en el equipo (reintentos tras expandir). */
   const pendingLocateScroll = useRef<string | null>(null)
+  /**
+   * Mientras el layout crece tras Localizar, re-centrar al equipo.
+   * No bloquear plantSize (rompe zoom/pan en móvil).
+   */
+  const locateSettleUntilRef = useRef(0)
   /** Tras saltar a acometida remota/AUX: centrar y resaltar el alimentador local. */
   const pendingJumpScroll = useRef<{
     circuitId: string
@@ -1147,6 +1154,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     boardIds: string[]
     expandEquipIds: string[]
   } | null>(null)
+  /** Re-centrar el salto mientras crece la cadena (p. ej. 2410 con 2209 dual). */
+  const jumpSettleUntilRef = useRef(0)
   const [jumpNonce, setJumpNonce] = useState(0)
   const jumpHighlightTimer = useRef<number | null>(null)
   /** Encaje del árbol de alimentaciones ya estabilizado (evita bucles/parpadeo). */
@@ -1247,6 +1256,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   useEffect(() => {
     if (!locateEquipmentId) {
       pendingLocateScroll.current = null
+      locateSettleUntilRef.current = 0
       return
     }
     if (!viewOriginRef.current) {
@@ -1263,6 +1273,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     }
     const path = getPlantRevealPath(locateEquipmentId, system690)
     pendingLocateScroll.current = locateEquipmentId
+    locateSettleUntilRef.current = performance.now() + 2000
     fitZoomPending.current = false
     setExpandedBoards((prev) => {
       const next = new Set(prev)
@@ -1471,7 +1482,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       if (wasPinching && e.touches.length <= 1) {
         dragging = false
         moved = false
-        suppressExpandUntilRef.current = performance.now() + 450
+        // Más margen si hay localización: un doble toque accidental plega la cadena.
+        suppressExpandUntilRef.current =
+          performance.now() + (locateRef.current ? 900 : 450)
       }
       if (e.touches.length < 2) {
         setPinching(false)
@@ -1521,7 +1534,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     // (provoca parpadeo al cambiar zoom/padding).
     if (focusRef.current) return
     const ro = new ResizeObserver(() => {
-      if (pinchingRef.current || focusRef.current || locateRef.current) return
+      // No congelar plantSize durante Localizar: en móvil el zoom/pan ancla
+      // usa w×h del space; si queda del layout anterior, se pierde el equipo.
+      if (pinchingRef.current || focusRef.current) return
       const w = el.offsetWidth
       const h = el.offsetHeight
       setPlantSize((prev) =>
@@ -1875,12 +1890,56 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       (plant.querySelector(`[data-equip="${id}"]`) as HTMLElement | null)
     if (!el) return false
 
-    pendingLocateScroll.current = null
     scrollStageToElement(el)
     el.classList.add('locate-flash')
     window.setTimeout(() => el.classList.remove('locate-flash'), 1800)
+    // Seguir recentrando mientras el DOM de la cadena termina de crecer.
+    if (performance.now() >= locateSettleUntilRef.current) {
+      pendingLocateScroll.current = null
+    }
     return true
   }, [scrollStageToElement])
+
+  /** Elige la instancia correcta de un equipo (misma id bajo varios padres). */
+  const pickEquipDrop = useCallback(
+    (
+      plant: HTMLElement,
+      equipId: string,
+      circuitId?: string,
+    ): HTMLElement | null => {
+      const drops = Array.from(
+        plant.querySelectorAll(`.hbus-drop[data-equip="${equipId}"]`),
+      ) as HTMLElement[]
+      if (drops.length === 0) return null
+      if (circuitId) {
+        const hit = drops.find(
+          (d) => d.getAttribute('data-circuit-id') === circuitId,
+        )
+        if (hit) return hit
+      }
+      if (drops.length === 1) return drops[0]!
+      const stage = panRef.current
+      if (!stage) return drops[0]!
+      const sr = stage.getBoundingClientRect()
+      const cx = sr.left + stage.clientWidth / 2
+      const cy = sr.top + stage.clientHeight / 2
+      let best = drops[0]!
+      let bestDist = Infinity
+      for (const d of drops) {
+        const r = d.getBoundingClientRect()
+        if (r.width < 2 && r.height < 2) continue
+        const dx = r.left + r.width / 2 - cx
+        const dy = r.top + r.height / 2 - cy
+        const dist = dx * dx + dy * dy
+        if (dist < bestDist) {
+          bestDist = dist
+          best = d
+        }
+      }
+      return best
+    },
+    [],
+  )
 
   const scrollToJumpedCircuit = useCallback((opts?: { finalize?: boolean }) => {
     const pending = pendingJumpScroll.current
@@ -1911,6 +1970,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     scrollStageToElement(target)
 
     if (!opts?.finalize) return true
+    // Seguir recentrando mientras el layout de la cadena origen termina.
+    if (performance.now() < jumpSettleUntilRef.current) return true
 
     pendingJumpScroll.current = null
 
@@ -1943,15 +2004,19 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   useLayoutEffect(() => {
     if (!locateEquipmentId || !pendingLocateScroll.current) return
     let cancelled = false
-    const delays = [0, 60, 160, 320, 560, 900]
+    const delays = [0, 60, 160, 320, 560, 900, 1400, 2000]
     const tryScroll = (i: number) => {
       if (cancelled) return
-      if (scrollToLocatedEquipment()) return
+      const ok = scrollToLocatedEquipment()
+      // Tras éxito, si aún hay settle, esperar siguiente pase / plantSize.
+      if (ok && !pendingLocateScroll.current) return
       if (i + 1 < delays.length) {
         window.setTimeout(
           () => tryScroll(i + 1),
           delays[i + 1]! - delays[i]!,
         )
+      } else if (pendingLocateScroll.current) {
+        pendingLocateScroll.current = null
       }
     }
     const raf = window.requestAnimationFrame(() => {
@@ -1965,6 +2030,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     locateEquipmentId,
     expandedBoards,
     expandedEquip,
+    plantSize.w,
+    plantSize.h,
     scrollToLocatedEquipment,
   ])
 
@@ -1972,18 +2039,18 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     if (!pendingJumpScroll.current) return
     let cancelled = false
     // Varios pases: primero cuando existe el local, luego al estabilizar layout
-    const delays = [80, 180, 320, 520, 800, 1200, 1800, 2600]
+    const delays = [80, 180, 320, 520, 800, 1200, 1800, 2600, 3600]
     const tryScroll = (i: number) => {
       if (cancelled || !pendingJumpScroll.current) return
       const isLast = i + 1 >= delays.length
       const ok = scrollToJumpedCircuit({ finalize: isLast })
-      if (ok && isLast) return
+      if (ok && !pendingJumpScroll.current) return
       if (!isLast) {
         window.setTimeout(
           () => tryScroll(i + 1),
           delays[i + 1]! - delays[i]!,
         )
-      } else if (!ok) {
+      } else if (pendingJumpScroll.current) {
         pendingJumpScroll.current = null
       }
     }
@@ -1994,7 +2061,14 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       cancelled = true
       window.cancelAnimationFrame(raf)
     }
-  }, [expandedBoards, expandedEquip, jumpNonce, scrollToJumpedCircuit])
+  }, [
+    expandedBoards,
+    expandedEquip,
+    plantSize.w,
+    plantSize.h,
+    jumpNonce,
+    scrollToJumpedCircuit,
+  ])
 
   useEffect(() => {
     return () => {
@@ -2020,9 +2094,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         (col?.querySelector('.plant-msb') as HTMLElement | null) ??
         col
     } else {
-      const drop = plant.querySelector(
-        `.hbus-drop[data-equip="${pending.id}"]`,
-      ) as HTMLElement | null
+      const drop = pickEquipDrop(plant, pending.id, pending.circuitId)
       if (!drop) return false
       // Preferir el cuerpo desplegado (SSB/LCS/400 Hz); si aún no montó, reintentar
       const openBody =
@@ -2039,14 +2111,20 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     const rect = el.getBoundingClientRect()
     if (rect.width < 4 || rect.height < 4) return false
 
+    const equipId = pending.id
     pendingFocusTarget.current = null
     scrollStageToElement(el)
     // Refuerzo tras layout de ejes SSB / ResizeObserver interno
     window.requestAnimationFrame(() => {
       scrollStageToElement(el!)
     })
+    // 2209: ejes QN/QA retrasan el tamaño final
+    if (equipId === 'SSB-2PWS2209') {
+      window.setTimeout(() => scrollStageToElement(el!), 200)
+      window.setTimeout(() => scrollStageToElement(el!), 500)
+    }
     return true
-  }, [scrollStageToElement])
+  }, [pickEquipDrop, scrollStageToElement])
 
   /** Tras plegar/desplegar: esperar layout y centrar en la sección tocada */
   useLayoutEffect(() => {
@@ -2077,6 +2155,11 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const toggleBoard = (id: string) => {
     if (performance.now() < suppressExpandUntilRef.current) return
     const opening = !expandedBoardsRef.current.has(id)
+    // Localizar: no plegar cuadros de la ruta (en móvil parece “unifilar plegado”).
+    if (!opening && locateRef.current) {
+      const path = getPlantRevealPath(locateRef.current, system690)
+      if (path.boardIds.some((b) => b === id)) return
+    }
     pendingFocusTarget.current = { kind: 'board', id, opening }
     setExpandedBoards((prev) => {
       const next = new Set(prev)
@@ -2086,10 +2169,14 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     })
   }
 
-  const toggleEquip = (id: string) => {
+  const toggleEquip = (id: string, circuitId?: string) => {
     if (performance.now() < suppressExpandUntilRef.current) return
     const opening = !expandedEquipRef.current.has(id)
-    pendingFocusTarget.current = { kind: 'equip', id, opening }
+    if (!opening && locateRef.current) {
+      const path = getPlantRevealPath(locateRef.current, system690)
+      if (path.expandEquipIds.includes(id)) return
+    }
+    pendingFocusTarget.current = { kind: 'equip', id, opening, circuitId }
     setExpandedEquip((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -2117,7 +2204,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     setHasViewBack(false)
     setBackKind(null)
     pendingLocateScroll.current = null
+    locateSettleUntilRef.current = 0
     pendingJumpScroll.current = null
+    jumpSettleUntilRef.current = 0
     pendingFocusTarget.current = null
     pendingViewFit.current = null
     fitZoomPending.current = false
@@ -2243,16 +2332,18 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     const path = getPlantRevealPath(circuit.originId, system690)
     const boardsToOpen = path.boardIds
     const equipToOpen = path.expandEquipIds
+    const jumpDest = isAux24Feed(circuit)
+      ? (msbIdFromAux24Panel(circuit.destinationId) ?? circuit.destinationId)
+      : circuit.destinationId
 
     pendingJumpScroll.current = {
       circuitId: circuit.id,
       originId: circuit.originId,
-      destinationId: isAux24Feed(circuit)
-        ? (msbIdFromAux24Panel(circuit.destinationId) ?? circuit.destinationId)
-        : circuit.destinationId,
+      destinationId: jumpDest,
       boardIds: boardsToOpen,
       expandEquipIds: equipToOpen,
     }
+    jumpSettleUntilRef.current = performance.now() + 2400
     fitZoomPending.current = false
     pendingViewFit.current = null
     centerPending.current = false
@@ -2265,6 +2356,11 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     setExpandedEquip((prev) => {
       const next = new Set(prev)
       for (const id of equipToOpen) next.add(id)
+      // No montar el destino abierto bajo el origen (p. ej. 2209 gigante
+      // bajo 2410-Q03 además del 2209 bajo LCS): deja el chip local visible.
+      if (jumpDest && jumpDest !== circuit.originId) {
+        next.delete(jumpDest)
+      }
       return next
     })
     // Dispara el centrado + resaltado tras el layout (mismo mecanismo que localizar).
@@ -2530,7 +2626,7 @@ function BoardColumn({
   /** Lado del puente: POPA=right (2SA), PROA=left (1SB). Ambos cuadros: SB | SA */
   tieSide: 'left' | 'right'
   onToggle: () => void
-  onToggleEquip: (id: string) => void
+  onToggleEquip: (id: string, circuitId?: string) => void
   onLocalBreaker: (c: Circuit, e: ReactMouseEvent) => void
   onJumpToCircuit: (c: Circuit) => void
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void

@@ -259,7 +259,7 @@ type SharedProps = {
   /** Equipo resaltado por el localizador del unifilar. */
   locateEquipmentId?: string | null
   expandedEquip?: Set<string>
-  onToggleEquip?: (id: string) => void
+  onToggleEquip?: (id: string, circuitId?: string) => void
 }
 
 function sectionOf(bus: LcsVoltageBus, service: ServiceClass): LcsSection | undefined {
@@ -322,7 +322,7 @@ function LcsOutletDrop({
   ancestorIds?: ReadonlySet<string>
 } & SharedProps & {
   expandedEquip: Set<string>
-  onToggleEquip: (id: string) => void
+  onToggleEquip: (id: string, circuitId?: string) => void
 }) {
   const kids = useMemo(() => {
     if (isAux24Feed(circuit)) return []
@@ -459,7 +459,7 @@ function LcsOutletDrop({
         onDoubleClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          onToggleEquip(equipment.id)
+          onToggleEquip(equipment.id, circuit.id)
         }}
       >
         {!linkOnly && (
@@ -522,7 +522,7 @@ function LcsOutletDrop({
             onDoubleClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onToggleEquip(equipment.id)
+              onToggleEquip(equipment.id, circuit.id)
             }}
           >
             {is2209 && (
@@ -577,7 +577,7 @@ function LcsOutletDrop({
           : undefined
       }
       onToggleExpand={
-        canExpand ? () => onToggleEquip(equipment.id) : undefined
+        canExpand ? () => onToggleEquip(equipment.id, circuit.id) : undefined
       }
       equipFam={equipFam}
       located={located}

@@ -42,7 +42,7 @@ type SharedProps = {
   onHoverInfo?: (circuit: Circuit, rect: DOMRect) => void
   onHoverInfoEnd?: () => void
   expandedEquip: Set<string>
-  onToggleEquip: (id: string) => void
+  onToggleEquip: (id: string, circuitId?: string) => void
   focusCircuitIds?: Set<string> | null
   locateEquipmentId?: string | null
   ancestorIds?: ReadonlySet<string>
@@ -199,7 +199,9 @@ function LoadOutlet({
           canExpand ? `${kids.length} ${expanded ? '▴' : '▾'}` : undefined
         }
         onToggleExpand={
-          canExpand ? () => shared.onToggleEquip(equipment.id) : undefined
+          canExpand
+            ? () => shared.onToggleEquip(equipment.id, circuit.id)
+            : undefined
         }
         equipFam={equipFamOf(equipment)}
         located={shared.locateEquipmentId === equipment.id}
@@ -268,9 +270,10 @@ export function Ssb2209BoardView({
     const qa = qaRef.current
     if (!board || !qn) return
 
-    const drop = board.closest('.hbus-drop--ssb-open') as HTMLElement | null
+    // Solo el drop del propio 2209 (nunca el SSB padre que también es --ssb-open).
+    const drop = board.closest('.hbus-drop--ssb2209') as HTMLElement | null
     const chassis = board.closest('.equip-chassis--ssb') as HTMLElement | null
-    if (!drop || !chassis) return
+    if (!drop || !chassis || !drop.contains(chassis)) return
 
     const tops = drop.querySelector(
       ':scope > .hbus-drop__tops',

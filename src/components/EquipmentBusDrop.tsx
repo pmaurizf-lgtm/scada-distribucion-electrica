@@ -37,6 +37,7 @@ import {
   SktUnifilarSymbol,
 } from './BreakerSymbols'
 import { EquipmentBalloon } from './EquipmentBalloon'
+import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
 
 export type EquipFam = 'abt' | 'trf' | 'lcs' | 'sec' | 'eq'
 
@@ -276,6 +277,11 @@ export function EquipmentBusDrop({
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
+  /** SSB abierto bajo otro cuadro: chasis dedicado (no cajita + board suelto). */
+  const ssbChassisOpen =
+    Boolean(children) &&
+    Boolean(rootClassName?.includes('hbus-drop--ssb-open'))
+  const is2209 = isSsb2Pws2209(equipment.id)
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
   const eqWrapRef = useRef<HTMLDivElement>(null)
@@ -412,7 +418,7 @@ export function EquipmentBusDrop({
 
   return (
     <div
-      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual || hasAuxTops ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${linkOnlyFromParent ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}${rootClassName ? ` ${rootClassName}` : ''}`}
+      className={`hbus-drop hbus-drop--fam-${equipFam}${isAltLocal ? ' hbus-drop--alt' : ''}${localFlowing ? ' hbus-drop--flow' : ''}${eqEnergized ? ' hbus-drop--live' : ''}${dual || hasAuxTops ? ' hbus-drop--dual' : ''}${canExpand ? ' hbus-drop--expandable' : ''}${spare ? ' hbus-drop--spare' : ''}${linkOnlyFromParent ? ' hbus-drop--link-only' : ''}${located ? ' hbus-drop--locate' : ''}${is2209 && ssbChassisOpen ? ' hbus-drop--ssb2209' : ''}${rootClassName ? ` ${rootClassName}` : ''}`}
       {...rootVoltageProps}
       data-equip={equipment.id}
       data-locate={located ? '1' : undefined}
@@ -485,110 +491,149 @@ export function EquipmentBusDrop({
         </div>
       ) : null}
 
-      <div className="hbus-drop__eq-row">
-        <div
-          ref={eqWrapRef}
-          className="hbus-drop__eq-wrap"
-          onMouseEnter={() => setEqHover(true)}
-          onMouseLeave={() => setEqHover(false)}
-        >
-          <button
-            type="button"
-            className={`hbus-drop__eq hbus-drop__eq--fam-${equipFam}${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
-            data-equip={equipment.id}
-            aria-label={
-              spare
-                ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
-                : canExpand
-                  ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
-                  : undefined
-            }
-            onClick={(e) => e.stopPropagation()}
+      {ssbChassisOpen ? (
+        <div className="hbus-drop__eq-row">
+          <div
+            className={`equip-chassis equip-chassis--ssb${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
+            {...dataFlowVoltageProps(equipment.id)}
             onDoubleClick={toggleExpand}
-            disabled={!canExpand}
+            aria-label={`${equipment.id} · doble clic para plegar`}
           >
-            <span className="hbus-drop__sym">
-              {spare ? 'R' : symbolFor(equipment.kind, equipment)}
-            </span>
-            <span className="hbus-drop__id">
-              {spare ? localFeed.protectionName : equipment.id}
-            </span>
-            {secondaryDenom && (
-              <span className="hbus-drop__dcp" title={secondaryDenom.title}>
-                {secondaryDenom.value}
-              </span>
+            {is2209 && (
+              <span className="ssb2209-chassis-alt-riser" aria-hidden />
             )}
-            <span className="hbus-drop__name">
-              {spare ? 'RESPETO' : equipment.name}
-            </span>
-            {bankNote && (
-              <span className="hbus-drop__bank" title={bankNote}>
-                690/440-230
-              </span>
-            )}
-            {conversionNote && (
-              <span className="hbus-drop__bank hbus-drop__bank--convert" title={conversionNote}>
-                {conversionNote}
-              </span>
-            )}
-            {equipFam === 'trf' && (
-              <>
-                <span
-                  className={`hbus-drop__trf-stub hbus-drop__trf-stub--230${trfStubFlow?.v230 ? ' hbus-drop__wire--flow' : ''}`}
-                  aria-hidden
+            <div
+              ref={eqWrapRef}
+              className="equip-chassis__label"
+              onMouseEnter={() => setEqHover(true)}
+              onMouseLeave={() => setEqHover(false)}
+            >
+              <span className="equip-chassis__id">{equipment.id}</span>
+              <span className="equip-chassis__name">{equipment.name}</span>
+              <span className="equip-chassis__hint">doble clic · plegar</span>
+              {showEqBalloon && (
+                <EquipmentBalloon
+                  equipment={equipment}
+                  feeds={feedSummaries}
+                  circuits={displayFeeds}
+                  anchorRef={eqWrapRef}
                 />
-                <span
-                  className={`hbus-drop__trf-stub hbus-drop__trf-stub--440${trfStubFlow?.v440 ? ' hbus-drop__wire--flow' : ''}`}
-                  aria-hidden
-                />
-              </>
-            )}
-            {trfInternalFeeds.map((tf) => {
-              const tfFlow = energizedCircuitIds.has(tf.id)
-              return (
-                <span
-                  key={tf.id}
-                  className="hbus-drop__trf-inbrk"
-                  onClick={(e) => e.stopPropagation()}
-                  onDoubleClick={(e) => e.stopPropagation()}
-                >
-                  <BreakerChip
-                    name={tf.protectionName}
-                    state={protectionStatus[tf.id]}
-                    compact
-                    circuitId={tf.id}
-                    circuit={tf}
-                    flowing={tfFlow}
-                    locked={lockedCircuits.has(tf.id)}
-                    title={`${tf.protectionName} · ${tf.voltage} V → ${tf.destinationId}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onLocalBreaker(tf, e)
-                    }}
-                    onHoverInfo={onHoverInfo}
-                    onHoverInfoEnd={onHoverInfoEnd}
-                  />
-                </span>
-              )
-            })}
-            {canExpand && (
-              <span className="hbus-drop__more">
-                {expandLabel ?? `${expanded ? '▴' : '▾'}`}
-              </span>
-            )}
-          </button>
-          {showEqBalloon && (
-            <EquipmentBalloon
-              equipment={equipment}
-              feeds={feedSummaries}
-              circuits={displayFeeds}
-              anchorRef={eqWrapRef}
-            />
-          )}
+              )}
+            </div>
+            <div className="equip-chassis__body">{children}</div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="hbus-drop__eq-row">
+            <div
+              ref={eqWrapRef}
+              className="hbus-drop__eq-wrap"
+              onMouseEnter={() => setEqHover(true)}
+              onMouseLeave={() => setEqHover(false)}
+            >
+              <button
+                type="button"
+                className={`hbus-drop__eq hbus-drop__eq--fam-${equipFam}${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
+                data-equip={equipment.id}
+                aria-label={
+                  spare
+                    ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
+                    : canExpand
+                      ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
+                      : undefined
+                }
+                onClick={(e) => e.stopPropagation()}
+                onDoubleClick={toggleExpand}
+                disabled={!canExpand}
+              >
+                <span className="hbus-drop__sym">
+                  {spare ? 'R' : symbolFor(equipment.kind, equipment)}
+                </span>
+                <span className="hbus-drop__id">
+                  {spare ? localFeed.protectionName : equipment.id}
+                </span>
+                {secondaryDenom && (
+                  <span className="hbus-drop__dcp" title={secondaryDenom.title}>
+                    {secondaryDenom.value}
+                  </span>
+                )}
+                <span className="hbus-drop__name">
+                  {spare ? 'RESPETO' : equipment.name}
+                </span>
+                {bankNote && (
+                  <span className="hbus-drop__bank" title={bankNote}>
+                    690/440-230
+                  </span>
+                )}
+                {conversionNote && (
+                  <span
+                    className="hbus-drop__bank hbus-drop__bank--convert"
+                    title={conversionNote}
+                  >
+                    {conversionNote}
+                  </span>
+                )}
+                {equipFam === 'trf' && (
+                  <>
+                    <span
+                      className={`hbus-drop__trf-stub hbus-drop__trf-stub--230${trfStubFlow?.v230 ? ' hbus-drop__wire--flow' : ''}`}
+                      aria-hidden
+                    />
+                    <span
+                      className={`hbus-drop__trf-stub hbus-drop__trf-stub--440${trfStubFlow?.v440 ? ' hbus-drop__wire--flow' : ''}`}
+                      aria-hidden
+                    />
+                  </>
+                )}
+                {trfInternalFeeds.map((tf) => {
+                  const tfFlow = energizedCircuitIds.has(tf.id)
+                  return (
+                    <span
+                      key={tf.id}
+                      className="hbus-drop__trf-inbrk"
+                      onClick={(e) => e.stopPropagation()}
+                      onDoubleClick={(e) => e.stopPropagation()}
+                    >
+                      <BreakerChip
+                        name={tf.protectionName}
+                        state={protectionStatus[tf.id]}
+                        compact
+                        circuitId={tf.id}
+                        circuit={tf}
+                        flowing={tfFlow}
+                        locked={lockedCircuits.has(tf.id)}
+                        title={`${tf.protectionName} · ${tf.voltage} V → ${tf.destinationId}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onLocalBreaker(tf, e)
+                        }}
+                        onHoverInfo={onHoverInfo}
+                        onHoverInfoEnd={onHoverInfoEnd}
+                      />
+                    </span>
+                  )
+                })}
+                {canExpand && (
+                  <span className="hbus-drop__more">
+                    {expandLabel ?? `${expanded ? '▴' : '▾'}`}
+                  </span>
+                )}
+              </button>
+              {showEqBalloon && (
+                <EquipmentBalloon
+                  equipment={equipment}
+                  feeds={feedSummaries}
+                  circuits={displayFeeds}
+                  anchorRef={eqWrapRef}
+                />
+              )}
+            </div>
+          </div>
 
-      {children}
+          {children}
+        </>
+      )}
     </div>
   )
 }
