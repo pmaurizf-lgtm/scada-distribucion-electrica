@@ -35,6 +35,11 @@
   --wire-drop: 2px;
   --wire-spare: 1.5px;
   --wire-flow-halo: 7px;
+  /* Puntos de flujo en barras horizontales (paso entre centros) */
+  --wire-flow-h-gap: 1.55rem;
+  --wire-flow-h-dot: 11px;
+  --wire-flow-blob: 1.15rem;
+  --wire-flow-blob-sm: 0.85rem;
   --zoom: 1;
   /* Flujo animado por tensión (cable + partícula + halo RGB) */
   --v690-wire: #4ade80;
@@ -2623,7 +2628,8 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
- * Partículas horizontales = mismas que verticales (doble halo, sin pulso de barra).
+ * Barras horizontales: fila densa de puntos (repeat-x) que avanzan.
+ * ::before y ::after desfasados ≈ doble densidad visual.
  */
 .plant-rack__rail-seg--live::before,
 .plant-rack__rail-seg--live::after,
@@ -2645,21 +2651,26 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   position: absolute;
   top: 50%;
   left: 0;
-  width: 32%;
-  min-width: 8px;
-  height: var(--wire-flow-halo);
+  width: 100%;
+  height: var(--wire-flow-h-dot);
   transform: translateY(-50%);
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--flow-particle) 50%,
-    transparent 100%
+  border-radius: 0;
+  background-color: transparent;
+  background-image: radial-gradient(
+    circle closest-side at center,
+    var(--flow-particle) 0%,
+    var(--flow-particle) 62%,
+    transparent 78%
   );
-  box-shadow: 0 0 10px rgba(var(--flow-glow-rgb), 0.75);
-  animation: flow-halo-h 1.05s linear infinite;
+  background-size: var(--wire-flow-h-gap) 100%;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+  box-shadow: none;
+  filter: drop-shadow(0 0 4px rgba(var(--flow-glow-rgb), 0.95));
+  animation: flow-halo-h-dots 0.95s linear infinite;
   pointer-events: none;
   z-index: 2;
+  opacity: 1;
 }
 
 .plant-rack__rail-seg--live::before,
@@ -2670,11 +2681,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 .lcs440-tie--flow .lcs440-tie__bridge::before,
 .trf-feed440--flow .trf-feed440__collector::before,
 .hbus--nested .hbus__rail--live::before {
-  animation-delay: -0.52s;
-  width: 24%;
-  min-width: 6px;
-  height: calc(var(--wire-flow-halo) - 2px);
-  opacity: 0.75;
+  animation-delay: -0.475s;
+  height: calc(var(--wire-flow-h-dot) - 1px);
+  opacity: 0.82;
+  filter: drop-shadow(0 0 3px rgba(var(--flow-glow-rgb), 0.75));
 }
 
 .plant-rack__rail {
@@ -3746,6 +3756,13 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   }
 }
 
+/* Barras horizontales: desplaza la trama de puntos un paso de rejilla */
+@keyframes flow-halo-h-dots {
+  to {
+    background-position: var(--wire-flow-h-gap) 50%;
+  }
+}
+
 @keyframes flow-halo-dash {
   to {
     stroke-dashoffset: -50;
@@ -4377,6 +4394,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   overflow: hidden;
 }
 
+/* TRF→LCS dual: las bajantes QVS sobresalen del recuadro TRF — no recortarlas */
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--feeds-lcs-open)
+  > .hbus--chain-link.hbus--direct {
+  overflow: visible;
+}
+
 .hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only):has(
     .hbus-drop--locate
   )
@@ -4941,9 +4964,9 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: var(--flow-wire);
 }
 
-/* data-flow-v en chasis SSB (CascadeView) y board: risers heredan --flow-wire */
+/* data-flow-v en chasis SSB (CascadeView) y board: riser de acometida (antes del INS) */
 .equip-chassis--ssb[data-flow-v]::before,
-.ssb-board[data-flow-v] .ssb-board__riser {
+.ssb-board[data-flow-v] .ssb-board__feed > .ssb-board__riser:first-child {
   background: color-mix(in srgb, var(--flow-wire) 50%, #3d4f4a);
 }
 
@@ -8280,20 +8303,10 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   background: var(--flow-wire);
 }
 
-/* Dentro del chasis LCS: flujo más tenue para no tapar etiquetas */
-.equip-chassis .lcs440-cell__bus--live::before,
-.equip-chassis .lcs440-cell__bus--live::after {
-  opacity: 0.38;
-}
-
+/* Dentro del chasis LCS: mismas partículas que fuera (no atenuar el flujo) */
 .equip-chassis .lcs440-tie--flow .lcs440-tie__bridge {
   position: relative;
   overflow: visible;
-}
-
-.equip-chassis .lcs440-tie--flow .lcs440-tie__bridge::before,
-.equip-chassis .lcs440-tie--flow .lcs440-tie__bridge::after {
-  opacity: 0.38;
 }
 
 .lcs440-drops {

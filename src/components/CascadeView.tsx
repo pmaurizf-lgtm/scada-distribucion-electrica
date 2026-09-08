@@ -853,6 +853,20 @@ function BusDrop({
       (it) =>
         isLcsEquipment(it.equipment.id) && expandedEquip.has(it.equipment.id),
     )
+  const trfDualQvs =
+    feedsOpenLcs &&
+    system690.circuits.some(
+      (c) =>
+        !c.virtual &&
+        c.originId === equipment.id &&
+        /^QVS-230/i.test(c.protectionName),
+    ) &&
+    system690.circuits.some(
+      (c) =>
+        !c.virtual &&
+        c.originId === equipment.id &&
+        /^QVS-440/i.test(c.protectionName),
+    )
 
   return (
     <EquipmentBusDrop
@@ -886,6 +900,7 @@ function BusDrop({
               : 'hbus-drop--chain-open'
             : '',
         feedsOpenLcs ? 'hbus-drop--feeds-lcs-open' : '',
+        trfDualQvs ? 'hbus-drop--dual-feed' : '',
       ]
         .filter(Boolean)
         .join(' ') || undefined}
@@ -1146,6 +1161,16 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
    * No bloquear plantSize (rompe zoom/pan en móvil).
    */
   const locateSettleUntilRef = useRef(0)
+  /**
+   * Tras pellizco / pan / rueda: no recentrar con preserveViewportAnchor
+   * (en móvil al alejar pelea con el scroll y salta la vista).
+   */
+  const userGestureUntilRef = useRef(0)
+  const markUserGesture = (ms = 600) => {
+    userGestureUntilRef.current = performance.now() + ms
+  }
+  /** True mientras applyZoomAt / preserve escriben scroll (ignorar como gesto). */
+  const applyingViewRef = useRef(false)
   /** Tras saltar a acometida remota/AUX: centrar y resaltar el alimentador local. */
   const pendingJumpScroll = useRef<{
     circuitId: string
@@ -1307,6 +1332,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       pendingLocateScroll.current = null
       locateSettleUntilRef.current = 0
       jumpSettleUntilRef.current = 0
+      markUserGesture(800)
       const rect = el.getBoundingClientRect()
       const offsetX = clientX - rect.left
       const offsetY = clientY - rect.top
@@ -1337,6 +1363,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       left = Math.min(Math.max(0, left), maxLeft)
       top = Math.min(Math.max(0, top), maxTop)
 
+      applyingViewRef.current = true
       space.style.width = `${cw}px`
       space.style.height = `${ch}px`
       space.style.paddingLeft = `${padX}px`
@@ -1347,6 +1374,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       plant.style.transformOrigin = 'top left'
       el.scrollLeft = left
       el.scrollTop = top
+      applyingViewRef.current = false
 
       pendingZoomScroll.current = { left, top, padX, padY }
       centerPending.current = false
@@ -1371,6 +1399,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     if (!stage || !plant || !space?.classList.contains('plant-zoom-space'))
       return
     if (pinchingRef.current || focusRef.current) return
+    if (performance.now() < userGestureUntilRef.current) return
 
     const z = zoomRef.current
     if (z < 0.01) return
@@ -1402,6 +1431,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     left = Math.min(Math.max(0, left), maxLeft)
     top = Math.min(Math.max(0, top), maxTop)
 
+    applyingViewRef.current = true
     space.style.width = `${cw}px`
     space.style.height = `${ch}px`
     space.style.paddingLeft = `${padX}px`
@@ -1412,6 +1442,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     plant.style.transformOrigin = 'top left'
     stage.scrollLeft = left
     stage.scrollTop = top
+    applyingViewRef.current = false
   }, [])
 
   /** Desplazamiento arrastrando + pellizco (móvil) / rueda (desktop) */
@@ -1444,9 +1475,16 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     const commitPinchZoom = () => {
       if (!pinchDirty) return
       pinchDirty = false
+      markUserGesture(900)
       const plant = plantRef.current
       if (plant) {
-        setPlantSize({ w: plant.offsetWidth, h: plant.offsetHeight })
+        const w = plant.offsetWidth
+        const h = plant.offsetHeight
+        // No forzar setState si el tamaño no cambió: si no, el layout effect
+        // llama preserveViewportAnchor y anula el ancla del pellizco.
+        setPlantSize((prev) =>
+          prev.w === w && prev.h === h ? prev : { w, h },
+        )
       }
       onZoomChange(zoomRef.current)
     }
@@ -1474,12 +1512,14 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         if (Math.abs(dx) + Math.abs(dy) <= thresh) return
         moved = true
         el.classList.add('is-panning')
+        markUserGesture(500)
         try {
           el.setPointerCapture(e.pointerId)
         } catch {
           /* ignore */
         }
       }
+      markUserGesture(400)
       el.scrollLeft = originLeft - dx
       el.scrollTop = originTop - dy
     }
@@ -1513,6 +1553,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         dragging = false
         moved = false
         el.classList.remove('is-panning')
+        markUserGesture(1200)
         pinchStartDist = touchDist(e.touches[0], e.touches[1])
         pinchStartZoom = zoomRef.current
         // No recentrar Localizar/salto mientras el usuario pellizca.
@@ -1525,6 +1566,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     const onTouchMove = (e: TouchEvent) => {
       if (pinching && e.touches.length >= 2) {
         e.preventDefault()
+        markUserGesture(1200)
         const dist = touchDist(e.touches[0], e.touches[1])
         if (pinchStartDist < 8) return
         const factor = dist / pinchStartDist
@@ -1549,6 +1591,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
           moved = true
           el.classList.add('is-panning')
         }
+        markUserGesture(500)
         el.scrollLeft = originLeft - dx
         el.scrollTop = originTop - dy
       }
@@ -1561,6 +1604,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         // Más margen si hay localización: un doble toque accidental plega la cadena.
         suppressExpandUntilRef.current =
           performance.now() + (locateRef.current ? 900 : 450)
+        markUserGesture(900)
       }
       if (e.touches.length < 2) {
         setPinching(false)
@@ -1577,6 +1621,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         startY = t.clientY
         originLeft = el.scrollLeft
         originTop = el.scrollTop
+        markUserGesture(700)
         return
       }
       if (e.touches.length === 0) {
@@ -1588,6 +1633,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
+      markUserGesture(700)
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
       const current = zoomRef.current
       const next = Math.min(
@@ -1832,6 +1878,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       const z = zoomRef.current
       const cw = plant.offsetWidth * z
       const ch = plant.offsetHeight * z
+      applyingViewRef.current = true
       if (cw >= 8 && ch >= 8) {
         space.style.width = `${cw}px`
         space.style.height = `${ch}px`
@@ -1844,6 +1891,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       }
       stage.scrollLeft = pending.left
       stage.scrollTop = pending.top
+      applyingViewRef.current = false
       centerPending.current = false
       lastCenteredZoom.current = zoom
       return
@@ -1862,6 +1910,14 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     if (centerPending.current) {
       centerPending.current = false
       applyCenter()
+      return
+    }
+
+    // Tras pellizco/pan: no recentrar (rompe el scroll al alejar en móvil).
+    if (
+      pinchingRef.current ||
+      performance.now() < userGestureUntilRef.current
+    ) {
       return
     }
 
@@ -1924,6 +1980,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       window.clearTimeout(t)
       t = window.setTimeout(() => {
         if (pinchingRef.current || focusRef.current) return
+        if (performance.now() < userGestureUntilRef.current) return
         const plant = plantRef.current
         if (plant) {
           const pw = plant.offsetWidth

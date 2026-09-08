@@ -83,10 +83,14 @@ export function computeEnergyFlow(
   }
 
   const byOrigin = new Map<string, Circuit[]>()
+  const byDestination = new Map<string, Circuit[]>()
   const add = (c: Circuit) => {
     const list = byOrigin.get(c.originId) ?? []
     list.push(c)
     byOrigin.set(c.originId, list)
+    const destList = byDestination.get(c.destinationId) ?? []
+    destList.push(c)
+    byDestination.set(c.destinationId, destList)
   }
 
   for (const c of data.circuits) add(c)
@@ -145,6 +149,21 @@ export function computeEnergyFlow(
     const list = ssbIncomingList(ssbId)
     if (list.length === 0) return true
     return list.every((c) => isClosed(c.id))
+  }
+
+  /**
+   * LCS: la barra VS de una tensión solo está viva si fluye su QVS
+   * (o un QS paralelo de esa misma tensión). Un QVS-230 no alimenta salidas 440.
+   */
+  const lcsVoltageFed = (lcsId: string, voltage: string) => {
+    const incoming = byDestination.get(lcsId) ?? []
+    return incoming.some(
+      (c) =>
+        !c.virtual &&
+        energizedCircuitIds.has(c.id) &&
+        (c.voltage ?? '').replace(/\s*V$/i, '') === voltage &&
+        (/^QVS-/i.test(c.protectionName) || /^QS\d/i.test(c.protectionName)),
+    )
   }
 
   while (queue.length > 0) {
@@ -228,19 +247,28 @@ export function computeEnergyFlow(
         continue
       }
 
-      // LCS: salidas VM/NV requieren QVM/QNV cerrado (como QBT entre mitades MSB)
-      if (
-        circuit.originId.startsWith('LCS-') &&
-        (circuit.service === 'VM' || circuit.service === 'NV') &&
-        !/^QVM-|^QNV-/.test(circuit.protectionName)
-      ) {
+      // LCS: salidas / QVM / QNV de una tensión requieren acometida QVS/QS de esa tensión.
+      // (Cerrar solo QVS-230 no debe energizar barras ni salidas 440 V, y viceversa.)
+      if (circuit.originId.startsWith('LCS-')) {
         const v = (circuit.voltage ?? '').replace(/\s*V$/i, '')
-        const needName =
-          circuit.service === 'VM' ? `QVM-${v}` : `QNV-${v}`
-        const coupler = (byOrigin.get(circuit.originId) ?? []).find(
-          (c) => c.protectionName === needName,
-        )
-        if (coupler && !isClosed(coupler.id)) continue
+        if (
+          (v === '230' || v === '440') &&
+          !lcsVoltageFed(circuit.originId, v)
+        ) {
+          continue
+        }
+        // Salidas VM/NV requieren además QVM/QNV cerrado (como QBT entre mitades MSB)
+        if (
+          (circuit.service === 'VM' || circuit.service === 'NV') &&
+          !/^QVM-|^QNV-/.test(circuit.protectionName)
+        ) {
+          const needName =
+            circuit.service === 'VM' ? `QVM-${v}` : `QNV-${v}`
+          const coupler = (byOrigin.get(circuit.originId) ?? []).find(
+            (c) => c.protectionName === needName,
+          )
+          if (coupler && !isClosed(coupler.id)) continue
+        }
       }
 
       // SSB: salidas / INS requieren cabecera (todos los INS) cerrada.

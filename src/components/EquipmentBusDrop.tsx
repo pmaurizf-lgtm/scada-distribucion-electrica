@@ -38,6 +38,7 @@ import {
 } from './BreakerSymbols'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
+import { isOutletSideOriginLive } from '../abtDownstream/ssbBoard'
 
 export type EquipFam = 'abt' | 'trf' | 'lcs' | 'sec' | 'eq'
 
@@ -98,7 +99,11 @@ function FoldedParallelCsbLeg({
 }) {
   const origin = system690.equipment.find((e) => e.id === feed.originId)
   const flowing = energizedCircuitIds.has(feed.id)
-  const eqLive = energizedEquipmentIds.has(feed.originId)
+  const eqLive = isOutletSideOriginLive(
+    feed.originId,
+    energizedEquipmentIds,
+    system690.equipment,
+  )
   const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
   const isAlt = feed.lineType === 'alternativa'
   const eqWrapRef = useRef<HTMLDivElement>(null)
@@ -208,6 +213,11 @@ export interface EquipmentBusDropProps {
   linkOnlyFromParent?: boolean
   /** Equipo localizado por el buscador del unifilar (halo). */
   located?: boolean
+  /**
+   * Si se indica, sustituye el «from-live» de la pierna local (p. ej. barra
+   * VS/VM/NV del LCS viva, no el LCS entero energizado por otro QVS).
+   */
+  outletFromLive?: boolean
   children?: ReactNode
 }
 
@@ -237,6 +247,7 @@ export function EquipmentBusDrop({
   trfStubFlow,
   linkOnlyFromParent = false,
   located = false,
+  outletFromLive,
   children,
 }: EquipmentBusDropProps) {
   const spare = isSpareEquipment(equipment) || !!circuit.spare
@@ -331,7 +342,14 @@ export function EquipmentBusDrop({
     const flowing = energizedCircuitIds.has(feed.id)
     const pending = isPendingFeed(feed)
     const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
-    const originLive = energizedEquipmentIds.has(feed.originId)
+    const originLive =
+      outletFromLive != null && feed.id === localFeed.id
+        ? outletFromLive
+        : isOutletSideOriginLive(
+            feed.originId,
+            energizedEquipmentIds,
+            system690.equipment,
+          )
     return (
       <div
         key={feed.id}

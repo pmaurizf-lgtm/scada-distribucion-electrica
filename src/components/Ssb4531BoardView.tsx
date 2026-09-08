@@ -6,6 +6,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react'
 import { system690 } from '../data/system690'
 import type { Circuit, Equipment, ProtectionState } from '../types'
 import { buildSsb4531Model } from '../abtDownstream/ssb2pws4531'
+import { isInternalBusLive } from '../abtDownstream/ssbBoard'
 import { dataFlowVoltageProps } from '../utils/flowVoltage'
 import { BreakerChip } from './BreakerChip'
 import { TrifasicSocketSymbol } from './BreakerSymbols'
@@ -35,8 +36,12 @@ export function Ssb4531BoardView({
   const insFlow = !!(ins && shared.energizedCircuitIds.has(ins.id))
   const q01Flow = !!(q01 && shared.energizedCircuitIds.has(q01.id))
   const q01Open = !!(q01 && shared.protectionStatus[q01.id] !== 'cerrada')
-  const busLive =
-    shared.energizedEquipmentIds.has(ssb.id) && (!ins || insFlow)
+  const busLive = isInternalBusLive(
+    ssb.id,
+    shared.energizedEquipmentIds,
+    system690.equipment,
+    !!ins,
+  )
   const sktBarLive = busLive && q01Flow
 
   return (

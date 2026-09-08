@@ -20,6 +20,7 @@ import {
 } from '../abtDownstream'
 import {
   hasSsbBoardLayout,
+  isOutletSideOriginLive,
   isSsbIncomingCircuit,
 } from '../abtDownstream/ssbBoard'
 import {
@@ -81,16 +82,13 @@ function applyFeedVars(fromEl: HTMLElement, vars: FeedSyncVars) {
     ) {
       el.style.setProperty('--feed-col', `${vars.feedCol}px`)
       el.style.setProperty('--feed-offset', `${vars.feedOffset}px`)
-      if (vars.dual && el.classList.contains('hbus-drop--feeds-lcs-open')) {
+      // Solo tocar dual en el TRF que alimenta el LCS; no borrar patas en
+      // pasadas intermedias (solo feedCol) — si no, desaparecen hasta el scroll.
+      if (el.classList.contains('hbus-drop--feeds-lcs-open') && vars.dual) {
         el.classList.add('hbus-drop--dual-feed')
         el.style.setProperty('--trf-out-230', `${vars.dual.out230}px`)
         el.style.setProperty('--trf-out-440', `${vars.dual.out440}px`)
         el.style.setProperty('--trf-stub-h', `${vars.dual.stubH}px`)
-      } else {
-        el.classList.remove('hbus-drop--dual-feed')
-        el.style.removeProperty('--trf-out-230')
-        el.style.removeProperty('--trf-out-440')
-        el.style.removeProperty('--trf-stub-h')
       }
     }
     el = el.parentElement
@@ -141,6 +139,12 @@ function syncFeedCol(
 
   void trfEq.offsetWidth
   const zTrf = layoutZoom(trfEq)
+  if (!(zTrf > 0) || trfEq.offsetWidth < 1) {
+    applyFeedVars(vs440, { feedCol, feedOffset })
+    syncParallelCsb(trfEq)
+    return
+  }
+
   const trfRect = trfEq.getBoundingClientRect()
   const chip230 =
     (qvs230.querySelector('.casc-brk') as HTMLElement | null)?.getBoundingClientRect() ??
@@ -148,17 +152,24 @@ function syncFeedCol(
   const chip440 =
     (qvs440.querySelector('.casc-brk') as HTMLElement | null)?.getBoundingClientRect() ??
     qvs440.getBoundingClientRect()
+
+  // Medidas aún no estables (zoom / layout a medias): mantener dual previo.
+  if (chip230.width < 2 || chip440.width < 2 || trfRect.width < 2) {
+    applyFeedVars(vs440, { feedCol, feedOffset })
+    syncParallelCsb(trfEq)
+    return
+  }
+
   const out230 = Math.round(
     (chip230.left + chip230.width / 2 - trfRect.left) / zTrf,
   )
   const out440 = Math.round(
     (chip440.left + chip440.width / 2 - trfRect.left) / zTrf,
   )
-  // Stub hasta el chip (el TRF pinta por encima del chasis vía z-index)
-  const stubH = Math.max(
-    12,
-    Math.round((Math.min(chip230.top, chip440.top) - trfRect.bottom) / zTrf) + 2,
-  )
+  // Stub hasta el chip (el TRF pinta por encima del chasis vía z-index).
+  // Suelo ~ hueco JBX/cadena para que no queden patas de 12px “invisibles”.
+  const gapPx = (Math.min(chip230.top, chip440.top) - trfRect.bottom) / zTrf
+  const stubH = Math.max(22, Math.round(gapPx) + 2)
 
   applyFeedVars(vs440, {
     feedCol,
@@ -269,6 +280,7 @@ function sectionOf(bus: LcsVoltageBus, service: ServiceClass): LcsSection | unde
 function BusDrops({
   outlets,
   busVoltage,
+  sectionLive,
   locateEquipmentId,
   expandedEquip,
   onToggleEquip,
@@ -276,6 +288,8 @@ function BusDrops({
 }: {
   outlets: LcsOutlet[]
   busVoltage: number | string
+  /** Barra de sección viva (tras QVS / QVM / QNV según corresponda). */
+  sectionLive: boolean
 } & SharedProps) {
   return (
     <div
@@ -288,6 +302,7 @@ function BusDrops({
             <LcsOutletDrop
               circuit={circuit}
               equipment={equipment}
+              sectionLive={sectionLive}
               locateEquipmentId={locateEquipmentId}
               expandedEquip={expandedEquip ?? new Set()}
               onToggleEquip={onToggleEquip ?? (() => {})}
@@ -304,6 +319,7 @@ function BusDrops({
 function LcsOutletDrop({
   circuit,
   equipment,
+  sectionLive,
   protectionStatus,
   energizedCircuitIds,
   energizedEquipmentIds,
@@ -319,6 +335,8 @@ function LcsOutletDrop({
 }: {
   circuit: Circuit
   equipment: Equipment
+  /** Vivo en la barra de sección LCS de la que cuelga esta salida. */
+  sectionLive?: boolean
   ancestorIds?: ReadonlySet<string>
 } & SharedProps & {
   expandedEquip: Set<string>
@@ -389,7 +407,14 @@ function LcsOutletDrop({
       const flowing = energizedCircuitIds.has(feed.id)
       const pending = isPendingFeed(feed)
       const breakerOpen = protectionStatus[feed.id] !== 'cerrada'
-      const originLive = energizedEquipmentIds.has(feed.originId)
+      const originLive =
+        kind === 'local' && sectionLive != null
+          ? sectionLive
+          : isOutletSideOriginLive(
+              feed.originId,
+              energizedEquipmentIds,
+              system690.equipment,
+            )
       return (
         <div
           key={feed.id}
@@ -582,6 +607,7 @@ function LcsOutletDrop({
       equipFam={equipFam}
       located={located}
       linkOnlyFromParent={isUnifilarLinkOnlyFeed(circuit)}
+      outletFromLive={sectionLive}
       rootClassName={
         expanded && (kids.length > 0 || hasSsbBoardLayout(equipment))
           ? hasSsbBoardLayout(equipment)
@@ -773,7 +799,12 @@ export function LcsVoltageBoard({
         )}
       </div>
       <div className="lcs440-rail__vs-drops">
-        <BusDrops outlets={vs?.outlets ?? []} busVoltage={bus.voltage} {...shared} />
+        <BusDrops
+          outlets={vs?.outlets ?? []}
+          busVoltage={bus.voltage}
+          sectionLive={vsLive}
+          {...shared}
+        />
         {parallel && (
           <div className="lcs440-rail__vs-parallel-spacer" aria-hidden />
         )}
@@ -815,7 +846,12 @@ export function LcsVoltageBoard({
         className={`lcs440-cell__bus lcs440-rail__vm-bus${vmLive ? ' lcs440-cell__bus--live' : ''}`}
       />
       <div className="lcs440-rail__vm-drops">
-        <BusDrops outlets={vm?.outlets ?? []} busVoltage={bus.voltage} {...shared} />
+        <BusDrops
+          outlets={vm?.outlets ?? []}
+          busVoltage={bus.voltage}
+          sectionLive={vmLive}
+          {...shared}
+        />
       </div>
     </>
   )
@@ -854,7 +890,12 @@ export function LcsVoltageBoard({
         className={`lcs440-cell__bus lcs440-rail__nv-bus${nvLive ? ' lcs440-cell__bus--live' : ''}`}
       />
       <div className="lcs440-rail__nv-drops">
-        <BusDrops outlets={nv?.outlets ?? []} busVoltage={bus.voltage} {...shared} />
+        <BusDrops
+          outlets={nv?.outlets ?? []}
+          busVoltage={bus.voltage}
+          sectionLive={nvLive}
+          {...shared}
+        />
       </div>
     </>
   )
@@ -1020,7 +1061,16 @@ export function LcsDualView({
         bus230 ? qvs230Ref.current : null,
       )
     apply()
-    const ro = new ResizeObserver(apply)
+    // Tras --feed-col el TRF se ensancha: segunda/tercera pasada cuando el layout asienta
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      apply()
+      raf2 = requestAnimationFrame(apply)
+    })
+    const ro = new ResizeObserver(() => {
+      apply()
+      requestAnimationFrame(apply)
+    })
     ro.observe(vs440)
     ro.observe(railsEl)
     const vs230 = vs230Ref.current
@@ -1032,7 +1082,15 @@ export function LcsDualView({
     // Salidas abiertas (SSB…) ensanchan el rail; re-sincronizar stubs TRF→QVS
     const dualRoot = railsEl.closest('.lcs-dual')
     if (dualRoot) ro.observe(dualRoot)
+    const trfDrop = findTrfDrop(vs440)
+    if (trfDrop) ro.observe(trfDrop)
+    const trfEq = trfDrop?.querySelector(
+      ':scope > .hbus-drop__eq-row > .hbus-drop__eq-wrap > .hbus-drop__eq, :scope > .hbus-drop__eq-wrap > .hbus-drop__eq',
+    ) as HTMLElement | null
+    if (trfEq) ro.observe(trfEq)
     return () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
       ro.disconnect()
       clearFeedSync(vs440)
     }

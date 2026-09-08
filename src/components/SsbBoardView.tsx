@@ -11,6 +11,7 @@ import { system690 } from '../data/system690'
 import type { Circuit, Equipment, ProtectionState } from '../types'
 import {
   hasSsbBoardLayout,
+  isInternalBusLive,
   isSsb115BusCircuit,
   isSsb115InternalBus,
   isSsbIncomingCircuit,
@@ -105,8 +106,12 @@ export function SsbBoardView({
 
   const inFlow = shared.energizedCircuitIds.has(feed.id)
   const insFlow = !!(ins && shared.energizedCircuitIds.has(ins.id))
-  const busLive =
-    shared.energizedEquipmentIds.has(ssb.id) && (!ins || insFlow)
+  const busLive = isInternalBusLive(
+    ssb.id,
+    shared.energizedEquipmentIds,
+    system690.equipment,
+    !!ins,
+  )
 
   const boardAncestors = new Set(ancestorIds ?? [])
   boardAncestors.add(ssb.id)

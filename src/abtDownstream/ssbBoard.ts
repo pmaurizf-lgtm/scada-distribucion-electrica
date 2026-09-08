@@ -30,6 +30,51 @@ export function isSsbIncomingCircuit(c: Circuit): boolean {
   )
 }
 
+/** Barra virtual interna `BUS-{boardId}` (aguas abajo del INS/NSX). */
+export function internalBusId(boardId: string): string {
+  return `BUS-${boardId}`
+}
+
+export function boardHasInternalBus(
+  boardId: string,
+  equipment: readonly Pick<Equipment, 'id'>[],
+): boolean {
+  const bus = internalBusId(boardId)
+  return equipment.some((e) => e.id === bus)
+}
+
+/**
+ * Señal de «origen vivo» para piernas de salida.
+ * Si el cuadro tiene barra interna, solo cuenta esa barra (no el chasis
+ * alimentado antes del INS). Sin barra, el propio cuadro.
+ */
+export function isOutletSideOriginLive(
+  originId: string,
+  energizedEquipmentIds: ReadonlySet<string>,
+  equipment: readonly Pick<Equipment, 'id'>[],
+): boolean {
+  const bus = internalBusId(originId)
+  if (equipment.some((e) => e.id === bus)) {
+    return energizedEquipmentIds.has(bus)
+  }
+  return energizedEquipmentIds.has(originId)
+}
+
+/** Barra del cuadro viva (tras INS si existe). */
+export function isInternalBusLive(
+  boardId: string,
+  energizedEquipmentIds: ReadonlySet<string>,
+  equipment: readonly Pick<Equipment, 'id'>[],
+  hasIncomingSwitch: boolean,
+): boolean {
+  if (boardHasInternalBus(boardId, equipment)) {
+    return energizedEquipmentIds.has(internalBusId(boardId))
+  }
+  // Bus-only / sin BUS materializado: el cuadro es la barra.
+  if (!hasIncomingSwitch) return energizedEquipmentIds.has(boardId)
+  return false
+}
+
 /**
  * ¿Cuadro/panel 440 V con interior barra → salidas (sin INS de cabecera)?
  * CCM-VEMS, FAC-VENT, FCP/FUP/UCP-ACON. Excluye CCM-6PWS del MSB.
