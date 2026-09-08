@@ -59,7 +59,6 @@ interface RawCircuit {
   spare?: boolean
   virtual?: boolean
   notes?: string | null
-  excelRow?: number | null
 }
 
 interface RawChain {

@@ -1,7 +1,6 @@
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import type { Circuit, ProtectionState } from '../types'
 import { BreakerChip } from './BreakerChip'
-import { aux24JumpRevealId } from '../utils/cascadeModel'
 import { dataFlowVoltageFromCircuit } from '../utils/flowVoltage'
 
 /**
@@ -30,7 +29,6 @@ export function Aux24Incoming({
   variant?: 'side' | 'msb'
 }) {
   const flowing = energizedCircuitIds.has(circuit.id)
-  const receptorId = aux24JumpRevealId(circuit)
   return (
     <div
       className={`hbus-drop__leg hbus-drop__leg--remote hbus-drop__leg--aux${flowing ? ' hbus-drop__leg--flow' : ''}`}
