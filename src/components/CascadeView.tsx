@@ -1303,6 +1303,10 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       const current = zoomRef.current
       if (Math.abs(next - current) < 0.001) return
       fitZoomPending.current = false
+      // El usuario mueve la vista: no pelear con recentrado de Localizar/salto.
+      pendingLocateScroll.current = null
+      locateSettleUntilRef.current = 0
+      jumpSettleUntilRef.current = 0
       const rect = el.getBoundingClientRect()
       const offsetX = clientX - rect.left
       const offsetY = clientY - rect.top
@@ -1355,6 +1359,60 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     },
     [onZoomChange],
   )
+
+  /**
+   * Conserva el punto de planta bajo el centro del viewport al cambiar
+   * tamaño de stage/planta (móvil: barra URL, chrome, RO) sin reencajar zoom.
+   */
+  const preserveViewportAnchor = useCallback(() => {
+    const stage = panRef.current
+    const plant = plantRef.current
+    const space = plant?.parentElement
+    if (!stage || !plant || !space?.classList.contains('plant-zoom-space'))
+      return
+    if (pinchingRef.current || focusRef.current) return
+
+    const z = zoomRef.current
+    if (z < 0.01) return
+
+    const oldPadX =
+      Number.parseFloat(getComputedStyle(space).paddingLeft) || 0
+    const oldPadY = Number.parseFloat(getComputedStyle(space).paddingTop) || 0
+    const cx = stage.clientWidth / 2
+    const cy = stage.clientHeight / 2
+    const plantX = (stage.scrollLeft + cx - oldPadX) / z
+    const plantY = (stage.scrollTop + cy - oldPadY) / z
+
+    const pw = plant.offsetWidth
+    const ph = plant.offsetHeight
+    if (pw < 1 || ph < 1) return
+    const cw = pw * z
+    const ch = ph * z
+    const padX = Math.max(stage.clientWidth, (stage.clientWidth - cw) / 2, 24)
+    const padY = Math.max(
+      stage.clientHeight,
+      (stage.clientHeight - ch) / 2,
+      24,
+    )
+
+    let left = padX + plantX * z - cx
+    let top = padY + plantY * z - cy
+    const maxLeft = Math.max(0, padX * 2 + cw - stage.clientWidth)
+    const maxTop = Math.max(0, padY * 2 + ch - stage.clientHeight)
+    left = Math.min(Math.max(0, left), maxLeft)
+    top = Math.min(Math.max(0, top), maxTop)
+
+    space.style.width = `${cw}px`
+    space.style.height = `${ch}px`
+    space.style.paddingLeft = `${padX}px`
+    space.style.paddingRight = `${padX}px`
+    space.style.paddingTop = `${padY}px`
+    space.style.paddingBottom = `${padY}px`
+    plant.style.transform = `scale(${z})`
+    plant.style.transformOrigin = 'top left'
+    stage.scrollLeft = left
+    stage.scrollTop = top
+  }, [])
 
   /** Desplazamiento arrastrando + pellizco (móvil) / rueda (desktop) */
   useEffect(() => {
@@ -1457,31 +1515,49 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         el.classList.remove('is-panning')
         pinchStartDist = touchDist(e.touches[0], e.touches[1])
         pinchStartZoom = zoomRef.current
+        // No recentrar Localizar/salto mientras el usuario pellizca.
+        pendingLocateScroll.current = null
+        locateSettleUntilRef.current = 0
+        jumpSettleUntilRef.current = 0
       }
     }
 
     const onTouchMove = (e: TouchEvent) => {
-      if (!pinching || e.touches.length < 2) return
-      e.preventDefault()
-      const dist = touchDist(e.touches[0], e.touches[1])
-      if (pinchStartDist < 8) return
-      const factor = dist / pinchStartDist
-      const next = Math.min(
-        2.5,
-        Math.max(0.25, Math.round(pinchStartZoom * factor * 100) / 100),
-      )
-      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
-      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
-      applyZoomAt(next, midX, midY, { commit: false })
-      pinchDirty = true
+      if (pinching && e.touches.length >= 2) {
+        e.preventDefault()
+        const dist = touchDist(e.touches[0], e.touches[1])
+        if (pinchStartDist < 8) return
+        const factor = dist / pinchStartDist
+        const next = Math.min(
+          2.5,
+          Math.max(0.25, Math.round(pinchStartZoom * factor * 100) / 100),
+        )
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+        applyZoomAt(next, midX, midY, { commit: false })
+        pinchDirty = true
+        return
+      }
+      // Pan con el dedo que queda tras pellizco (no hay pointerdown nuevo).
+      if (!pinching && dragging && e.touches.length === 1) {
+        e.preventDefault()
+        const t = e.touches[0]
+        const dx = t.clientX - startX
+        const dy = t.clientY - startY
+        if (!moved) {
+          if (Math.abs(dx) + Math.abs(dy) <= 8) return
+          moved = true
+          el.classList.add('is-panning')
+        }
+        el.scrollLeft = originLeft - dx
+        el.scrollTop = originTop - dy
+      }
     }
 
     const onTouchEnd = (e: TouchEvent) => {
       if (e.touches.length >= 2) return
       const wasPinching = pinching
       if (wasPinching && e.touches.length <= 1) {
-        dragging = false
-        moved = false
         // Más margen si hay localización: un doble toque accidental plega la cadena.
         suppressExpandUntilRef.current =
           performance.now() + (locateRef.current ? 900 : 450)
@@ -1490,6 +1566,23 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         setPinching(false)
         pinchStartDist = 0
         if (wasPinching) commitPinchZoom()
+      }
+      // Un dedo queda tras el pellizco: armar pan desde ese toque.
+      if (wasPinching && e.touches.length === 1) {
+        const t = e.touches[0]
+        dragging = true
+        moved = false
+        el.classList.remove('is-panning')
+        startX = t.clientX
+        startY = t.clientY
+        originLeft = el.scrollLeft
+        originTop = el.scrollTop
+        return
+      }
+      if (e.touches.length === 0) {
+        dragging = false
+        moved = false
+        el.classList.remove('is-panning')
       }
     }
 
@@ -1679,21 +1772,6 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     [onZoomChange],
   )
 
-  /** Mide la planta real (no el plantSize en estado, que puede ir retrasado) */
-  const fitAndCenterView = useCallback(() => {
-    if (focusRef.current) {
-      fitFocusTreeView()
-      return
-    }
-    if (!applyPlantViewFit('fit')) {
-      window.setTimeout(() => {
-        if (fitZoomPending.current || pendingViewFit.current === 'fit') {
-          applyPlantViewFit('fit')
-        }
-      }, 120)
-    }
-  }, [applyPlantViewFit, fitFocusTreeView])
-
   /** Al abrir el árbol: esperar layout y encajar a pantalla una sola vez. */
   useLayoutEffect(() => {
     if (!focus || focusFitDone.current) return
@@ -1781,11 +1859,15 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       return
     }
 
-    // Solo cuando se pidió explícitamente (evita el parpadeo continuo)
-    if (!centerPending.current) return
-    centerPending.current = false
-    applyCenter()
-  }, [zoom, plantSize.w, plantSize.h, focus])
+    if (centerPending.current) {
+      centerPending.current = false
+      applyCenter()
+      return
+    }
+
+    // Cambio de plantSize/zoom sin gesto: no saltar al origen; anclar viewport.
+    preserveViewportAnchor()
+  }, [zoom, plantSize.w, plantSize.h, focus, preserveViewportAnchor])
 
   /** Tras plegar/desplegar o montaje: encajar / centrar en viewport */
   useEffect(() => {
@@ -1825,36 +1907,40 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     }
   }, [expandedBoards, expandedEquip, focus, applyPlantViewFit])
 
-  // Viewport del stage: solo si el ancho cambia de verdad (redimensionar ventana)
+  // Viewport del stage (móvil: chrome/URL bar): conservar ancla, no reencajar zoom.
   useEffect(() => {
     const stage = panRef.current
     if (!stage || typeof ResizeObserver === 'undefined') return
     let lastW = stage.clientWidth
+    let lastH = stage.clientHeight
     let t: number | undefined
     const ro = new ResizeObserver(() => {
-      if (pinchingRef.current || pendingJumpScroll.current || locateRef.current)
-        return
+      if (pinchingRef.current) return
       const w = stage.clientWidth
-      if (Math.abs(w - lastW) < 48) return
+      const h = stage.clientHeight
+      if (Math.abs(w - lastW) < 24 && Math.abs(h - lastH) < 24) return
       lastW = w
+      lastH = h
       window.clearTimeout(t)
       t = window.setTimeout(() => {
-        if (
-          pinchingRef.current ||
-          pendingJumpScroll.current ||
-          locateRef.current
-        )
-          return
-        fitZoomPending.current = true
-        fitAndCenterView()
-      }, 100)
+        if (pinchingRef.current || focusRef.current) return
+        const plant = plantRef.current
+        if (plant) {
+          const pw = plant.offsetWidth
+          const ph = plant.offsetHeight
+          setPlantSize((prev) =>
+            prev.w === pw && prev.h === ph ? prev : { w: pw, h: ph },
+          )
+        }
+        preserveViewportAnchor()
+      }, 80)
     })
     ro.observe(stage)
     return () => {
       ro.disconnect()
       window.clearTimeout(t)
     }
-  }, [fitAndCenterView])
+  }, [preserveViewportAnchor])
 
   /** Centra el scroll del stage en un elemento, sin cambiar el zoom */
   const scrollStageToElement = useCallback((el: HTMLElement) => {
@@ -2006,7 +2092,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     let cancelled = false
     const delays = [0, 60, 160, 320, 560, 900, 1400, 2000]
     const tryScroll = (i: number) => {
-      if (cancelled) return
+      if (cancelled || pinchingRef.current) return
       const ok = scrollToLocatedEquipment()
       // Tras éxito, si aún hay settle, esperar siguiente pase / plantSize.
       if (ok && !pendingLocateScroll.current) return
@@ -2041,7 +2127,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     // Varios pases: primero cuando existe el local, luego al estabilizar layout
     const delays = [80, 180, 320, 520, 800, 1200, 1800, 2600, 3600]
     const tryScroll = (i: number) => {
-      if (cancelled || !pendingJumpScroll.current) return
+      if (cancelled || !pendingJumpScroll.current || pinchingRef.current) return
       const isLast = i + 1 >= delays.length
       const ok = scrollToJumpedCircuit({ finalize: isLast })
       if (ok && !pendingJumpScroll.current) return
