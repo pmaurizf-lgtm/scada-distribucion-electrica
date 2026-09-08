@@ -2403,10 +2403,16 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 /* QG dentro del cuadro: cable gen → QG → barra */
 .plant-msb__inner-top {
   position: relative;
-  z-index: 2;
+  /* Por encima del rail: la bajante QT/QG no queda tapada por la barra */
+  z-index: 4;
   display: flex;
   flex-direction: column;
-  min-height: 4.25rem;
+  /*
+   * Misma altura en ambos MSB (0001/0002), con o sin candado, para que
+   * las barras 1SB/1SA queden alineadas entre cuadros.
+   * Hueco suficiente para chip LOTO + pata IEC larga + bajante a la barra.
+   */
+  min-height: 6.1rem;
   margin-bottom: 0;
 }
 
@@ -2485,26 +2491,17 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /*
- * Candado en QT* / QG* (arriba de barra MSB): solapado al chip para no
- * alargar la columna ni empujar la pata a través de 1SB/1SA.
+ * Candado QT* / QG* (arriba de barra MSB): en el flujo del chip compacto
+ * (símbolo → candado → nombre), igual que el resto de interruptores.
+ * No usar position:absolute en esquina: las patas flex (.bustie-down /
+ * .vwire--to-rail) absorben la altura extra sin atravesar 1SB/1SA.
  */
-.plant-msb__bustie .casc-brk__lock-hit,
-.plant-msb__qg-slot .casc-brk__lock-hit {
-  position: absolute;
-  top: -0.2rem;
-  right: -0.4rem;
-  z-index: 6;
-  margin: 0;
-  padding: 1px;
-  background: color-mix(in srgb, var(--bg-elevated) 92%, #3a1010);
-  border-radius: 3px;
-  box-shadow: 0 0 0 1px rgba(214, 69, 69, 0.35);
-}
-
-.plant-msb__bustie .casc-brk--compact,
-.plant-msb__qg-slot .casc-brk--compact {
-  /* Espacio fijo del chip sin el candado en el flujo flex */
-  gap: 0.1rem;
+.plant-msb__bustie:has(.casc-brk--locked) .plant-msb__bustie-down,
+.plant-msb__qg-slot:has(.casc-brk--locked) .plant-msb__vwire--to-rail {
+  /* Tramo visible chip → barra; no aplastar bajo el mínimo */
+  flex: 1 1 auto;
+  flex-shrink: 0;
+  min-height: 1.05rem;
 }
 
 .plant-msb__bustie--flow .plant-msb__bustie-down {
@@ -2974,6 +2971,19 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   font-size: 0.8rem;
 }
 
+.casc__focus-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+}
+
+.casc__focus-bar__hint {
+  color: var(--muted);
+  font-weight: 400;
+}
+
 /* Alimentaciones superiores unidas (estilo unifilar) */
 .hbus-drop__tops {
   display: flex;
@@ -3437,10 +3447,12 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   content: none;
 }
 
-/* Un solo stub central bajo el padre: sobra con varios hijos; cada hijo lleva su pata. */
-.hbus-drop.hbus-drop--chain-open:has(
-    > .hbus--chain-link > .hbus__drops > .hbus__slot:nth-child(2)
-  )
+/*
+ * Stub central del padre (.hbus--chain-link::before): sobra siempre que el hijo
+ * link-only ya pinta la pata con .hbus-drop__wire--thru (1 o N hijos).
+ * Si ambos se dibujan, en ABT→TRF aparece un trazo fantasma sobre el borde del TRF.
+ */
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
   > .hbus--chain-link::before {
   content: none;
   display: none;
@@ -4331,9 +4343,7 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   bottom: 0 !important;
 }
 
-.hbus-drop.hbus-drop--chain-open:has(
-    > .hbus--chain-link > .hbus__drops > .hbus__slot:nth-child(2)
-  )
+.hbus-drop.hbus-drop--chain-open:has(> .hbus--chain-link .hbus-drop--link-only)
   > .hbus--chain-link::before {
   content: none !important;
   display: none !important;
@@ -4396,21 +4406,6 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   overflow: visible;
   background: var(--wire-idle);
   opacity: 1;
-}
-
-/*
- * ABT→TRF: el thru “link-only” sufre corte con márgenes demasiado agresivos
- * (pata a salida del ABT recortada + línea extra a la derecha).
- * Ajustamos solo para ABT para no tocar otros tramos.
- */
-.hbus-drop--fam-trf.hbus-drop--link-only
-  > .hbus-drop__tops--link-thru
-  .hbus-drop__wire--thru,
-.hbus-drop--fam-trf.hbus-drop--link-only
-  > .hbus-drop__tops--link-aux
-  .hbus-drop__wire--thru {
-  margin-top: -1.05rem;
-  margin-bottom: -0.35rem;
 }
 
 .hbus-drop--link-only.hbus-drop--flow > .hbus-drop__tops--link-thru .hbus-drop__wire--thru,
@@ -9638,43 +9633,57 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
 }
 
 /* Captura PDF: fondo blanco y texto legible (sustituye tema oscuro del panel) */
-.startup-trees--export {
+.startup-trees--export,
+.stree--export {
   background: #fff !important;
   color: #1a2330 !important;
   padding: 1rem 1.25rem 1.5rem !important;
 }
 
-.startup-trees--export .startup-trees__doc-title h2 {
+.startup-trees--export .startup-trees__doc-title h2,
+.stree--export .stree__head h3 {
   color: #0d47a1 !important;
 }
 
 .startup-trees--export .startup-trees__doc-title p,
-.startup-trees--export .stree__group-caption {
+.startup-trees--export .stree__group-caption,
+.stree--export .stree__group-caption {
   color: #546e7a !important;
+}
+
+/* En PDF del árbol de búsqueda: título corto, sin párrafo largo */
+.stree--export .stree__head p {
+  display: none !important;
 }
 
 .startup-trees--export .startup-trees__group {
   border-top-color: #cfd8e0 !important;
 }
 
-.startup-trees--export .stree-eq {
+.startup-trees--export .stree-eq,
+.stree--export .stree-eq {
   background: #f5f7fa !important;
   border-color: #90a4ae !important;
   color: #1a2330 !important;
 }
 
-.startup-trees--export .stree-eq--target {
+.startup-trees--export .stree-eq--target,
+.stree--export .stree-eq--target {
   border-color: #f9a825 !important;
   box-shadow: 0 0 0 1px rgba(249, 168, 37, 0.55) !important;
 }
 
 .startup-trees--export .stree-eq__id,
 .startup-trees--export .stree-eq__name,
-.startup-trees--export .stree-eq__dcp {
+.startup-trees--export .stree-eq__dcp,
+.stree--export .stree-eq__id,
+.stree--export .stree-eq__name,
+.stree--export .stree-eq__dcp {
   color: #1a2330 !important;
 }
 
-.startup-trees--export .stree-eq__id {
+.startup-trees--export .stree-eq__id,
+.stree--export .stree-eq__id {
   font-size: 0.56rem !important;
   font-weight: 600 !important;
   white-space: nowrap !important;
@@ -9684,14 +9693,16 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   line-height: 1.1 !important;
 }
 
-.startup-trees--export .stree-eq__dcp {
+.startup-trees--export .stree-eq__dcp,
+.stree--export .stree-eq__dcp {
   font-size: 0.5rem !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
-.startup-trees--export .stree-eq {
+.startup-trees--export .stree-eq,
+.stree--export .stree-eq {
   max-width: 8.25rem !important;
 }
 
@@ -9701,16 +9712,20 @@ body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   break-inside: avoid;
 }
 
-.startup-trees--export .stree-branch__bus {
+.startup-trees--export .stree-branch__bus,
+.stree--export .stree-branch__bus {
   color: #546e7a !important;
   border-color: #b0bec5 !important;
   background: #fff !important;
 }
 
-/* Congelar animaciones en captura PDF del informe de arranque */
+/* Congelar animaciones en captura PDF */
 .startup-trees--export *,
 .startup-trees--export *::before,
-.startup-trees--export *::after {
+.startup-trees--export *::after,
+.stree--export *,
+.stree--export *::before,
+.stree--export *::after {
   animation: none !important;
   transition: none !important;
 }

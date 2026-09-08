@@ -586,23 +586,23 @@ export function ScadaCanvas() {
                   >
                     Plegar todo
                   </button>
-                  {!isMobile && (
-                    <button
-                      type="button"
-                      className={`btn${startupMode ? ' btn--active' : ''}`}
-                      onClick={() => setStartupMode(true)}
-                      title="Informe de alimentaciones para puesta en marcha de sistemas"
-                    >
-                      Puesta en marcha
-                    </button>
-                  )}
-                </div>
-                {!isMobile && (
-                  <div
-                    className="topbar__actions topbar__actions--sim"
-                    role="group"
-                    aria-label="Simulación"
+                  <button
+                    type="button"
+                    className={`btn${startupMode ? ' btn--active' : ''}`}
+                    onClick={() => {
+                      setStartupMode(true)
+                      if (isMobile) setChromeCollapsed(true)
+                    }}
+                    title="Informe de alimentaciones para puesta en marcha de sistemas"
                   >
+                    Puesta en marcha
+                  </button>
+                </div>
+                <div
+                  className="topbar__actions topbar__actions--sim"
+                  role="group"
+                  aria-label="Simulación"
+                >
                     <button
                       type="button"
                       className={`btn${simulationActive ? ' btn--active' : ''}`}
@@ -680,8 +680,7 @@ export function ScadaCanvas() {
                       hidden
                       onChange={handleLockExcelChange}
                     />
-                  </div>
-                )}
+                </div>
               </div>
               <div className="zoom-controls" role="group" aria-label="Zoom">
                 <button
@@ -886,17 +885,17 @@ export function ScadaCanvas() {
         )}
 
         {searchHint && <div className="banner">{searchHint}</div>}
-        {!isMobile && lockTool !== 'none' && (
+        {lockTool !== 'none' && (
           <div className="banner banner--tool">
             {lockTool === 'lock'
               ? 'Modo poner candado activo: pulsa un interruptor para abrirlo y bloquearlo.'
               : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
           </div>
         )}
-        {isMobile && lockTool === 'none' && !searchHint && (
+        {isMobile && lockTool === 'none' && !searchHint && !simulationActive && (
           <div className="banner">
-            Modo consulta: Localizar o Ver árbol. Doble toque para plegar/desplegar;
-            pellizca para zoom y arrastra para desplazar.
+            Localizar / Ver árbol · Puesta en marcha · Simular / Candados. Doble
+            toque para plegar; pellizca para zoom y arrastra para desplazar.
           </div>
         )}
         {!isMobile && lockTool === 'none' && !searchHint && !simulationActive && (
@@ -906,7 +905,7 @@ export function ScadaCanvas() {
             plegar/desplegar.
           </div>
         )}
-        {!isMobile && lockTool === 'none' && !searchHint && simulationActive && (
+        {lockTool === 'none' && !searchHint && simulationActive && (
           <div className="banner">
             {runningGenerators.size === 0
               ? 'Simulación activa: pulsa un generador (G) para arrancarlo (ON), cierra su QG* y luego los interruptores de salida / QBT para ver el flujo de energía.'

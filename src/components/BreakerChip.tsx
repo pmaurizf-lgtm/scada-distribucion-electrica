@@ -66,6 +66,8 @@ export function BreakerChip({
   const isMotor =
     motorized ??
     isMotorizedProtectionModel(circuit?.protectionModel, name)
+  /** Solo chips compactos con LOTO: alarga la pata IEC sin tocar QBT u horizontales. */
+  const longFoot = Boolean(locked && compact && orientation === 'vertical')
 
   const clearHoverTimer = () => {
     if (hoverTimer.current != null) {
@@ -125,9 +127,17 @@ export function BreakerChip({
     >
       <span className="casc-brk__sym">
         {isMotor ? (
-          <MotorizedBreakerSymbol state={state} orientation={orientation} />
+          <MotorizedBreakerSymbol
+            state={state}
+            orientation={orientation}
+            longFoot={longFoot}
+          />
         ) : (
-          <ManualBreakerSymbol state={state} orientation={orientation} />
+          <ManualBreakerSymbol
+            state={state}
+            orientation={orientation}
+            longFoot={longFoot}
+          />
         )}
       </span>
       {locked && (

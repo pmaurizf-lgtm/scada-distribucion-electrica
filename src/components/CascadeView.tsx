@@ -57,6 +57,7 @@ import {
 } from './EquipmentBusDrop'
 import { LcsDualView } from './LcsDualView'
 import { SearchTreeView } from './SearchTreeView'
+import { exportSearchTreePdf } from '../utils/exportSearchTreePdf'
 import { SsbBoardView } from './SsbBoardView'
 
 export type LockTool = 'none' | 'lock' | 'unlock'
@@ -1100,6 +1101,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const stageRef = useRef<HTMLDivElement>(null)
   const panRef = useRef<HTMLDivElement>(null)
   const plantRef = useRef<HTMLDivElement>(null)
+  const [treePdfBusy, setTreePdfBusy] = useState(false)
+  const [treePdfHint, setTreePdfHint] = useState<string | null>(null)
   const zoomRef = useRef(zoom)
   /** True durante pellizco: no pisar zoomRef con un render React atrasado. */
   const pinchingRef = useRef(false)
@@ -1179,6 +1182,37 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const focusEquipmentIds = useMemo(() => {
     if (!focus) return null
     return new Set(focus.trace.equipmentIds)
+  }, [focus])
+
+  useEffect(() => {
+    setTreePdfHint(null)
+    setTreePdfBusy(false)
+  }, [focus?.equipmentId])
+
+  const handlePrintTreePdf = useCallback(async () => {
+    if (!focus) return
+    const treeEl = document.getElementById('search-tree-print')
+    if (!(treeEl instanceof HTMLElement)) {
+      setTreePdfHint('No hay árbol para imprimir.')
+      return
+    }
+    setTreePdfBusy(true)
+    setTreePdfHint('Generando PDF…')
+    try {
+      const { format, orientation } = await exportSearchTreePdf(
+        treeEl,
+        focus.equipmentId,
+      )
+      const orient =
+        orientation === 'landscape' ? 'horizontal' : 'vertical'
+      setTreePdfHint(`PDF generado · ${format.toUpperCase()} ${orient}`)
+    } catch (err) {
+      console.error(err)
+      const msg = err instanceof Error ? err.message : 'desconocido'
+      setTreePdfHint(`Error al generar el PDF: ${msg}`)
+    } finally {
+      setTreePdfBusy(false)
+    }
   }, [focus])
 
   useEffect(() => {
@@ -2298,12 +2332,26 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         <div className="casc__focus-bar casc__focus-bar--overlay casc__focus-bar--feeds">
           <span>
             Árbol de alimentaciones: <strong>{focus.equipmentId}</strong>
+            {treePdfHint ? (
+              <span className="casc__focus-bar__hint"> · {treePdfHint}</span>
+            ) : null}
           </span>
-          {onClearFocus && (
-            <button type="button" className="btn" onClick={onClearFocus}>
-              Volver al unifilar
+          <div className="casc__focus-bar__actions">
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={treePdfBusy}
+              title="Exportar el gráfico del árbol a PDF (fondo blanco; A3/A4 y orientación automáticos)"
+              onClick={() => void handlePrintTreePdf()}
+            >
+              {treePdfBusy ? 'Generando…' : 'Imprimir PDF'}
             </button>
-          )}
+            {onClearFocus && (
+              <button type="button" className="btn" onClick={onClearFocus}>
+                Volver al unifilar
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -2339,6 +2387,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
                 energizedCircuitIds={energizedCircuitIds}
                 energizedEquipmentIds={energizedEquipmentIds}
                 onBreaker={onLocalBreaker}
+                printId="search-tree-print"
               />
             </div>
           </div>

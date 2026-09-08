@@ -216,3 +216,59 @@
     transform: translateX(-50%) translateY(0.35rem);
   }
 }
+
+/* Herramientas nuevas (puesta en marcha / simulación / candados) */
+.app-shell--mobile .topbar__actions--sim {
+  width: 100%;
+}
+
+.app-shell--mobile .candados-menu__panel {
+  right: auto;
+  left: 0;
+  min-width: min(16rem, calc(100vw - 2rem));
+}
+
+.app-shell--mobile .topbar__legend {
+  display: none;
+}
+
+.app-shell--mobile .casc__focus-bar--feeds {
+  gap: 0.4rem;
+}
+
+.app-shell--mobile .casc__focus-bar__actions {
+  width: 100%;
+  margin-left: 0;
+}
+
+.app-shell--mobile .casc__focus-bar__actions .btn {
+  flex: 1 1 auto;
+}
+
+/* Informe puesta en marcha a pantalla completa en móvil */
+.app-shell--mobile .startup-panel {
+  padding: 0.55rem 0.65rem max(0.85rem, env(safe-area-inset-bottom, 0px));
+}
+
+.app-shell--mobile .startup-panel__field {
+  min-width: 0;
+  flex: 1 1 100%;
+}
+
+.app-shell--mobile .startup-panel__actions {
+  width: 100%;
+}
+
+.app-shell--mobile .startup-panel__actions .btn {
+  flex: 1 1 auto;
+}
+
+.app-shell--mobile .startup-panel__scroll {
+  max-height: min(55vh, 28rem);
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-shell--mobile .startup-table {
+  font-size: 0.68rem;
+}
+

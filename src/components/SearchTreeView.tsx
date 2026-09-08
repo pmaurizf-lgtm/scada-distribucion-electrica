@@ -58,6 +58,8 @@ interface SearchTreeViewProps {
   reportMode?: boolean
   showHeader?: boolean
   groupCaption?: string
+  /** Id DOM para captura PDF («Imprimir»). */
+  printId?: string
 }
 
 const HOVER_DELAY_MS = 1800
@@ -343,9 +345,17 @@ function BreakerMini({
     >
       <span className="casc-brk__sym">
         {isMotor ? (
-          <MotorizedBreakerSymbol state={state} orientation={orientation} />
+          <MotorizedBreakerSymbol
+            state={state}
+            orientation={orientation}
+            longFoot={Boolean(locked)}
+          />
         ) : (
-          <ManualBreakerSymbol state={state} orientation={orientation} />
+          <ManualBreakerSymbol
+            state={state}
+            orientation={orientation}
+            longFoot={Boolean(locked)}
+          />
         )}
       </span>
       {locked && (
@@ -1752,6 +1762,7 @@ export function SearchTreeView({
   reportMode = false,
   showHeader = true,
   groupCaption,
+  printId,
 }: SearchTreeViewProps) {
   const direct = upstreamEdges(equipmentId, null, false, true).filter(
     (c) => !c.virtual,
@@ -1802,7 +1813,10 @@ export function SearchTreeView({
     hubDownstream != null && hubDownstream.length > 0
 
   return (
-    <div className={`stree${reportMode ? ' stree--report' : ''}`}>
+    <div
+      id={printId}
+      className={`stree${reportMode ? ' stree--report' : ''}`}
+    >
       {showHeader && (
         <header className="stree__head">
           <h3>Árbol de alimentaciones · {equipmentId}</h3>

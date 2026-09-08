@@ -4,12 +4,13 @@ import type { ProtectionState } from '../types'
 import {
   buildStartupReport,
   buildStartupTableRows,
+  exportStartupPdf,
+  exportStartupTableExcel,
   parseDestinationsFromText,
   parseDestinationsFromWorkbook,
   summarizeGroups,
   type StartupReport,
 } from '../startupFeeds'
-import { exportStartupPdf } from '../startupFeeds/exportPdf'
 import { StartupReportTrees } from './StartupReportTrees'
 
 export function StartupFeedsPanel({
@@ -100,23 +101,27 @@ export function StartupFeedsPanel({
     applyQueries(parseDestinationsFromText(manualText))
   }
 
-  const handlePdf = async () => {
+  const handleExport = async () => {
     if (!report) return
     const trees = document.getElementById('startup-print-a3')
     const table = document.getElementById('startup-print-a4')
     if (!trees || !table) {
-      setHint('No hay contenido para imprimir.')
+      setHint('No hay contenido para exportar.')
       return
     }
+    const payload = { ...report, title }
     setBusy(true)
-    setHint('Generando PDF (A3 árbol + A4 apaisado tabla)…')
+    setHint('Generando PDF (A3 árbol + A4 tabla) y Excel de la tabla…')
     try {
-      await exportStartupPdf({ ...report, title }, trees, table)
-      setHint(`PDF generado · ${title} (A3 árbol + A4 apaisado tabla)`)
+      await exportStartupPdf(payload, trees, table)
+      exportStartupTableExcel(payload)
+      setHint(
+        `Informe generado · ${title} (PDF: árbol + tabla · Excel: tabla resumen)`,
+      )
     } catch (err) {
       console.error(err)
       const msg = err instanceof Error ? err.message : 'desconocido'
-      setHint(`Error al generar el PDF: ${msg}`)
+      setHint(`Error al generar el informe: ${msg}`)
     } finally {
       setBusy(false)
     }
@@ -174,9 +179,10 @@ export function StartupFeedsPanel({
             type="button"
             className="btn btn--primary"
             disabled={!report || busy}
-            onClick={() => void handlePdf()}
+            onClick={() => void handleExport()}
+            title="PDF (árbol A3 + tabla A4) y Excel de la tabla resumen"
           >
-            {busy ? 'Generando…' : 'Exportar informe PDF'}
+            {busy ? 'Generando…' : 'Exportar informe (PDF + Excel)'}
           </button>
         </div>
         <label className="startup-panel__field startup-panel__field--grow">

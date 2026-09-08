@@ -6,21 +6,27 @@ import type { ProtectionState } from '../types'
 export function MotorizedBreakerSymbol({
   state,
   orientation = 'vertical',
+  /** Pata inferior más larga (p. ej. chip compacto con candado). */
+  longFoot = false,
 }: {
   state?: ProtectionState
   /** vertical = bajante; horizontal = acoplador de barras QBT */
   orientation?: 'vertical' | 'horizontal'
+  longFoot?: boolean
 }) {
   const open = state !== 'cerrada'
   const color = open ? 'var(--prot-open)' : 'var(--prot-closed)'
   const horizontal = orientation === 'horizontal'
+  const vbH = longFoot ? 48 : 40
+  const footEnd = longFoot ? 47 : 39
+  const drawH = horizontal ? 22 : longFoot ? 36 : 30
 
   return (
     <svg
       className={`casc-brk__iec${horizontal ? ' casc-brk__iec--horizontal' : ''}`}
-      viewBox="0 0 28 40"
+      viewBox={`0 0 28 ${vbH}`}
       width={horizontal ? 30 : 22}
-      height={horizontal ? 22 : 30}
+      height={drawH}
       aria-hidden
       style={horizontal ? { transform: 'rotate(90deg)' } : undefined}
     >
@@ -98,7 +104,7 @@ export function MotorizedBreakerSymbol({
         x1="12"
         y1="32"
         x2="12"
-        y2="39"
+        y2={footEnd}
         stroke={color}
         strokeWidth="2"
         strokeLinecap="round"
@@ -113,20 +119,25 @@ export function MotorizedBreakerSymbol({
 export function ManualBreakerSymbol({
   state,
   orientation = 'vertical',
+  longFoot = false,
 }: {
   state?: ProtectionState
   orientation?: 'vertical' | 'horizontal'
+  longFoot?: boolean
 }) {
   const open = state !== 'cerrada'
   const color = open ? 'var(--prot-open)' : 'var(--prot-closed)'
   const horizontal = orientation === 'horizontal'
+  const vbH = longFoot ? 48 : 40
+  const footEnd = longFoot ? 47 : 39
+  const drawH = horizontal ? 20 : longFoot ? 34 : 28
 
   return (
     <svg
       className={`casc-brk__iec casc-brk__iec--manual${horizontal ? ' casc-brk__iec--horizontal' : ''}`}
-      viewBox="0 0 22 40"
+      viewBox={`0 0 22 ${vbH}`}
       width={horizontal ? 30 : 20}
-      height={horizontal ? 20 : 28}
+      height={drawH}
       aria-hidden
       style={horizontal ? { transform: 'rotate(90deg)' } : undefined}
     >
@@ -183,7 +194,7 @@ export function ManualBreakerSymbol({
         x1="11"
         y1="32"
         x2="11"
-        y2="39"
+        y2={footEnd}
         stroke={color}
         strokeWidth="2"
         strokeLinecap="round"
