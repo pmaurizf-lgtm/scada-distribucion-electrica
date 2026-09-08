@@ -455,24 +455,13 @@ export function ScadaCanvas() {
       return
     }
     setLocateEquipmentId(found.id)
-    let mobileTraceLen: number | null = null
-    if (isMobile) {
-      const trace = getUpstreamTrace(found.id, system690.circuits)
-      mobileTraceLen = trace.circuits.length
-      setFocus({ equipmentId: found.id, trace })
-    } else {
-      setFocus(null)
-    }
+    setFocus(null)
     if (isMobile) setChromeCollapsed(true)
     const dcp =
       found.dcp10Id && found.dcp10Id !== found.id ? ` / ${found.dcp10Id}` : ''
     const nme = found.nme674Id ? ` / NME ${found.nme674Id}` : ''
     setSearchHint(
-      isMobile
-        ? `${found.id}${dcp}${nme} · ${found.name} — árbol con ${
-            mobileTraceLen ?? 0
-          } alimentaciones aguas arriba.`
-        : `${found.id}${dcp}${nme} · ${found.name} — localizado en el unifilar.`,
+      `${found.id}${dcp}${nme} · ${found.name} — localizado en el unifilar.`,
     )
   }
 
