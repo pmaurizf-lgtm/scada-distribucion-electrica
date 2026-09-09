@@ -42,6 +42,7 @@ import {
 import { useCircuitLockInfo } from '../locks/LockInfoContext'
 import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
+import { useEquipInfoBalloon } from '../hooks/useEquipInfoBalloon'
 
 interface SearchTreeViewProps {
   equipmentId: string
@@ -402,10 +403,8 @@ function EquipCard({
   capExpanded?: boolean
   onToggleCapExpand?: () => void
 }) {
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
+  const eqBalloon = useEquipInfoBalloon()
   const wrapRef = useRef<HTMLDivElement>(null)
-  const stickyEq = useRef(false)
 
   const feeds = useMemo(
     () => incomingFeeds(system690, equipment.id),
@@ -421,47 +420,12 @@ function EquipCard({
     [feeds],
   )
 
-  useEffect(() => {
-    if (stickyEq.current) return
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => {
-      stickyEq.current = true
-      setShowEqBalloon(true)
-    }, HOVER_DELAY_MS)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
-
-  useEffect(() => {
-    if (!showEqBalloon) return
-    const onPointerDown = (e: PointerEvent) => {
-      const t = e.target
-      if (!(t instanceof Element)) return
-      if (t.closest('.equip-balloon--portal')) return
-      if (t.closest('.notes-modal-backdrop') || t.closest('.notes-modal')) return
-      if (wrapRef.current?.contains(t)) return
-      stickyEq.current = false
-      setShowEqBalloon(false)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        stickyEq.current = false
-        setShowEqBalloon(false)
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown, true)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, true)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [showEqBalloon])
-
   return (
     <div
-      ref={wrapRef}
+      ref={(el) => {
+        wrapRef.current = el
+        eqBalloon.setAnchorEl(el)
+      }}
       className={`stree-eq${compact ? ' stree-eq--compact' : ''}${live ? ' stree-eq--live' : ''}${highlight ? ' stree-eq--target' : ''}${capExpandable ? ' stree-eq--cap' : ''}${capExpanded ? ' stree-eq--cap-open' : ''}`}
       data-equip={equipment.id}
       aria-label={
@@ -471,13 +435,12 @@ function EquipCard({
             : 'Doble clic para expandir aguas arriba (ALT/AUX 24 V)'
           : undefined
       }
-      onMouseEnter={() => setEqHover(true)}
-      onMouseLeave={() => setEqHover(false)}
+      {...eqBalloon.bind}
       onDoubleClick={(e) => {
         if (!capExpandable || !onToggleCapExpand) return
         e.preventDefault()
         e.stopPropagation()
-        setShowEqBalloon(false)
+        eqBalloon.close()
         onToggleCapExpand()
       }}
     >
@@ -501,7 +464,7 @@ function EquipCard({
           {capExpanded ? '▴' : '▾'}
         </span>
       )}
-      {showEqBalloon && (
+      {eqBalloon.show && (
         <EquipmentBalloon
           equipment={equipment}
           feeds={feedSummaries}

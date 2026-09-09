@@ -1005,9 +1005,9 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
           !simulationActive &&
           !chromeCollapsed && (
           <div className="banner">
-            Localizar / Ver árbol · Puesta en marcha · Simular / Candados. Doble
-            toque para plegar; pellizca para zoom y arrastra para desplazar.
-            Arrastra o pellizca para ocultar el menú.
+            Localizar / Ver árbol · Puesta en marcha · Simular / Candados.
+            Doble toque para plegar/desplegar · mantén pulsado para info.
+            Arrastra o pellizca para zoom y para ocultar el menú.
           </div>
         )}
         {!isMobile && lockTool === 'none' && !searchHint && !simulationActive && (

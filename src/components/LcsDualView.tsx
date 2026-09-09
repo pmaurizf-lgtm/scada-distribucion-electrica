@@ -579,9 +579,7 @@ function LcsOutletDrop({
                 eqBalloon.setAnchorEl(el)
               }}
               className="equip-chassis__label"
-              onMouseEnter={eqBalloon.onMouseEnter}
-              onMouseLeave={eqBalloon.onMouseLeave}
-              onClick={eqBalloon.onClick}
+              {...eqBalloon.bind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>

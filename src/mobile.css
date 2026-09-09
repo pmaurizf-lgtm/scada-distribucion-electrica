@@ -190,6 +190,15 @@ html.scada-mobile:has(.notes-modal-backdrop) .chrome-fab {
   -webkit-overflow-scrolling: touch;
 }
 
+.app-shell--mobile .hbus-drop__eq,
+.app-shell--mobile .equip-chassis__label,
+.app-shell--mobile .hbus-drop__eq-wrap,
+.app-shell--mobile .hbus-drop__csb-src {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .app-shell--mobile .casc-brk,
 .app-shell--mobile .casc-gen,
 .app-shell--mobile .hbus-drop__eq {

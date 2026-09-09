@@ -547,9 +547,7 @@ export function EquipmentBusDrop({
                 eqBalloon.setAnchorEl(el)
               }}
               className="equip-chassis__label"
-              onMouseEnter={eqBalloon.onMouseEnter}
-              onMouseLeave={eqBalloon.onMouseLeave}
-              onClick={eqBalloon.onClick}
+              {...eqBalloon.bind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>
@@ -582,9 +580,7 @@ export function EquipmentBusDrop({
                 eqBalloon.setAnchorEl(el)
               }}
               className="hbus-drop__eq-wrap"
-              onMouseEnter={eqBalloon.onMouseEnter}
-              onMouseLeave={eqBalloon.onMouseLeave}
-              onClick={eqBalloon.onClick}
+              {...eqBalloon.bind}
             >
               <button
                 type="button"
@@ -601,6 +597,10 @@ export function EquipmentBusDrop({
                   e.stopPropagation()
                   eqBalloon.onClick(e)
                 }}
+                onPointerDown={eqBalloon.onPointerDown}
+                onPointerMove={eqBalloon.onPointerMove}
+                onPointerUp={eqBalloon.onPointerUp}
+                onPointerCancel={eqBalloon.onPointerCancel}
                 onDoubleClick={toggleExpand}
                 disabled={!canExpand}
               >

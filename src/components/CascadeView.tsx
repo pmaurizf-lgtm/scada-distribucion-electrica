@@ -49,6 +49,7 @@ import {
 import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
 import { Aux24Incoming } from './Aux24Incoming'
 import { useEquipInfoBalloon } from '../hooks/useEquipInfoBalloon'
+import { useIsMobileUi } from '../hooks/useIsMobileUi'
 import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { BreakerChip } from './BreakerChip'
@@ -542,9 +543,7 @@ function BusDrop({
                 eqBalloon.setAnchorEl(el)
               }}
               className="equip-chassis__label"
-              onMouseEnter={eqBalloon.onMouseEnter}
-              onMouseLeave={eqBalloon.onMouseLeave}
-              onClick={eqBalloon.onClick}
+              {...eqBalloon.bind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__hint">doble clic · plegar</span>
@@ -672,9 +671,7 @@ function BusDrop({
                 eqBalloon.setAnchorEl(el)
               }}
               className="equip-chassis__label"
-              onMouseEnter={eqBalloon.onMouseEnter}
-              onMouseLeave={eqBalloon.onMouseLeave}
-              onClick={eqBalloon.onClick}
+              {...eqBalloon.bind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__hint">doble clic · plegar</span>
@@ -827,9 +824,7 @@ function BusDrop({
                 eqBalloon.setAnchorEl(el)
               }}
               className="equip-chassis__label"
-              onMouseEnter={eqBalloon.onMouseEnter}
-              onMouseLeave={eqBalloon.onMouseLeave}
-              onClick={eqBalloon.onClick}
+              {...eqBalloon.bind}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>
@@ -1143,6 +1138,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   ) {
   const boards = useMemo(() => buildBoardModels(system690), [])
   const ties = useMemo(() => busTieCircuits(system690), [])
+  /** En móvil, Localizar deja el destino plegado (solo abre padres / MSB). */
+  const locateCollapsedTarget = useIsMobileUi()
   const stageRef = useRef<HTMLDivElement>(null)
   const panRef = useRef<HTMLDivElement>(null)
   const plantRef = useRef<HTMLDivElement>(null)
@@ -1342,13 +1339,18 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     })
     setExpandedEquip((prev) => {
       const next = new Set(prev)
-      for (const id of path.expandEquipIds) next.add(id)
+      for (const id of path.expandEquipIds) {
+        // Móvil: revelar la cadena, pero dejar el equipo buscado plegado.
+        if (locateCollapsedTarget && id === locateEquipmentId) continue
+        next.add(id)
+      }
+      if (locateCollapsedTarget) next.delete(locateEquipmentId)
       return next
     })
     if (zoomRef.current < 0.9) {
       onZoomChange(1)
     }
-  }, [locateEquipmentId, onZoomChange])
+  }, [locateEquipmentId, onZoomChange, locateCollapsedTarget])
 
   /** Zoom anclado a un punto de pantalla (pellizco, rueda, botones +/-). */
   const applyZoomAt = useCallback(
