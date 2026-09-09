@@ -44,8 +44,8 @@ export default defineConfig({
         // Revisar actualizaciones al enfocar la app y en red
         clientsClaim: true,
         skipWaiting: true,
-        // El bundle unifilar supera el límite por defecto de 2 MiB
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // El bundle unifilar (abtDownstream + topología) supera con creces 2 MiB
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         globPatterns: [
           '**/*.{js,css,html,ico,svg,png,woff2,json,xlsx}',
         ],
