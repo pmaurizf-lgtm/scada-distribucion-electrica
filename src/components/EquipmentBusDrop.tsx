@@ -110,15 +110,45 @@ function FoldedParallelCsbLeg({
   const eqWrapRef = useRef<HTMLDivElement>(null)
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
+  const stickyEq = useRef(false)
 
   useEffect(() => {
+    if (stickyEq.current) return
     if (!eqHover) {
       setShowEqBalloon(false)
       return
     }
-    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
+    const t = window.setTimeout(() => {
+      stickyEq.current = true
+      setShowEqBalloon(true)
+    }, 1800)
     return () => window.clearTimeout(t)
   }, [eqHover])
+
+  useEffect(() => {
+    if (!showEqBalloon) return
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target
+      if (!(t instanceof Element)) return
+      if (t.closest('.equip-balloon--portal')) return
+      if (t.closest('.notes-modal-backdrop') || t.closest('.notes-modal')) return
+      if (eqWrapRef.current?.contains(t)) return
+      stickyEq.current = false
+      setShowEqBalloon(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        stickyEq.current = false
+        setShowEqBalloon(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showEqBalloon])
 
   if (!origin) return null
 
@@ -512,7 +542,10 @@ export function EquipmentBusDrop({
               <span className="ssb2209-chassis-alt-riser" aria-hidden />
             )}
             <div
-              ref={eqWrapRef}
+              ref={(el) => {
+                eqWrapRef.current = el
+                eqBalloon.setAnchorEl(el)
+              }}
               className="equip-chassis__label"
               onMouseEnter={eqBalloon.onMouseEnter}
               onMouseLeave={eqBalloon.onMouseLeave}
@@ -544,7 +577,10 @@ export function EquipmentBusDrop({
         <>
           <div className="hbus-drop__eq-row">
             <div
-              ref={eqWrapRef}
+              ref={(el) => {
+                eqWrapRef.current = el
+                eqBalloon.setAnchorEl(el)
+              }}
               className="hbus-drop__eq-wrap"
               onMouseEnter={eqBalloon.onMouseEnter}
               onMouseLeave={eqBalloon.onMouseLeave}

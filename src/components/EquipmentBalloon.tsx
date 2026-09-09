@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom'
 import type { Circuit, Equipment } from '../types'
 import { originLabel } from '../utils/cascadeModel'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
+import { useNotesOptional } from '../notes'
+import { requestOpenNotes } from '../notes/openNotesEvent'
+import { useIsMobileUi } from '../hooks/useIsMobileUi'
 
 const KIND_LABEL: Record<Equipment['kind'], string> = {
   generador: 'Generador',
@@ -32,15 +35,23 @@ export function EquipmentBalloon({
   circuits,
   anchorRef,
 }: EquipmentBalloonProps) {
+  const notesApi = useNotesOptional()
+  const isMobile = useIsMobileUi()
+  const noteTarget = { kind: 'equipment' as const, equipmentId: equipment.id }
+  const openNotesCount = notesApi?.openCountFor(noteTarget) ?? 0
   const [pos, setPos] = useState<{
     left: number
     top: number
-    place: 'above' | 'below'
+    place: 'above' | 'below' | 'sheet'
   } | null>(null)
   const primary = circuits?.[0]
 
   useLayoutEffect(() => {
     const update = () => {
+      if (isMobile) {
+        setPos({ left: 0, top: 0, place: 'sheet' })
+        return
+      }
       const el = anchorRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
@@ -70,7 +81,7 @@ export function EquipmentBalloon({
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
     }
-  }, [anchorRef, equipment.id])
+  }, [anchorRef, equipment.id, isMobile])
 
   if (!pos || typeof document === 'undefined') return null
 
@@ -85,20 +96,58 @@ export function EquipmentBalloon({
       : null
   const secondary = labelSecondaryDenom(equipment)
 
+  const openNotes = (e: { stopPropagation: () => void; preventDefault?: () => void }) => {
+    e.stopPropagation()
+    e.preventDefault?.()
+    if (notesApi) {
+      notesApi.openEditor({ target: noteTarget })
+    } else {
+      requestOpenNotes(noteTarget)
+    }
+  }
+
   return createPortal(
     <div
-      className={`equip-balloon equip-balloon--portal equip-balloon--${pos.place}`}
-      style={{ left: pos.left, top: pos.top }}
-      role="tooltip"
+      className={`equip-balloon equip-balloon--portal equip-balloon--${pos.place}${
+        isMobile ? ' equip-balloon--mobile' : ''
+      }`}
+      style={
+        pos.place === 'sheet'
+          ? undefined
+          : { left: pos.left, top: pos.top }
+      }
+      role="dialog"
       aria-label={`Equipo ${equipment.id}`}
     >
       <header className="equip-balloon__header">
-        <span className="equip-balloon__kicker">Equipo</span>
-        <strong className="equip-balloon__title">{equipment.id}</strong>
-        {secondary && (
-          <span className="equip-balloon__dcp">{secondary.value}</span>
-        )}
+        <div className="equip-balloon__header-main">
+          <span className="equip-balloon__kicker">Equipo</span>
+          <strong className="equip-balloon__title">{equipment.id}</strong>
+          {secondary && (
+            <span className="equip-balloon__dcp">{secondary.value}</span>
+          )}
+        </div>
+        <button
+          type="button"
+          className="btn equip-balloon__notes-btn equip-balloon__notes-btn--header"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+          onClick={openNotes}
+        >
+          Notas
+          {openNotesCount > 0 ? (
+            <span
+              className="notes-badge"
+              aria-label={`${openNotesCount} abiertas`}
+            >
+              {openNotesCount}
+            </span>
+          ) : null}
+        </button>
       </header>
+      <div className="equip-balloon__body">
       <dl className="equip-balloon__kv">
         <dt>PUMA</dt>
         <dd>{equipment.id}</dd>
@@ -277,6 +326,28 @@ export function EquipmentBalloon({
           </>
         )}
       </dl>
+      </div>
+      <footer className="equip-balloon__notes-foot">
+        <button
+          type="button"
+          className="btn equip-balloon__notes-btn"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+          onClick={openNotes}
+        >
+          Notas de revisión
+          {openNotesCount > 0 ? (
+            <span
+              className="notes-badge"
+              aria-label={`${openNotesCount} abiertas`}
+            >
+              {openNotesCount}
+            </span>
+          ) : null}
+        </button>
+      </footer>
     </div>,
     document.body,
   )

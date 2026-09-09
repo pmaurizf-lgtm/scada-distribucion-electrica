@@ -10,13 +10,15 @@ function isCoarsePointer(): boolean {
 }
 
 /**
- * Globo de equipo: hover ~1,8 s en ratón; en táctil, un toque lo muestra/oculta
- * (el mouseleave del touchend no cancela el globo).
+ * Globo de equipo: hover ~1,8 s → se fija hasta clic fuera / Escape.
+ * En táctil, un toque muestra/oculta.
+ * Así se puede pulsar «Notas» sin que desaparezca al mover el ratón.
  */
 export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
   const [show, setShow] = useState(false)
   const timer = useRef<number | null>(null)
-  const stickyTap = useRef(false)
+  const sticky = useRef(false)
+  const rootRef = useRef<HTMLElement | null>(null)
 
   const clearTimer = useCallback(() => {
     if (timer.current != null) {
@@ -25,34 +27,73 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     }
   }, [])
 
-  useEffect(() => () => clearTimer(), [clearTimer])
-
-  const onMouseEnter = useCallback(() => {
-    if (stickyTap.current) return
+  const close = useCallback(() => {
     clearTimer()
-    timer.current = window.setTimeout(() => setShow(true), delayMs)
-  }, [clearTimer, delayMs])
-
-  const onMouseLeave = useCallback(() => {
-    if (stickyTap.current) return
-    clearTimer()
+    sticky.current = false
     setShow(false)
   }, [clearTimer])
+
+  const openSticky = useCallback(() => {
+    clearTimer()
+    sticky.current = true
+    setShow(true)
+    window.dispatchEvent(new CustomEvent('scada-canvas-interact'))
+  }, [clearTimer])
+
+  useEffect(() => () => clearTimer(), [clearTimer])
+
+  useEffect(() => {
+    if (!show) return
+
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target
+      if (!(t instanceof Element)) return
+      if (t.closest('.equip-balloon--portal')) return
+      if (t.closest('.notes-modal-backdrop') || t.closest('.notes-modal')) return
+      if (rootRef.current && rootRef.current.contains(t)) return
+      close()
+    }
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close()
+    }
+
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [show, close])
+
+  const onMouseEnter = useCallback(() => {
+    if (sticky.current || show) return
+    clearTimer()
+    timer.current = window.setTimeout(() => openSticky(), delayMs)
+  }, [clearTimer, delayMs, openSticky, show])
+
+  const onMouseLeave = useCallback(() => {
+    // Si aún no se abrió, cancelar el timer de apertura.
+    // Si ya está abierto (sticky), no cerrar al salir del equipo.
+    if (sticky.current || show) return
+    clearTimer()
+  }, [clearTimer, show])
 
   const onClick = useCallback(
     (e: { stopPropagation: () => void }) => {
       e.stopPropagation()
+      // Solo táctil: en escritorio el globo se abre por hover ~1,8 s
       if (!isCoarsePointer()) return
       clearTimer()
-      stickyTap.current = true
-      setShow((prev) => {
-        const next = !prev
-        if (!next) stickyTap.current = false
-        return next
-      })
+      if (show) close()
+      else openSticky()
     },
-    [clearTimer],
+    [clearTimer, close, openSticky, show],
   )
 
-  return { show, onMouseEnter, onMouseLeave, onClick }
+  const setAnchorEl = useCallback((el: HTMLElement | null) => {
+    rootRef.current = el
+  }, [])
+
+  return { show, onMouseEnter, onMouseLeave, onClick, setAnchorEl, close }
 }

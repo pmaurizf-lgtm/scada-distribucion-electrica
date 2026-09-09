@@ -74,6 +74,55 @@
   display: none;
 }
 
+/* Pantalla completa unifilar: ocultar chrome, banners y status */
+.app-shell--mobile.app-shell--chrome-collapsed .app-shell__chrome {
+  display: none;
+}
+
+.app-shell--mobile.app-shell--chrome-collapsed .statusbar,
+.app-shell--mobile.app-shell--chrome-collapsed .banner,
+.app-shell--mobile.app-shell--chrome-collapsed .pwa-install {
+  display: none;
+}
+
+.app-shell--mobile.app-shell--chrome-collapsed .workspace--cascade {
+  /* Más alto útil al ocultar barras */
+  min-height: 0;
+}
+
+.chrome-fab {
+  position: fixed;
+  z-index: 70;
+  right: max(0.75rem, env(safe-area-inset-right, 0px));
+  bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
+  min-width: 3.4rem;
+  min-height: 3.4rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid rgba(230, 194, 0, 0.55);
+  border-radius: 999px;
+  background: rgba(18, 28, 25, 0.94);
+  color: #f5e6a0;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chrome-fab:active {
+  transform: scale(0.97);
+  background: rgba(230, 194, 0, 0.22);
+}
+
+html.scada-mobile:has(.equip-balloon--portal) .chrome-fab,
+html.scada-mobile:has(.circuit-balloon--fixed) .chrome-fab,
+html.scada-mobile:has(.notes-modal-backdrop) .chrome-fab {
+  display: none;
+}
+
 .app-shell--mobile .topbar__row--tools,
 .app-shell--mobile .topbar__row--search {
   justify-content: stretch;
@@ -286,4 +335,257 @@
 .vessel-gate__btn {
   min-height: 3rem;
 }
+
+/* ——— Notas / globos (portales en body: html.scada-mobile) ——— */
+
+html.scada-mobile .notes-modal-backdrop,
+.notes-modal-backdrop--mobile {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+html.scada-mobile .notes-modal,
+.notes-modal--mobile {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  height: 100dvh;
+  border-radius: 0;
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+html.scada-mobile .notes-modal__header {
+  padding: 0.75rem 0.85rem 0.55rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-elevated, #1a222c);
+}
+
+html.scada-mobile .notes-modal__close {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.6rem;
+}
+
+html.scada-mobile .notes-modal__title {
+  font-size: 1.05rem;
+  padding-right: 0.35rem;
+  word-break: break-word;
+}
+
+html.scada-mobile .notes-modal__scroll {
+  flex: 1 1 auto;
+  padding-bottom: 0.5rem;
+}
+
+html.scada-mobile .notes-modal__actions,
+html.scada-mobile .notes-modal__actions--sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  gap: 0.45rem;
+  padding: 0.65rem 0.85rem
+    max(0.65rem, env(safe-area-inset-bottom, 0px));
+  background: var(--bg-elevated, #1a222c);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+}
+
+html.scada-mobile .notes-modal__actions .btn,
+html.scada-mobile .notes-modal__actions-right .btn {
+  min-height: var(--touch-min, 2.75rem);
+  flex: 1 1 auto;
+  font-size: 0.95rem;
+}
+
+html.scada-mobile .notes-modal__actions-right {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+html.scada-mobile .notes-modal__actions-right .btn--active {
+  flex: 1.4 1 auto;
+}
+
+html.scada-mobile .notes-panel__toolbar {
+  flex-direction: column;
+  align-items: stretch;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-elevated, #1a222c);
+  padding: 0.55rem 0.85rem;
+}
+
+html.scada-mobile .notes-panel__filters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+html.scada-mobile .notes-panel__filters .btn,
+html.scada-mobile .notes-panel__io .btn,
+html.scada-mobile .note-editor__list-toggle,
+html.scada-mobile .note-editor__new,
+html.scada-mobile .note-editor__add-row .btn {
+  min-height: var(--touch-min, 2.75rem);
+  font-size: 0.9rem;
+}
+
+html.scada-mobile .notes-panel__io {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+html.scada-mobile .notes-panel__body {
+  padding: 0.55rem 0.85rem 1.25rem;
+}
+
+html.scada-mobile .notes-panel__item {
+  min-height: var(--touch-min, 2.75rem);
+  padding: 0.65rem 0.7rem;
+}
+
+html.scada-mobile .notes-panel__bullet-check {
+  min-height: var(--touch-min, 2.75rem);
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.92rem;
+}
+
+html.scada-mobile .notes-panel__bullet-check input {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+}
+
+html.scada-mobile .note-editor__lines {
+  margin: 0 0.85rem;
+  max-height: none;
+  flex: 1 1 auto;
+}
+
+html.scada-mobile .note-editor__line {
+  min-height: var(--touch-min, 2.75rem);
+  padding: 0.4rem 0.45rem;
+  gap: 0.45rem;
+}
+
+html.scada-mobile .note-editor__line-check input {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+html.scada-mobile .note-editor__line-input {
+  font-size: 1.05rem;
+  padding: 0.5rem 0.45rem;
+  min-height: 2.4rem;
+}
+
+html.scada-mobile .note-editor__line-remove {
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 1.35rem;
+}
+
+html.scada-mobile .note-editor__list-item {
+  min-height: var(--touch-min, 2.75rem);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.88rem;
+}
+
+html.scada-mobile .notes-modal__input {
+  min-height: var(--touch-min, 2.75rem);
+  font-size: 1.05rem;
+}
+
+html.scada-mobile .notes-modal--profile {
+  justify-content: center;
+  padding: 1.25rem 1rem;
+}
+
+html.scada-mobile .notes-modal--profile .notes-modal__form {
+  padding: 0.85rem 0 0;
+}
+
+/* Globo de equipo: hoja inferior */
+html.scada-mobile .equip-balloon--portal.equip-balloon--sheet,
+html.scada-mobile .equip-balloon--mobile.equip-balloon--sheet {
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: 0 !important;
+  transform: none !important;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  max-height: min(78dvh, 36rem);
+  border-radius: 14px 14px 0 0;
+  padding: 0.75rem 0.85rem
+    max(0.75rem, env(safe-area-inset-bottom, 0px));
+  animation: equip-sheet-in 0.2s ease-out;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.55);
+}
+
+@keyframes equip-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html.scada-mobile .equip-balloon--sheet .equip-balloon__header {
+  align-items: center;
+}
+
+html.scada-mobile .equip-balloon--sheet .equip-balloon__notes-btn--header {
+  display: none;
+}
+
+html.scada-mobile .equip-balloon--sheet .equip-balloon__body {
+  max-height: none;
+  flex: 1 1 auto;
+}
+
+html.scada-mobile .equip-balloon--sheet .equip-balloon__notes-foot {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+}
+
+html.scada-mobile .equip-balloon--sheet .equip-balloon__notes-btn,
+html.scada-mobile .circuit-balloon__notes-btn {
+  min-height: var(--touch-min, 2.75rem);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-color: rgba(230, 194, 0, 0.65);
+  background: rgba(230, 194, 0, 0.22);
+  color: #f5e6a0;
+}
+
+html.scada-mobile .circuit-balloon--fixed {
+  width: min(100vw - 16px, 22rem);
+  max-height: min(70dvh, 32rem);
+}
+
+html.scada-mobile .circuit-balloon__notes-foot {
+  position: sticky;
+  bottom: 0;
+  background: inherit;
+  padding-bottom: 0.25rem;
+}
+
+html.scada-mobile .app-shell--mobile .topbar__actions .btn .notes-badge {
+  margin-left: 0.25rem;
+}
+
 

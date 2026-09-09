@@ -405,6 +405,7 @@ function EquipCard({
   const [eqHover, setEqHover] = useState(false)
   const [showEqBalloon, setShowEqBalloon] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const stickyEq = useRef(false)
 
   const feeds = useMemo(
     () => incomingFeeds(system690, equipment.id),
@@ -421,13 +422,42 @@ function EquipCard({
   )
 
   useEffect(() => {
+    if (stickyEq.current) return
     if (!eqHover) {
       setShowEqBalloon(false)
       return
     }
-    const t = window.setTimeout(() => setShowEqBalloon(true), HOVER_DELAY_MS)
+    const t = window.setTimeout(() => {
+      stickyEq.current = true
+      setShowEqBalloon(true)
+    }, HOVER_DELAY_MS)
     return () => window.clearTimeout(t)
   }, [eqHover])
+
+  useEffect(() => {
+    if (!showEqBalloon) return
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target
+      if (!(t instanceof Element)) return
+      if (t.closest('.equip-balloon--portal')) return
+      if (t.closest('.notes-modal-backdrop') || t.closest('.notes-modal')) return
+      if (wrapRef.current?.contains(t)) return
+      stickyEq.current = false
+      setShowEqBalloon(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        stickyEq.current = false
+        setShowEqBalloon(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showEqBalloon])
 
   return (
     <div

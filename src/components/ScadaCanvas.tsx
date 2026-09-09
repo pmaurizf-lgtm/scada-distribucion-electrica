@@ -50,6 +50,10 @@ import {
 import { NavantiaLogo } from './NavantiaLogo'
 import { StartupFeedsPanel } from './StartupFeedsPanel'
 import { PwaUpdateToast } from './PwaUpdateToast'
+import { NoteEditorModal } from './NoteEditorModal'
+import { NotesPanel } from './NotesPanel'
+import { useNotes } from '../notes/NotesContext'
+import { useUserProfile } from '../notes/UserProfileContext'
 
 const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
@@ -100,6 +104,9 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const candadosDetailsRef = useRef<HTMLDetailsElement>(null)
   const cascadeRef = useRef<CascadeViewHandle>(null)
   const isMobile = useIsMobileUi()
+  const { notes } = useNotes()
+  const { displayName, openProfilePrompt } = useUserProfile()
+  const [notesPanelOpen, setNotesPanelOpen] = useState(false)
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatusMap>(
     () => {
@@ -164,6 +171,21 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       setStartupMode(false)
     }
   }, [isMobile])
+
+  const hideChromeForCanvas = useCallback(() => {
+    if (!isMobile) return
+    setChromeCollapsed(true)
+  }, [isMobile])
+
+  useEffect(() => {
+    const onInteract = () => hideChromeForCanvas()
+    window.addEventListener('scada-canvas-interact', onInteract)
+    return () => window.removeEventListener('scada-canvas-interact', onInteract)
+  }, [hideChromeForCanvas])
+
+  const showChromeMenu = useCallback(() => {
+    setChromeCollapsed(false)
+  }, [])
 
   useEffect(() => {
     const onBip = (e: Event) => {
@@ -600,19 +622,15 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
             </div>
           </div>
 
-          {isMobile && (
+          {isMobile && !chromeCollapsed && (
             <button
               type="button"
               className="btn topbar__chrome-toggle"
-              aria-expanded={!chromeCollapsed}
-              onClick={() => setChromeCollapsed((c) => !c)}
-              title={
-                chromeCollapsed
-                  ? 'Mostrar herramientas y búsqueda'
-                  : 'Ocultar barra y ganar espacio'
-              }
+              aria-expanded={true}
+              onClick={() => setChromeCollapsed(true)}
+              title="Ocultar barra y trabajar a pantalla completa"
             >
-              {chromeCollapsed ? 'Menú ▾' : 'Menú ▴'}
+              Ocultar ▴
             </button>
           )}
 
@@ -646,6 +664,45 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     title="Informe de alimentaciones para puesta en marcha de sistemas"
                   >
                     Puesta en marcha
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn${notesPanelOpen ? ' btn--active' : ''}`}
+                    onClick={() => {
+                      setNotesPanelOpen(true)
+                      if (isMobile) setChromeCollapsed(true)
+                    }}
+                    title="Notas de revisión del buque (offline; exportar/importar JSON)"
+                  >
+                    Notas
+                    {notes.reduce(
+                      (sum, n) => sum + n.lines.filter((l) => !l.resolved).length,
+                      0,
+                    ) > 0 ? (
+                      <span className="notes-badge notes-badge--topbar">
+                        {notes.reduce(
+                          (sum, n) =>
+                            sum + n.lines.filter((l) => !l.resolved).length,
+                          0,
+                        )}
+                      </span>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() =>
+                      openProfilePrompt(
+                        'Edita el nombre que firmará las notas de revisión.',
+                      )
+                    }
+                    title={
+                      displayName
+                        ? `Usuario: ${displayName}`
+                        : 'Configurar nombre de usuario'
+                    }
+                  >
+                    Usuario
                   </button>
                 </div>
                 <div
@@ -942,10 +999,15 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
               : 'Modo quitar candado activo: pulsa un interruptor bloqueado para liberarlo.'}
           </div>
         )}
-        {isMobile && lockTool === 'none' && !searchHint && !simulationActive && (
+        {isMobile &&
+          lockTool === 'none' &&
+          !searchHint &&
+          !simulationActive &&
+          !chromeCollapsed && (
           <div className="banner">
             Localizar / Ver árbol · Puesta en marcha · Simular / Candados. Doble
             toque para plegar; pellizca para zoom y arrastra para desplazar.
+            Arrastra o pellizca para ocultar el menú.
           </div>
         )}
         {!isMobile && lockTool === 'none' && !searchHint && !simulationActive && (
@@ -982,6 +1044,8 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
             onZoomChange={setZoom}
             focus={focus}
             locateEquipmentId={locateEquipmentId}
+            chromeCollapsed={isMobile && chromeCollapsed}
+            onCanvasInteract={hideChromeForCanvas}
             onToggleProtection={handleToggleProtection}
             onLockCircuit={handleLockCircuit}
             onUnlockCircuit={handleUnlockCircuit}
@@ -1008,6 +1072,12 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
         />
       )}
 
+      <NotesPanel
+        open={notesPanelOpen}
+        onClose={() => setNotesPanelOpen(false)}
+      />
+      <NoteEditorModal />
+
       <footer className="statusbar">
         <span>
           Cascada 690 V · protecciones:{' '}
@@ -1020,6 +1090,17 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
         </span>
       </footer>
       <PwaUpdateToast enabled={true} />
+      {isMobile && chromeCollapsed && (
+        <button
+          type="button"
+          className="chrome-fab"
+          onClick={showChromeMenu}
+          title="Mostrar menú y herramientas"
+          aria-label="Mostrar menú"
+        >
+          Menú
+        </button>
+      )}
         </>
       )}
     </div>

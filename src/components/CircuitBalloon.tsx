@@ -6,6 +6,8 @@ import {
 import { createPortal } from 'react-dom'
 import type { Circuit, ProtectionState } from '../types'
 import { dcp10Of } from '../data/system690'
+import { useNotesOptional } from '../notes'
+import { requestOpenNotes } from '../notes/openNotesEvent'
 
 interface CircuitBalloonProps {
   circuit: Circuit
@@ -72,6 +74,9 @@ export function CircuitBalloon({
   onClose,
   fixed = false,
 }: CircuitBalloonProps) {
+  const notesApi = useNotesOptional()
+  const noteTarget = { kind: 'circuit' as const, circuitId: circuit.id }
+  const openNotesCount = notesApi?.openCountFor(noteTarget) ?? 0
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ x, y })
 
@@ -226,7 +231,7 @@ export function CircuitBalloon({
         </dd>
         {circuit.notes && (
           <>
-            <dt>Notas</dt>
+            <dt>Notas plano</dt>
             <dd>{circuit.notes}</dd>
           </>
         )}
@@ -237,6 +242,31 @@ export function CircuitBalloon({
           </>
         )}
       </dl>
+      <footer className="circuit-balloon__notes-foot">
+        <button
+          type="button"
+          className="btn circuit-balloon__notes-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (notesApi) {
+              notesApi.openEditor({ target: noteTarget })
+            } else {
+              requestOpenNotes(noteTarget)
+            }
+            onClose()
+          }}
+        >
+          Notas de revisión
+          {openNotesCount > 0 ? (
+            <span
+              className="notes-badge"
+              aria-label={`${openNotesCount} abiertas`}
+            >
+              {openNotesCount}
+            </span>
+          ) : null}
+        </button>
+      </footer>
     </div>
   )
 

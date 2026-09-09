@@ -97,6 +97,10 @@ interface CascadeViewProps {
   onToggleGenerator: (genId: string) => void
   onClearFocus?: () => void
   onClearLocate?: () => void
+  /** Pan / pellizco / gesto sobre el unifilar (p. ej. ocultar menú móvil). */
+  onCanvasInteract?: () => void
+  /** Chrome móvil oculto: el stage crece; anclar viewport sin reencajar. */
+  chromeCollapsed?: boolean
 }
 
 const MSB_BOARD_IDS = ['MSB-6PWS0002', 'MSB-6PWS0001'] as const
@@ -533,7 +537,10 @@ function BusDrop({
           aria-label={`${equipment.id} · doble clic para plegar`}
         >
             <div
-              ref={eqWrapRef}
+              ref={(el) => {
+                eqWrapRef.current = el
+                eqBalloon.setAnchorEl(el)
+              }}
               className="equip-chassis__label"
               onMouseEnter={eqBalloon.onMouseEnter}
               onMouseLeave={eqBalloon.onMouseLeave}
@@ -660,7 +667,10 @@ function BusDrop({
             aria-label={`${equipment.id} · doble clic para plegar`}
           >
             <div
-              ref={eqWrapRef}
+              ref={(el) => {
+                eqWrapRef.current = el
+                eqBalloon.setAnchorEl(el)
+              }}
               className="equip-chassis__label"
               onMouseEnter={eqBalloon.onMouseEnter}
               onMouseLeave={eqBalloon.onMouseLeave}
@@ -812,7 +822,10 @@ function BusDrop({
               <span className="ssb2209-chassis-alt-riser" aria-hidden />
             )}
             <div
-              ref={eqWrapRef}
+              ref={(el) => {
+                eqWrapRef.current = el
+                eqBalloon.setAnchorEl(el)
+              }}
               className="equip-chassis__label"
               onMouseEnter={eqBalloon.onMouseEnter}
               onMouseLeave={eqBalloon.onMouseLeave}
@@ -1123,6 +1136,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       onToggleGenerator,
       onClearFocus,
       onClearLocate,
+      onCanvasInteract,
+      chromeCollapsed = false,
     },
     ref,
   ) {
@@ -1183,6 +1198,11 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const userGestureUntilRef = useRef(0)
   const markUserGesture = (ms = 600) => {
     userGestureUntilRef.current = performance.now() + ms
+  }
+  const onCanvasInteractRef = useRef(onCanvasInteract)
+  onCanvasInteractRef.current = onCanvasInteract
+  const notifyCanvasInteract = () => {
+    onCanvasInteractRef.current?.()
   }
   /** True mientras applyZoomAt / preserve escriben scroll (ignorar como gesto). */
   const applyingViewRef = useRef(false)
@@ -1460,6 +1480,15 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     applyingViewRef.current = false
   }, [])
 
+  /** Chrome móvil oculto/visible: el stage cambia de alto → anclar, no reencajar. */
+  useEffect(() => {
+    markUserGesture(1600)
+    const t = window.setTimeout(() => {
+      if (!pinchingRef.current) preserveViewportAnchor()
+    }, 120)
+    return () => window.clearTimeout(t)
+  }, [chromeCollapsed, preserveViewportAnchor])
+
   /** Desplazamiento arrastrando + pellizco (móvil) / rueda (desktop) */
   useEffect(() => {
     const el = panRef.current
@@ -1527,7 +1556,10 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         if (Math.abs(dx) + Math.abs(dy) <= thresh) return
         moved = true
         el.classList.add('is-panning')
-        markUserGesture(500)
+        markUserGesture(900)
+        // Evitar doble toque que pliega MSB/equipo tras desplazar.
+        suppressExpandUntilRef.current = performance.now() + 900
+        notifyCanvasInteract()
         try {
           el.setPointerCapture(e.pointerId)
         } catch {
@@ -1568,7 +1600,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
         dragging = false
         moved = false
         el.classList.remove('is-panning')
-        markUserGesture(1200)
+        markUserGesture(1400)
+        suppressExpandUntilRef.current = performance.now() + 1400
+        notifyCanvasInteract()
         pinchStartDist = touchDist(e.touches[0], e.touches[1])
         pinchStartZoom = zoomRef.current
         // No recentrar Localizar/salto mientras el usuario pellizca.
@@ -1605,6 +1639,8 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
           if (Math.abs(dx) + Math.abs(dy) <= 8) return
           moved = true
           el.classList.add('is-panning')
+          suppressExpandUntilRef.current = performance.now() + 900
+          notifyCanvasInteract()
         }
         markUserGesture(500)
         el.scrollLeft = originLeft - dx
@@ -1616,10 +1652,10 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
       if (e.touches.length >= 2) return
       const wasPinching = pinching
       if (wasPinching && e.touches.length <= 1) {
-        // Más margen si hay localización: un doble toque accidental plega la cadena.
+        // Más margen: un doble toque accidental plega la cadena / MSB.
         suppressExpandUntilRef.current =
-          performance.now() + (locateRef.current ? 900 : 450)
-        markUserGesture(900)
+          performance.now() + (locateRef.current ? 1400 : 1100)
+        markUserGesture(1200)
       }
       if (e.touches.length < 2) {
         setPinching(false)
@@ -1648,7 +1684,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
-      markUserGesture(700)
+      markUserGesture(900)
+      suppressExpandUntilRef.current = performance.now() + 500
+      notifyCanvasInteract()
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
       const current = zoomRef.current
       const next = Math.min(

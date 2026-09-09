@@ -14,7 +14,8 @@ export function VesselGate({ onSelect }: VesselGateProps) {
           Elegir buque
         </h1>
         <p className="vessel-gate__hint">
-          Cada escritorio tiene sus propios candados LOTO. El unifilar es común.
+          Cada escritorio tiene sus propios candados LOTO y notas de revisión. El
+          unifilar es común.
         </p>
         <ul className="vessel-gate__list">
           {VESSELS.map((v) => (
