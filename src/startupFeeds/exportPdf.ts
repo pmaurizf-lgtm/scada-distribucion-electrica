@@ -1,8 +1,10 @@
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
+import { chooseBestPage } from '../utils/exportSearchTreePdf'
 import type { StartupReport } from './types'
 
 const TREE_EXPORT_CLASS = 'startup-trees--export'
+const MARGIN_MM = 8
 
 function slug(title: string): string {
   return (
@@ -203,47 +205,6 @@ function newPage(layout: PdfLayout): void {
   layout.y = layout.margin
 }
 
-/** Puntos Y (px DOM) donde conviene cortar: tras cabecera y tras cada origen. */
-function measureDomBreakPoints(root: HTMLElement): number[] {
-  const rootTop = root.getBoundingClientRect().top
-  const points = new Set<number>([0, root.scrollHeight])
-
-  const mark = (el: Element | null | undefined) => {
-    if (!(el instanceof HTMLElement)) return
-    const bottom = el.getBoundingClientRect().bottom - rootTop
-    if (bottom > 0) points.add(Math.round(bottom))
-  }
-
-  mark(root.querySelector('.startup-trees__doc-title'))
-  for (const group of root.querySelectorAll('.startup-trees__group')) {
-    mark(group)
-  }
-
-  return [...points].sort((a, b) => a - b)
-}
-
-function scaleBreaksToCanvas(
-  domBreaks: number[],
-  domHeight: number,
-  canvasHeight: number,
-): number[] {
-  const ratio = canvasHeight / Math.max(domHeight, 1)
-  const scaled = domBreaks.map((y) => Math.round(y * ratio))
-  scaled.push(canvasHeight)
-  return [...new Set(scaled)]
-    .filter((y) => y >= 0 && y <= canvasHeight)
-    .sort((a, b) => a - b)
-}
-
-function nearestBreakAtOrBefore(breaks: number[], y: number): number {
-  let best = breaks[0]
-  for (const b of breaks) {
-    if (b <= y) best = b
-    else break
-  }
-  return best
-}
-
 function drawSlice(
   layout: PdfLayout,
   canvas: HTMLCanvasElement,
@@ -284,15 +245,8 @@ function drawSlice(
   layout.y += drawH
 }
 
-/**
- * Pagina un canvas respetando puntos de corte (cabeceras / grupos enteros).
- */
-function appendCanvas(
-  layout: PdfLayout,
-  canvas: HTMLCanvasElement,
-  breakPx: number[],
-  gapMm = 4,
-): void {
+/** Tabla: pagina a ancho completo (sin cortar filas a mitad si el alto cabe). */
+function appendTableCanvas(layout: PdfLayout, canvas: HTMLCanvasElement): void {
   const pageBottom = layout.margin + layout.maxH
   const scale = layout.maxW / canvas.width
   if (!Number.isFinite(scale) || scale <= 0) {
@@ -310,18 +264,7 @@ function appendCanvas(
     }
 
     const maxSlicePx = remainingMm / scale
-    let targetEnd = Math.min(canvas.height, srcY + maxSlicePx)
-
-    if (targetEnd < canvas.height - 0.5) {
-      const snapped = nearestBreakAtOrBefore(breakPx, targetEnd)
-      if (snapped > srcY + 8) targetEnd = snapped
-    }
-
-    let sliceH = targetEnd - srcY
-    if (sliceH <= 0.5) {
-      targetEnd = Math.min(canvas.height, srcY + maxSlicePx)
-      sliceH = targetEnd - srcY
-    }
+    let sliceH = Math.min(canvas.height - srcY, maxSlicePx)
     if (sliceH <= 0.5) {
       newPage(layout)
       continue
@@ -334,8 +277,45 @@ function appendCanvas(
       newPage(layout)
     }
   }
+}
 
-  layout.y += gapMm
+/** Un árbol por página: elige A3/A4 y escala para caber sin cortar. */
+function addTreeFitPage(
+  pdf: jsPDF,
+  canvas: HTMLCanvasElement,
+  format: PageFormat,
+  orientation: PageOrientation,
+  header?: string,
+): void {
+  const [pageW, pageH] = PAGE_MM[format][orientation]
+  let top = MARGIN_MM
+
+  if (header?.trim()) {
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(11)
+    pdf.setTextColor(13, 71, 161)
+    pdf.text(header.trim(), MARGIN_MM, top + 4, {
+      maxWidth: pageW - MARGIN_MM * 2,
+    })
+    top += 10
+  }
+
+  const maxW = pageW - MARGIN_MM * 2
+  const maxH = pageH - top - MARGIN_MM
+  const scale = Math.min(maxW / canvas.width, maxH / canvas.height)
+  const drawW = canvas.width * scale
+  const drawH = canvas.height * scale
+  const x = MARGIN_MM + (maxW - drawW) / 2
+  const y = top + (maxH - drawH) / 2
+
+  pdf.addImage(
+    canvas.toDataURL('image/jpeg', 0.92),
+    'JPEG',
+    x,
+    y,
+    drawW,
+    drawH,
+  )
 }
 
 function downloadPdf(pdf: jsPDF, filename: string): void {
@@ -352,7 +332,7 @@ function downloadPdf(pdf: jsPDF, filename: string): void {
 }
 
 /**
- * PDF del informe: árboles en A3 apaisado (fondo blanco) +
+ * PDF del informe: un árbol (origen) por página, escalado para caber entero +
  * tabla resumen en A4 apaisado.
  */
 export async function exportStartupPdf(
@@ -360,36 +340,47 @@ export async function exportStartupPdf(
   treeEl: HTMLElement,
   tableEl: HTMLElement,
 ): Promise<void> {
+  const groups = [
+    ...treeEl.querySelectorAll<HTMLElement>('.startup-trees__group'),
+  ]
+  if (!groups.length) {
+    throw new Error('No hay árboles de alimentaciones para exportar.')
+  }
+
   treeEl.classList.add(TREE_EXPORT_CLASS)
-  let treeCanvas: HTMLCanvasElement
-  let treeBreaks: number[]
+  let pdf: jsPDF | null = null
   try {
-    const domBreaks = measureDomBreakPoints(treeEl)
-    const domH = treeEl.scrollHeight
-    treeCanvas = await capture(treeEl, { background: '#ffffff' })
-    treeBreaks = scaleBreaksToCanvas(domBreaks, domH, treeCanvas.height)
+    for (let i = 0; i < groups.length; i++) {
+      const group = groups[i]!
+      const canvas = await capture(group, { background: '#ffffff' })
+      const { format, orientation } = chooseBestPage(
+        canvas.width,
+        canvas.height,
+      )
+      const header =
+        i === 0
+          ? report.title
+          : `${report.title} · ${i + 1}/${groups.length}`
+
+      if (!pdf) {
+        pdf = new jsPDF({ orientation, unit: 'mm', format })
+      } else {
+        pdf.addPage(format, orientation)
+      }
+      addTreeFitPage(pdf, canvas, format, orientation, header)
+    }
   } finally {
     treeEl.classList.remove(TREE_EXPORT_CLASS)
   }
 
-  const pdf = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm',
-    format: 'a3',
-  })
-
-  const treeLayout = createLayout(pdf, 'a3', 'landscape', 8)
-  appendCanvas(treeLayout, treeCanvas, treeBreaks, 0)
+  if (!pdf) {
+    throw new Error('No se pudo generar el PDF de árboles.')
+  }
 
   const tableCanvas = await capture(tableEl, { background: '#ffffff' })
-  const tableLayout = createLayout(pdf, 'a4', 'landscape', 8)
+  const tableLayout = createLayout(pdf, 'a4', 'landscape', MARGIN_MM)
   newPage(tableLayout)
-  appendCanvas(
-    tableLayout,
-    tableCanvas,
-    [0, tableCanvas.height],
-    0,
-  )
+  appendTableCanvas(tableLayout, tableCanvas)
 
   downloadPdf(pdf, `informe-puesta-en-marcha-${slug(report.title)}.pdf`)
 }

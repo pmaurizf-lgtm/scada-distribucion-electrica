@@ -38,6 +38,7 @@ import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
 import { Aux24Incoming } from './Aux24Incoming'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBalloon } from './EquipmentBalloon'
+import { useEquipInfoBalloon } from '../hooks/useEquipInfoBalloon'
 import { EquipmentBusDrop, equipFamOf, symbolFor } from './EquipmentBusDrop'
 import { SsbBoardView } from './SsbBoardView'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
@@ -393,6 +394,23 @@ function LcsOutletDrop({
   const isAltLocal = circuit.lineType === 'alternativa'
   const equipFam = equipFamOf(equipment)
   const located = locateEquipmentId === equipment.id
+  const eqBalloon = useEquipInfoBalloon()
+  const eqWrapRef = useRef<HTMLDivElement>(null)
+  const feedSummaries = useMemo(() => {
+    const list = powerFeeds.map((f) => ({
+      name: f.protectionName,
+      lineType: f.lineType,
+      originId: f.originId,
+    }))
+    for (const aux of aux24Feeds) {
+      list.push({
+        name: `${aux.protectionName} (AUX 24 V)`,
+        lineType: aux.lineType,
+        originId: aux.originId,
+      })
+    }
+    return list
+  }, [powerFeeds, aux24Feeds])
   const nextAncestors = useMemo(() => {
     const s = new Set(ancestorIds ?? [])
     s.add(equipment.id)
@@ -401,6 +419,11 @@ function LcsOutletDrop({
 
   if (ssbOpen) {
     const linkOnly = isUnifilarLinkOnlyFeed(circuit)
+    const foldSsb = (e: ReactMouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      onToggleEquip(equipment.id, circuit.id)
+    }
 
     const renderIncomingLeg = (feed: Circuit, kind: 'local' | 'remote') => {
       const isAlt = feed.lineType === 'alternativa'
@@ -544,19 +567,37 @@ function LcsOutletDrop({
           <div
             className={`equip-chassis equip-chassis--ssb${eqEnergized ? ' equip-chassis--live' : ''}${localFlowing ? ' equip-chassis--feed-flow' : ''}${isAltLocal ? ' equip-chassis--feed-alt' : ''}${located ? ' equip-chassis--locate' : ''}`}
             {...dataFlowVoltageProps(equipment.id)}
-            onDoubleClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onToggleEquip(equipment.id, circuit.id)
-            }}
+            onDoubleClick={foldSsb}
+            aria-label={`${equipment.id} · doble clic para plegar`}
           >
             {is2209 && (
               <span className="ssb2209-chassis-alt-riser" aria-hidden />
             )}
-            <div className="equip-chassis__label">
+            <div
+              ref={eqWrapRef}
+              className="equip-chassis__label"
+              onMouseEnter={eqBalloon.onMouseEnter}
+              onMouseLeave={eqBalloon.onMouseLeave}
+              onClick={eqBalloon.onClick}
+            >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>
               <span className="equip-chassis__hint">doble clic · plegar</span>
+              <button
+                type="button"
+                className="equip-chassis__fold-btn"
+                onClick={foldSsb}
+              >
+                Plegar
+              </button>
+              {eqBalloon.show && (
+                <EquipmentBalloon
+                  equipment={equipment}
+                  feeds={feedSummaries}
+                  circuits={powerFeeds}
+                  anchorRef={eqWrapRef}
+                />
+              )}
             </div>
             <div className="equip-chassis__body">
               <SsbBoardView

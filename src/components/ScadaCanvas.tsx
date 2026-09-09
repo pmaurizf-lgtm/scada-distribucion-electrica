@@ -28,7 +28,16 @@ import {
   resolveLockEntries,
   type CircuitLockInfo,
 } from '../utils/parseLocksExcel'
-import lockListSeed from '../data/lockList.json'
+import {
+  defaultLocksForVessel,
+  loadVesselLocks,
+  saveVesselLocks,
+} from '../utils/vesselLocksPersistence'
+import {
+  VESSELS,
+  vesselById,
+  type VesselId,
+} from '../vessels/vesselCatalog'
 import { LockInfoProvider } from '../locks/LockInfoContext'
 import { LockBalloon, placeLockBalloon } from './LockBalloon'
 import { useIsMobileUi } from '../hooks/useIsMobileUi'
@@ -59,15 +68,21 @@ const searchableEquipment = system690.equipment.filter(
 
 const REST_STATUS_SOURCE = 'reposo · todos abiertos · gens parados'
 
-const SEED_LOCKS: Record<string, CircuitLockInfo> = (
-  lockListSeed as { locks?: Record<string, CircuitLockInfo> }
-).locks ?? {}
-
-function withSeedLocksOpen(
+function withLocksOpen(
   base: ProtectionStatusMap,
-  locks: Record<string, CircuitLockInfo>,
+  lockedIds: Iterable<string>,
 ): ProtectionStatusMap {
-  return applyLocksToProtectionStatus(base, Object.keys(locks))
+  return applyLocksToProtectionStatus(base, [...lockedIds])
+}
+
+function locksStatusLine(
+  vesselId: VesselId,
+  lockCount: number,
+): string {
+  const name = vesselById(vesselId).label
+  return lockCount
+    ? `${name} · reposo · ${lockCount} candados LOTO · gens parados`
+    : `${name} · ${REST_STATUS_SOURCE}`
 }
 
 type BeforeInstallPromptEvent = Event & {
@@ -75,25 +90,33 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-export function ScadaCanvas() {
+type ScadaCanvasProps = {
+  vesselId: VesselId
+  onVesselChange: (id: VesselId) => void
+}
+
+export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const candadosDetailsRef = useRef<HTMLDetailsElement>(null)
   const cascadeRef = useRef<CascadeViewHandle>(null)
   const isMobile = useIsMobileUi()
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatusMap>(
-    () =>
-      withSeedLocksOpen(
+    () => {
+      const locks = loadVesselLocks(vesselId)
+      return withLocksOpen(
         toProtectionStatusMap(sampleProtectionStatus),
-        SEED_LOCKS,
-      ),
+        locks.lockedCircuits,
+      )
+    },
   )
-  const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(
-    () => new Set(Object.keys(SEED_LOCKS)),
-  )
+  const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(() => {
+    const locks = loadVesselLocks(vesselId)
+    return new Set(locks.lockedCircuits)
+  })
   const [lockInfoByCircuit, setLockInfoByCircuit] = useState<
     Record<string, CircuitLockInfo>
-  >(() => ({ ...SEED_LOCKS }))
+  >(() => ({ ...loadVesselLocks(vesselId).lockInfoByCircuit }))
   const [lockBalloon, setLockBalloon] = useState<{
     info: CircuitLockInfo
     protectionName?: string
@@ -105,11 +128,10 @@ export function ScadaCanvas() {
   )
   const [lockTool, setLockTool] = useState<LockTool>('none')
   const [zoom, setZoom] = useState(1)
-  const [statusSource, setStatusSource] = useState(
-    Object.keys(SEED_LOCKS).length
-      ? `reposo · ${Object.keys(SEED_LOCKS).length} candados LOTO · gens parados`
-      : REST_STATUS_SOURCE,
-  )
+  const [statusSource, setStatusSource] = useState(() => {
+    const n = loadVesselLocks(vesselId).lockedCircuits.length
+    return locksStatusLine(vesselId, n)
+  })
   const [locateQuery, setLocateQuery] = useState('')
   const [feedsQuery, setFeedsQuery] = useState('')
   const [searchHint, setSearchHint] = useState<string | null>(null)
@@ -160,6 +182,30 @@ export function ScadaCanvas() {
     })
   }, [protectionStatus, lockedCircuits, runningGenerators])
 
+  useEffect(() => {
+    saveVesselLocks(vesselId, { lockedCircuits, lockInfoByCircuit })
+  }, [vesselId, lockedCircuits, lockInfoByCircuit])
+
+  const switchVessel = useCallback(
+    (next: VesselId) => {
+      if (next === vesselId) return
+      saveVesselLocks(vesselId, { lockedCircuits, lockInfoByCircuit })
+      const loaded = loadVesselLocks(next)
+      saveVesselLocks(next, loaded)
+      setLockedCircuits(new Set(loaded.lockedCircuits))
+      setLockInfoByCircuit({ ...loaded.lockInfoByCircuit })
+      setProtectionStatus((prev) =>
+        withLocksOpen(prev, loaded.lockedCircuits),
+      )
+      setLockBalloon(null)
+      setStatusSource(
+        `${vesselById(next).label} · ${loaded.lockedCircuits.length} candados LOTO`,
+      )
+      onVesselChange(next)
+    },
+    [vesselId, lockedCircuits, lockInfoByCircuit, onVesselChange],
+  )
+
   const { energizedCircuitIds, energizedEquipmentIds, energizedBusHalves } =
     useMemo(
       () =>
@@ -204,24 +250,22 @@ export function ScadaCanvas() {
   )
 
   const resetToRestState = useCallback(() => {
+    const defaults = defaultLocksForVessel(vesselId)
     setProtectionStatus(
-      withSeedLocksOpen(
+      withLocksOpen(
         toProtectionStatusMap(sampleProtectionStatus),
-        SEED_LOCKS,
+        defaults.lockedCircuits,
       ),
     )
     setRunningGenerators(new Set())
-    setLockedCircuits(new Set(Object.keys(SEED_LOCKS)))
-    setLockInfoByCircuit({ ...SEED_LOCKS })
+    setLockedCircuits(new Set(defaults.lockedCircuits))
+    setLockInfoByCircuit({ ...defaults.lockInfoByCircuit })
     setLockBalloon(null)
     setLockTool('none')
-    setStatusSource(
-      Object.keys(SEED_LOCKS).length
-        ? `reposo · ${Object.keys(SEED_LOCKS).length} candados LOTO · gens parados`
-        : REST_STATUS_SOURCE,
-    )
+    setStatusSource(locksStatusLine(vesselId, defaults.lockedCircuits.length))
+    saveVesselLocks(vesselId, defaults)
     clearPersistedSim()
-  }, [])
+  }, [vesselId])
 
   const handleSimulateToggle = useCallback(() => {
     setSimulationActive((active) => {
@@ -529,13 +573,30 @@ export function ScadaCanvas() {
             <NavantiaLogo />
             <div className="topbar__brand-meta">
               <p className="topbar__brand-title">
-                F110 - Distribution Power System
+                {vesselById(vesselId).label}
               </p>
               <p>
                 {system690.sourceFile
                   ? displaySourceFileName(system690.sourceFile)
                   : system690.vessel}
               </p>
+              <label className="topbar__vessel">
+                <span className="topbar__vessel-label">Buque</span>
+                <select
+                  className="topbar__vessel-select"
+                  value={vesselId}
+                  aria-label="Cambiar buque"
+                  onChange={(e) =>
+                    switchVessel(e.target.value as VesselId)
+                  }
+                >
+                  {VESSELS.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 

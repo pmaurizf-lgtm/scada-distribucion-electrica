@@ -111,12 +111,12 @@ export function StartupFeedsPanel({
     }
     const payload = { ...report, title }
     setBusy(true)
-    setHint('Generando PDF (A3 árbol + A4 tabla) y Excel de la tabla…')
+    setHint('Generando PDF (un árbol por página + tabla) y Excel…')
     try {
       await exportStartupPdf(payload, trees, table)
-      exportStartupTableExcel(payload)
+      await exportStartupTableExcel(payload)
       setHint(
-        `Informe generado · ${title} (PDF: árbol + tabla · Excel: tabla resumen)`,
+        `Informe generado · ${title} (PDF: un árbol/página + tabla · Excel)`,
       )
     } catch (err) {
       console.error(err)
@@ -133,9 +133,10 @@ export function StartupFeedsPanel({
         <div>
           <h1 className="startup-panel__h1">Puesta en marcha · alimentaciones</h1>
           <p className="startup-panel__sub">
-            Carga solo los equipos a alimentar; el SCADA calcula aguas arriba y
-            agrupa por origen común. El árbol usa el mismo aspecto que la
-            búsqueda de alimentaciones.
+            Carga solo los equipos a alimentar; el SCADA calcula la cadena
+            completa aguas arriba (Normal y Alternativa). La tabla lista cada
+            escalón hasta el destino; el Excel marca bloques y colores por
+            alimentación.
           </p>
         </div>
         <button type="button" className="btn" onClick={onClose}>
@@ -180,7 +181,7 @@ export function StartupFeedsPanel({
             className="btn btn--primary"
             disabled={!report || busy}
             onClick={() => void handleExport()}
-            title="PDF (árbol A3 + tabla A4) y Excel de la tabla resumen"
+            title="PDF (un árbol por página + tabla) y Excel de la tabla resumen"
           >
             {busy ? 'Generando…' : 'Exportar informe (PDF + Excel)'}
           </button>
@@ -225,46 +226,88 @@ export function StartupFeedsPanel({
               <table className="startup-table">
                 <thead>
                   <tr>
-                    <th colSpan={3}>Alimentación normal</th>
-                    <th colSpan={3}>Alimentación alternativa</th>
-                    <th colSpan={2}>Origen</th>
-                    <th colSpan={2}>Destino</th>
-                  </tr>
-                  <tr>
-                    <th>Equipo</th>
-                    <th>Local</th>
-                    <th>Protección</th>
-                    <th>Equipo</th>
-                    <th>Local</th>
-                    <th>Protección</th>
-                    <th>Equipo</th>
-                    <th>Local</th>
                     <th>Destino</th>
-                    <th>Protección</th>
+                    <th>Local</th>
+                    <th>Línea</th>
+                    <th>Paso</th>
+                    <th>Equipo (cadena)</th>
+                    <th>Local</th>
+                    <th>Protección entrada</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tableRows.map((r, i) => (
                     <tr
                       key={i}
-                      className={
-                        r.isGroupStart ? 'startup-table__row--group' : undefined
-                      }
+                      className={[
+                        r.isDestStart ? 'startup-table__row--dest' : '',
+                        r.isLineStart && !r.isDestStart
+                          ? 'startup-table__row--line'
+                          : '',
+                        r.lineKind === 'alternativa'
+                          ? 'startup-table__row--alt'
+                          : 'startup-table__row--norm',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                     >
-                      <td>{r.normEquip}</td>
-                      <td>{r.normLocal}</td>
-                      <td>{r.normProt}</td>
-                      <td>{r.altEquip}</td>
-                      <td>{r.altLocal}</td>
-                      <td>{r.altProt}</td>
-                      <td>{r.originEquip}</td>
-                      <td>{r.originLocal}</td>
-                      <td>{r.destEquip}</td>
-                      <td>{r.destProt}</td>
+                      <td className="startup-table__dest">
+                        {r.isDestStart || r.isLineStart ? r.destEquip : ''}
+                      </td>
+                      <td>{r.isDestStart || r.isLineStart ? r.destLocal : ''}</td>
+                      <td>
+                        {r.isLineStart ? (
+                          <span
+                            className={
+                              r.lineKind === 'alternativa'
+                                ? 'startup-table__pill startup-table__pill--alt'
+                                : 'startup-table__pill startup-table__pill--norm'
+                            }
+                          >
+                            {r.lineLabel}
+                          </span>
+                        ) : (
+                          ''
+                        )}
+                      </td>
+                      <td className="startup-table__step">{r.step}</td>
+                      <td>
+                        <strong>{r.hopEquip}</strong>
+                        {r.hopName && r.hopName !== r.hopEquip ? (
+                          <span className="startup-table__name">
+                            {' '}
+                            {r.hopName}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>{r.hopLocal}</td>
+                      <td>{r.hopProt}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {tableRows.some((r) => r.chainSummary) ? (
+                <ul className="startup-table__summaries" aria-label="Cadenas">
+                  {[
+                    ...new Map(
+                      tableRows
+                        .filter((r) => r.chainSummary)
+                        .map((r) => [r.destEquip, r] as const),
+                    ).values(),
+                  ].map((r) => (
+                    <li key={r.destEquip}>
+                      <strong>{r.destEquip}</strong>
+                      {r.destLocal !== '—' ? (
+                        <span className="startup-table__sum-local">
+                          {' '}
+                          (Loc. {r.destLocal})
+                        </span>
+                      ) : null}
+                      : {r.chainSummary}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </section>
         </div>

@@ -21,6 +21,7 @@ import {
 } from '../utils/cascadeModel'
 import { isSpareEquipment } from '../utils/spareCircuits'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
+import { useEquipInfoBalloon } from '../hooks/useEquipInfoBalloon'
 import {
   dataFlowVoltageForBoardFeed,
   dataFlowVoltageForConversionLink,
@@ -293,18 +294,8 @@ export function EquipmentBusDrop({
     Boolean(children) &&
     Boolean(rootClassName?.includes('hbus-drop--ssb-open'))
   const is2209 = isSsb2Pws2209(equipment.id)
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
+  const eqBalloon = useEquipInfoBalloon()
   const eqWrapRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
 
   const displayFeeds = useMemo(
     () =>
@@ -523,13 +514,21 @@ export function EquipmentBusDrop({
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              onMouseEnter={eqBalloon.onMouseEnter}
+              onMouseLeave={eqBalloon.onMouseLeave}
+              onClick={eqBalloon.onClick}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>
               <span className="equip-chassis__hint">doble clic · plegar</span>
-              {showEqBalloon && (
+              <button
+                type="button"
+                className="equip-chassis__fold-btn"
+                onClick={toggleExpand}
+              >
+                Plegar
+              </button>
+              {eqBalloon.show && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}
@@ -547,8 +546,9 @@ export function EquipmentBusDrop({
             <div
               ref={eqWrapRef}
               className="hbus-drop__eq-wrap"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              onMouseEnter={eqBalloon.onMouseEnter}
+              onMouseLeave={eqBalloon.onMouseLeave}
+              onClick={eqBalloon.onClick}
             >
               <button
                 type="button"
@@ -561,7 +561,10 @@ export function EquipmentBusDrop({
                       ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
                       : undefined
                 }
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  eqBalloon.onClick(e)
+                }}
                 onDoubleClick={toggleExpand}
                 disabled={!canExpand}
               >
@@ -638,7 +641,7 @@ export function EquipmentBusDrop({
                   </span>
                 )}
               </button>
-              {showEqBalloon && (
+              {eqBalloon.show && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}

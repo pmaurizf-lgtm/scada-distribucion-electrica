@@ -46,6 +46,17 @@
   max-width: 11rem;
 }
 
+.app-shell--mobile .topbar__vessel {
+  margin-top: 0.15rem;
+  max-width: 100%;
+}
+
+.app-shell--mobile .topbar__vessel-select {
+  max-width: 100%;
+  min-height: 2rem;
+  font-size: 0.72rem;
+}
+
 .app-shell--mobile .topbar__chrome-toggle {
   flex: 0 0 auto;
   min-height: var(--touch-min);
@@ -270,5 +281,9 @@
 
 .app-shell--mobile .startup-table {
   font-size: 0.68rem;
+}
+
+.vessel-gate__btn {
+  min-height: 3rem;
 }
 

@@ -48,6 +48,7 @@ import {
 } from '../abtDownstream/ssbBoard'
 import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
 import { Aux24Incoming } from './Aux24Incoming'
+import { useEquipInfoBalloon } from '../hooks/useEquipInfoBalloon'
 import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
 import { BreakerChip } from './BreakerChip'
@@ -429,18 +430,8 @@ function BusDrop({
   const localFlowing = energizedCircuitIds.has(localFeed.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = localFeed.lineType === 'alternativa'
-  const [eqHover, setEqHover] = useState(false)
-  const [showEqBalloon, setShowEqBalloon] = useState(false)
+  const eqBalloon = useEquipInfoBalloon()
   const eqWrapRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!eqHover) {
-      setShowEqBalloon(false)
-      return
-    }
-    const t = window.setTimeout(() => setShowEqBalloon(true), 1800)
-    return () => window.clearTimeout(t)
-  }, [eqHover])
 
   const childItems = useMemo(() => {
     const all = children.map(({ circuit: c, equipment: eq }) => ({
@@ -544,12 +535,20 @@ function BusDrop({
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              onMouseEnter={eqBalloon.onMouseEnter}
+              onMouseLeave={eqBalloon.onMouseLeave}
+              onClick={eqBalloon.onClick}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__hint">doble clic · plegar</span>
-              {showEqBalloon && (
+              <button
+                type="button"
+                className="equip-chassis__fold-btn"
+                onClick={toggleExpand}
+              >
+                Plegar
+              </button>
+              {eqBalloon.show && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}
@@ -663,12 +662,20 @@ function BusDrop({
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              onMouseEnter={eqBalloon.onMouseEnter}
+              onMouseLeave={eqBalloon.onMouseLeave}
+              onClick={eqBalloon.onClick}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__hint">doble clic · plegar</span>
-              {showEqBalloon && (
+              <button
+                type="button"
+                className="equip-chassis__fold-btn"
+                onClick={toggleExpand}
+              >
+                Plegar
+              </button>
+              {eqBalloon.show && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}
@@ -807,13 +814,21 @@ function BusDrop({
             <div
               ref={eqWrapRef}
               className="equip-chassis__label"
-              onMouseEnter={() => setEqHover(true)}
-              onMouseLeave={() => setEqHover(false)}
+              onMouseEnter={eqBalloon.onMouseEnter}
+              onMouseLeave={eqBalloon.onMouseLeave}
+              onClick={eqBalloon.onClick}
             >
               <span className="equip-chassis__id">{equipment.id}</span>
               <span className="equip-chassis__name">{equipment.name}</span>
               <span className="equip-chassis__hint">doble clic · plegar</span>
-              {showEqBalloon && (
+              <button
+                type="button"
+                className="equip-chassis__fold-btn"
+                onClick={toggleExpand}
+              >
+                Plegar
+              </button>
+              {eqBalloon.show && (
                 <EquipmentBalloon
                   equipment={equipment}
                   feeds={feedSummaries}
@@ -2315,7 +2330,9 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
   const toggleEquip = (id: string, circuitId?: string) => {
     if (performance.now() < suppressExpandUntilRef.current) return
     const opening = !expandedEquipRef.current.has(id)
-    if (!opening && locateRef.current) {
+    // Localizar: no plegar ancestros de la ruta (ocultaría el equipo).
+    // Sí permitir plegar el propio equipo buscado (p. ej. SSB abierto).
+    if (!opening && locateRef.current && id !== locateRef.current) {
       const path = getPlantRevealPath(locateRef.current, system690)
       if (path.expandEquipIds.includes(id)) return
     }

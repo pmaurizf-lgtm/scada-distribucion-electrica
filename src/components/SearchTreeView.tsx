@@ -34,7 +34,6 @@ import {
   type FlowVoltage,
 } from '../utils/flowVoltage'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
-import { symbolFor } from './EquipmentBusDrop'
 import {
   LockBadge,
   ManualBreakerSymbol,
@@ -452,7 +451,6 @@ function EquipCard({
         onToggleCapExpand()
       }}
     >
-      <span className="stree-eq__sym">{symbolFor(equipment.kind, equipment)}</span>
       <strong className="stree-eq__id">{equipment.id}</strong>
       {(() => {
         const secondary = labelSecondaryDenom(equipment)
@@ -463,6 +461,11 @@ function EquipCard({
         ) : null
       })()}
       {!compact && <span className="stree-eq__name">{equipment.name}</span>}
+      {equipment.local?.trim() ? (
+        <span className="stree-eq__local" title="Local">
+          Loc. {equipment.local.trim()}
+        </span>
+      ) : null}
       {capExpandable && (
         <span className="stree-eq__cap-hint" aria-hidden>
           {capExpanded ? '▴' : '▾'}
@@ -1514,6 +1517,11 @@ function TreeNode({
     return (
       <div className="stree-eq stree-eq--ref" title="Ya representado aguas arriba">
         <span className="stree-eq__id">{equipmentId}</span>
+        {equipment.local?.trim() ? (
+          <span className="stree-eq__local" title="Local">
+            Loc. {equipment.local.trim()}
+          </span>
+        ) : null}
       </div>
     )
   }
