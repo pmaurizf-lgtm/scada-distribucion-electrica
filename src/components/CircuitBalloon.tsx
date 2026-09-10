@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -83,6 +84,26 @@ export function CircuitBalloon({
   useLayoutEffect(() => {
     setPos({ x, y })
   }, [x, y, circuit.id])
+
+  useEffect(() => {
+    if (!fixed) return
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target
+      if (!(t instanceof Element)) return
+      if (ref.current?.contains(t)) return
+      if (t.closest('.notes-modal-backdrop') || t.closest('.notes-modal')) return
+      onClose()
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [fixed, onClose, circuit.id])
 
   useLayoutEffect(() => {
     if (!fixed) return

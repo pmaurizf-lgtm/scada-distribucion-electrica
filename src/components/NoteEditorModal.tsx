@@ -41,6 +41,8 @@ export function NoteEditorModal() {
     updateNote,
     setLineResolved,
     deleteNote,
+    canDeleteNote,
+    canEditNote,
     labelFor,
     kindLabelFor,
     openEditor,
@@ -99,6 +101,8 @@ export function NoteEditorModal() {
 
   const title = labelFor(editor.target)
   const kind = kindLabelFor(editor.target)
+  const ownsActive = activeNote ? canEditNote(activeNote) : true
+  const canRemoveActive = activeNote ? canDeleteNote(activeNote) : false
 
   const setLineText = (lineId: string, text: string) => {
     setDraftLines((prev) =>
@@ -136,6 +140,7 @@ export function NoteEditorModal() {
 
   const save = () => {
     if (!ensureProfile()) return
+    if (activeNote && !draftMode && !ownsActive) return
     const cleaned = draftLines
       .map((l) => ({
         ...l,
@@ -291,6 +296,9 @@ export function NoteEditorModal() {
                 {noteHasOpenLines(activeNote)
                   ? ` · ${openLineCount(activeNote)} abierta(s)`
                   : ' · todas resueltas'}
+                {!ownsActive
+                  ? ' · Solo el autor puede editar o borrar; tú puedes marcar viñetas.'
+                  : ''}
               </p>
             )}
           </div>
@@ -326,9 +334,11 @@ export function NoteEditorModal() {
                   enterKeyHint="next"
                   autoComplete="off"
                   autoCorrect="on"
+                  readOnly={Boolean(activeNote && !draftMode && !ownsActive)}
                   onChange={(e) => setLineText(line.id, e.target.value)}
                   onKeyDown={(e) => onLineKeyDown(e, line.id, index)}
                 />
+                {(!activeNote || draftMode || ownsActive) && (
                 <button
                   type="button"
                   className="note-editor__line-remove"
@@ -338,13 +348,16 @@ export function NoteEditorModal() {
                 >
                   ×
                 </button>
+                )}
               </li>
             ))}
           </ul>
           <div className="note-editor__add-row">
-            <button type="button" className="btn" onClick={addLine}>
-              + Viñeta
-            </button>
+            {(!activeNote || draftMode || ownsActive) && (
+              <button type="button" className="btn" onClick={addLine}>
+                + Viñeta
+              </button>
+            )}
             {isMobile && targetNotes.length === 0 && (
               <button type="button" className="btn" onClick={startNew}>
                 + Nueva nota
@@ -354,17 +367,17 @@ export function NoteEditorModal() {
         </div>
 
         <div className="notes-modal__actions notes-modal__actions--sticky">
-          {activeNote && !draftMode && (
+          {activeNote && !draftMode && canRemoveActive && (
             <button
               type="button"
               className="btn btn--danger"
               onClick={() => {
                 if (
                   window.confirm(
-                    '¿Eliminar esta nota de revisión? Esta acción no se puede deshacer.',
+                    '¿Eliminar esta nota de revisión? Desaparecerá en todos los móviles al sincronizar.',
                   )
                 ) {
-                  deleteNote(activeNote.id)
+                  if (!deleteNote(activeNote.id)) return
                   if (targetNotes.length <= 1) closeEditor()
                   else openEditor({ target: editor.target, createNew: true })
                 }
@@ -377,9 +390,11 @@ export function NoteEditorModal() {
             <button type="button" className="btn" onClick={closeEditor}>
               Cerrar
             </button>
-            <button type="button" className="btn btn--active" onClick={save}>
-              Guardar
-            </button>
+            {(draftMode || !activeNote || ownsActive) && (
+              <button type="button" className="btn btn--active" onClick={save}>
+                Guardar
+              </button>
+            )}
           </div>
         </div>
       </div>

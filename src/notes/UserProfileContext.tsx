@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import {
+  getInstallUserId,
   loadUserProfile,
   saveUserProfile,
   type UserProfile,
@@ -26,9 +27,10 @@ type UserProfileContextValue = {
 const UserProfileContext = createContext<UserProfileContextValue | null>(null)
 
 export function UserProfileProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<UserProfile | null>(() =>
-    loadUserProfile(),
-  )
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    getInstallUserId()
+    return loadUserProfile()
+  })
   const [profilePromptOpen, setProfilePromptOpen] = useState(false)
   const [profilePromptReason, setProfilePromptReason] = useState<string | null>(
     null,

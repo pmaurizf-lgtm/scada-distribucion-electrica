@@ -80,7 +80,7 @@ export function UserProfileModal({ required = false }: UserProfileModalProps) {
         )}
         <form className="notes-modal__form" onSubmit={onSubmit}>
           <label className="notes-modal__label" htmlFor="user-display-name">
-            Tu nombre (se asignará a las notas)
+            Tu nombre en este móvil (firma las notas que crees)
           </label>
           <input
             id="user-display-name"

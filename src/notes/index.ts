@@ -13,6 +13,7 @@ export {
   openLineCount,
   isNoteFullyResolved,
   noteHasOpenLines,
+  isNoteDeleted,
 } from './types'
 export { NotesProvider, useNotes, useNotesOptional } from './NotesContext'
 export {

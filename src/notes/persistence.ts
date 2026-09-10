@@ -1,6 +1,7 @@
 import type { VesselId } from '../vessels/vesselCatalog'
 import {
   coerceNoteLines,
+  isNoteDeleted,
   noteHasOpenLines,
   openLineCount,
   sameNoteTarget,
@@ -9,6 +10,7 @@ import {
   type NoteTarget,
   type PersistedVesselNotes,
 } from './types'
+import { getInstallUserId, loadUserProfile } from './userProfile'
 
 function storageKey(vesselId: VesselId): string {
   return `scada-vessel-${vesselId}-notes-v1`
@@ -33,14 +35,22 @@ function migrateNote(raw: unknown, vesselId: VesselId): InspectionNote | null {
 
   const legacyResolved = n.resolved === true
   const lines = coerceNoteLines(n.lines, { noteResolved: legacyResolved })
+  const authorId =
+    typeof n.authorId === 'string' && n.authorId.trim()
+      ? n.authorId.trim()
+      : ''
+  const deletedAt =
+    typeof n.deletedAt === 'string' && n.deletedAt ? n.deletedAt : undefined
 
   return {
     id: n.id,
     vesselId,
     target,
     author: n.author,
+    authorId,
     createdAt: n.createdAt,
     updatedAt: n.updatedAt,
+    deletedAt,
     lines,
   }
 }
@@ -152,7 +162,7 @@ export function notesForTarget(
   target: NoteTarget,
 ): InspectionNote[] {
   return notes
-    .filter((n) => sameNoteTarget(n.target, target))
+    .filter((n) => !isNoteDeleted(n) && sameNoteTarget(n.target, target))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
@@ -162,10 +172,30 @@ export function countOpenNotesForTarget(
   target: NoteTarget,
 ): number {
   return notes
-    .filter((n) => sameNoteTarget(n.target, target))
+    .filter((n) => !isNoteDeleted(n) && sameNoteTarget(n.target, target))
     .reduce((sum, n) => sum + openLineCount(n), 0)
 }
 
 export function noteIsOpen(note: InspectionNote): boolean {
-  return noteHasOpenLines(note)
+  return !isNoteDeleted(note) && noteHasOpenLines(note)
+}
+
+export function visibleNotes(notes: InspectionNote[]): InspectionNote[] {
+  return notes.filter((n) => !isNoteDeleted(n))
+}
+
+export function isNoteAuthor(
+  note: InspectionNote,
+  userId: string,
+  displayName?: string,
+): boolean {
+  if (note.authorId) return note.authorId === userId
+  // Notas antiguas sin authorId: el nombre visible es el único rastro.
+  return Boolean(displayName) && note.author === displayName
+}
+
+export function currentAuthor(): { author: string; authorId: string } | null {
+  const profile = loadUserProfile()
+  if (!profile) return null
+  return { author: profile.displayName, authorId: getInstallUserId() }
 }

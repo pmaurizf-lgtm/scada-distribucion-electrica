@@ -31,6 +31,26 @@ function formatDate(iso: string): string {
   }
 }
 
+function syncHint(sync: {
+  enabled: boolean
+  state: string
+  lastError: string | null
+}): string {
+  if (!sync.enabled) {
+    return 'Este móvil guarda en local. Configura Firebase para compartir entre teléfonos.'
+  }
+  if (sync.state === 'offline') {
+    return 'Sin red: las notas se enviarán al reconectar.'
+  }
+  if (sync.state === 'syncing') return 'Sincronizando con el resto de móviles…'
+  if (sync.state === 'error') {
+    return sync.lastError
+      ? `No se pudo sincronizar: ${sync.lastError}`
+      : 'No se pudo sincronizar.'
+  }
+  return 'Sincronizado. Las notas de este buque se ven en todos los móviles.'
+}
+
 type Group = {
   key: string
   target: NoteTarget
@@ -49,6 +69,7 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
     importNotesJson,
     labelFor,
     kindLabelFor,
+    sync,
   } = useNotes()
   const { ensureProfile, openProfilePrompt, displayName } = useUserProfile()
   const isMobile = useIsMobileUi()
@@ -146,6 +167,21 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
               {openBullets === 1 ? '' : 's'} · {notes.length} nota
               {notes.length === 1 ? '' : 's'}
               {displayName ? ` · Usuario: ${displayName}` : ''}
+            </p>
+            <p className="notes-modal__hint notes-panel__sync-hint">
+              {syncHint(sync)}
+              {sync.enabled ? (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    className="notes-panel__sync-now"
+                    onClick={() => sync.syncNow()}
+                  >
+                    Actualizar
+                  </button>
+                </>
+              ) : null}
             </p>
           </div>
           <button
@@ -311,7 +347,12 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                                     : 'Marcar viñeta como resuelta'
                                 }
                               />
-                              <span>{line.text}</span>
+                              <span>
+                                {line.text}
+                                {line.resolved && line.resolvedBy
+                                  ? ` · ${line.resolvedBy}`
+                                  : ''}
+                              </span>
                             </label>
                           </li>
                         ))}

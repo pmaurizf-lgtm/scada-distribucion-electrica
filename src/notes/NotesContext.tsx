@@ -14,10 +14,13 @@ import {
   buildNotesExport,
   countOpenNotesForTarget,
   createNoteId,
+  currentAuthor,
+  isNoteAuthor,
   loadVesselNotes,
   mergeImportedNotes,
   notesForTarget,
   saveVesselNotes,
+  visibleNotes,
 } from './persistence'
 import {
   coerceNoteLines,
@@ -27,7 +30,10 @@ import {
   type NoteLine,
   type NoteTarget,
 } from './types'
-import { loadUserProfile } from './userProfile'
+import {
+  useNotesCloudSync,
+  type NotesSyncInfo,
+} from './useNotesCloudSync'
 
 export type NotesEditorSession = {
   target: NoteTarget
@@ -56,7 +62,9 @@ type NotesContextValue = {
     lineId: string,
     resolved: boolean,
   ) => void
-  deleteNote: (id: string) => void
+  deleteNote: (id: string) => boolean
+  canDeleteNote: (note: InspectionNote) => boolean
+  canEditNote: (note: InspectionNote) => boolean
   exportNotesJson: () => string
   importNotesJson: (raw: string) => {
     added: number
@@ -65,6 +73,7 @@ type NotesContextValue = {
   }
   labelFor: (target: NoteTarget) => string
   kindLabelFor: (target: NoteTarget) => string
+  sync: Omit<NotesSyncInfo, 'enqueuePush'>
 }
 
 const NotesContext = createContext<NotesContextValue | null>(null)
@@ -76,19 +85,28 @@ export function NotesProvider({
   vesselId: VesselId
   children: ReactNode
 }) {
-  const [notes, setNotes] = useState<InspectionNote[]>(() =>
+  const [allNotes, setAllNotes] = useState<InspectionNote[]>(() =>
     loadVesselNotes(vesselId),
   )
   const [editor, setEditor] = useState<NotesEditorSession | null>(null)
+  const notes = useMemo(() => visibleNotes(allNotes), [allNotes])
+  const {
+    enqueuePush,
+    enabled: syncEnabled,
+    state: syncState,
+    lastError: syncLastError,
+    lastOkAt: syncLastOkAt,
+    syncNow,
+  } = useNotesCloudSync(vesselId, allNotes, setAllNotes)
 
   useEffect(() => {
-    setNotes(loadVesselNotes(vesselId))
+    setAllNotes(loadVesselNotes(vesselId))
     setEditor(null)
   }, [vesselId])
 
   useEffect(() => {
-    saveVesselNotes(vesselId, notes)
-  }, [vesselId, notes])
+    saveVesselNotes(vesselId, allNotes)
+  }, [vesselId, allNotes])
 
   useEffect(() => {
     const onOpen = (e: Event) => {
@@ -116,19 +134,27 @@ export function NotesProvider({
   const closeEditor = useCallback(() => setEditor(null), [])
 
   const openCountFor = useCallback(
-    (target: NoteTarget) => countOpenNotesForTarget(notes, target),
-    [notes],
+    (target: NoteTarget) => countOpenNotesForTarget(allNotes, target),
+    [allNotes],
   )
 
   const notesFor = useCallback(
-    (target: NoteTarget) => notesForTarget(notes, target),
-    [notes],
+    (target: NoteTarget) => notesForTarget(allNotes, target),
+    [allNotes],
   )
+
+  const canEditNote = useCallback((note: InspectionNote) => {
+    const who = currentAuthor()
+    if (!who) return false
+    return isNoteAuthor(note, who.authorId, who.author)
+  }, [])
+
+  const canDeleteNote = canEditNote
 
   const createNote = useCallback(
     (target: NoteTarget, lines: string | NoteLine[]): InspectionNote | null => {
-      const profile = loadUserProfile()
-      if (!profile) return null
+      const who = currentAuthor()
+      if (!who) return null
       const now = new Date().toISOString()
       const parsed =
         typeof lines === 'string'
@@ -138,7 +164,8 @@ export function NotesProvider({
         id: createNoteId(),
         vesselId,
         target,
-        author: profile.displayName,
+        author: who.author,
+        authorId: who.authorId,
         createdAt: now,
         updatedAt: now,
         lines:
@@ -146,37 +173,58 @@ export function NotesProvider({
             ? parsed
             : [{ id: createLineId(), text: '', resolved: false }],
       }
-      // No guardar líneas vacías en create
-      note.lines = note.lines.filter((l) => l.text.trim().length > 0)
+      note.lines = note.lines
+        .filter((l) => l.text.trim().length > 0)
+        .map((l) => ({ ...l, textUpdatedAt: now }))
       if (note.lines.length === 0) {
-        note.lines = [{ id: createLineId(), text: '(sin texto)', resolved: false }]
+        note.lines = [
+          {
+            id: createLineId(),
+            text: '(sin texto)',
+            resolved: false,
+            textUpdatedAt: now,
+          },
+        ]
       }
-      setNotes((prev) => [note, ...prev])
+      setAllNotes((prev) => [note, ...prev])
+      enqueuePush(note.id, note)
       return note
     },
-    [vesselId],
+    [enqueuePush, vesselId],
   )
 
   const updateNote = useCallback(
     (id: string, patch: { lines: NoteLine[] }) => {
+      const who = currentAuthor()
       const now = new Date().toISOString()
-      setNotes((prev) =>
+      setAllNotes((prev) =>
         prev.map((n) => {
           if (n.id !== id) return n
-          const lines = coerceNoteLines(patch.lines).filter(
-            (l) => l.text.trim().length > 0,
-          )
+          if (who && !isNoteAuthor(n, who.authorId, who.author)) return n
+          const prevById = new Map(n.lines.map((l) => [l.id, l]))
+          const lines = coerceNoteLines(patch.lines)
+            .filter((l) => l.text.trim().length > 0)
+            .map((l) => {
+              const old = prevById.get(l.id)
+              const textChanged = !old || old.text !== l.text
+              return {
+                ...l,
+                textUpdatedAt: textChanged ? now : old?.textUpdatedAt,
+              }
+            })
           return { ...n, updatedAt: now, lines }
         }),
       )
+      enqueuePush(id)
     },
-    [],
+    [enqueuePush],
   )
 
   const setLineResolved = useCallback(
     (noteId: string, lineId: string, resolved: boolean) => {
+      const who = currentAuthor()
       const now = new Date().toISOString()
-      setNotes((prev) =>
+      setAllNotes((prev) =>
         prev.map((n) => {
           if (n.id !== noteId) return n
           return {
@@ -188,19 +236,41 @@ export function NotesProvider({
                     ...l,
                     resolved,
                     resolvedAt: resolved ? now : undefined,
+                    resolvedBy: who?.author,
+                    resolvedById: who?.authorId,
+                    resolvedUpdatedAt: now,
                   }
                 : l,
             ),
           }
         }),
       )
+      enqueuePush(noteId)
     },
-    [],
+    [enqueuePush],
   )
 
-  const deleteNote = useCallback((id: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== id))
-  }, [])
+  const deleteNote = useCallback(
+    (id: string) => {
+      const who = currentAuthor()
+      if (!who) return false
+      let allowed = false
+      const now = new Date().toISOString()
+      setAllNotes((prev) => {
+        const target = prev.find((n) => n.id === id)
+        if (!target || !isNoteAuthor(target, who.authorId, who.author)) {
+          return prev
+        }
+        allowed = true
+        return prev.map((n) =>
+          n.id === id ? { ...n, deletedAt: now, updatedAt: now } : n,
+        )
+      })
+      if (allowed) enqueuePush(id)
+      return allowed
+    },
+    [enqueuePush],
+  )
 
   const exportNotesJson = useCallback(() => {
     return JSON.stringify(buildNotesExport(vesselId, notes), null, 2)
@@ -209,15 +279,27 @@ export function NotesProvider({
   const importNotesJson = useCallback(
     (raw: string) => {
       const parsed: unknown = JSON.parse(raw)
-      const result = mergeImportedNotes(vesselId, notes, parsed)
-      setNotes(result.notes)
+      const result = mergeImportedNotes(vesselId, allNotes, parsed)
+      setAllNotes(result.notes)
+      for (const n of result.notes) enqueuePush(n.id)
       return {
         added: result.added,
         updated: result.updated,
         skipped: result.skipped,
       }
     },
-    [vesselId, notes],
+    [allNotes, enqueuePush, vesselId],
+  )
+
+  const sync = useMemo(
+    () => ({
+      enabled: syncEnabled,
+      state: syncState,
+      lastError: syncLastError,
+      lastOkAt: syncLastOkAt,
+      syncNow,
+    }),
+    [syncEnabled, syncState, syncLastError, syncLastOkAt, syncNow],
   )
 
   const value = useMemo<NotesContextValue>(
@@ -233,10 +315,13 @@ export function NotesProvider({
       updateNote,
       setLineResolved,
       deleteNote,
+      canDeleteNote,
+      canEditNote,
       exportNotesJson,
       importNotesJson,
       labelFor: labelForNoteTarget,
       kindLabelFor: kindLabelForNoteTarget,
+      sync,
     }),
     [
       vesselId,
@@ -250,8 +335,11 @@ export function NotesProvider({
       updateNote,
       setLineResolved,
       deleteNote,
+      canDeleteNote,
+      canEditNote,
       exportNotesJson,
       importNotesJson,
+      sync,
     ],
   )
 

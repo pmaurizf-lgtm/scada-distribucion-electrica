@@ -42,7 +42,10 @@ import {
 import { useCircuitLockInfo } from '../locks/LockInfoContext'
 import { CircuitBalloon, placeCircuitBalloon } from './CircuitBalloon'
 import { EquipmentBalloon } from './EquipmentBalloon'
-import { useEquipInfoBalloon } from '../hooks/useEquipInfoBalloon'
+import {
+  useEquipInfoBalloon,
+  yieldEquipBalloonToBreaker,
+} from '../hooks/useEquipInfoBalloon'
 
 interface SearchTreeViewProps {
   equipmentId: string
@@ -332,6 +335,7 @@ function BreakerMini({
       }
       onMouseEnter={(e) => {
         if (!onHoverInfo) return
+        yieldEquipBalloonToBreaker()
         clearHoverTimer()
         const el = e.currentTarget
         hoverTimer.current = window.setTimeout(() => {
@@ -340,7 +344,6 @@ function BreakerMini({
       }}
       onMouseLeave={() => {
         clearHoverTimer()
-        onHoverInfoEnd?.()
       }}
     >
       <span className="casc-brk__sym">

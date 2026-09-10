@@ -1458,6 +1458,7 @@ body {
 body:has(.circuit-balloon--fixed) .equip-balloon--portal {
   visibility: hidden;
   opacity: 0;
+  pointer-events: none;
 }
 
 /* Notas / perfil por encima de globos */
@@ -2939,9 +2940,9 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   font-size: 0.68rem;
   cursor: pointer;
   flex-shrink: 0;
-  /* Por encima del tramo --from-bus (margen negativo solapa el chip) */
+  /* Por encima del rótulo del chasis (z 5) y del tramo --from-bus */
   position: relative;
-  z-index: 4;
+  z-index: 6;
   isolation: isolate;
   transition:
     border-color 0.22s ease,
@@ -4948,7 +4949,8 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  z-index: 3;
+  /* Por encima del rótulo del chasis (z 5): si no, el INS no recibe hover */
+  z-index: 6;
 }
 
 .ssb-board__riser {
@@ -6092,6 +6094,9 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   width: max-content;
   max-width: none;
   overflow: visible;
+  /* Interruptores del interior por encima del rótulo (globo de protección). */
+  position: relative;
+  z-index: 6;
 }
 
 .hbus--direct .hbus__slot:has(.hbus-drop--lcs-open) {
@@ -6213,7 +6218,7 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
 
 .hbus--lcs-section .casc-brk {
   position: relative;
-  z-index: 3;
+  z-index: 6;
 }
 
 /*
@@ -10272,6 +10277,23 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   margin: 0.35rem 1rem 0;
   font-size: 0.8rem;
   color: var(--muted, #9aa7b5);
+}
+
+.notes-panel__sync-hint {
+  margin-top: 0.2rem;
+  margin-bottom: 0.15rem;
+}
+
+.notes-panel__sync-now {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--line-normal, #7ec8b8);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 .notes-modal__close {

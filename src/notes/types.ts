@@ -9,15 +9,27 @@ export type NoteLine = {
   text: string
   resolved: boolean
   resolvedAt?: string
+  /** Quién marcó o desmarcó el check (cualquier usuario). */
+  resolvedBy?: string
+  resolvedById?: string
+  /** Siempre al cambiar el check — para fusionar entre móviles. */
+  resolvedUpdatedAt?: string
+  /** Última edición del texto (solo el autor). */
+  textUpdatedAt?: string
 }
 
 export type InspectionNote = {
   id: string
   vesselId: VesselId
   target: NoteTarget
+  /** Nombre visible al crear (no es la clave de permisos). */
   author: string
+  /** Id estable de la instalación que creó la nota. */
+  authorId: string
   createdAt: string
   updatedAt: string
+  /** Baja lógica: se sincroniza para que el resto de móviles la oculten. */
+  deletedAt?: string
   /** Cada viñeta con su propio estado resuelto. */
   lines: NoteLine[]
 }
@@ -82,16 +94,28 @@ export function coerceNoteLines(
       typeof row.text === 'string' ? stripBullet(row.text) : ''
     if (!text) continue
     const resolved = typeof row.resolved === 'boolean' ? row.resolved : noteResolved
+    const resolvedAt =
+      resolved && typeof row.resolvedAt === 'string'
+        ? row.resolvedAt
+        : resolved
+          ? new Date().toISOString()
+          : undefined
+    const resolvedUpdatedAt =
+      typeof row.resolvedUpdatedAt === 'string'
+        ? row.resolvedUpdatedAt
+        : resolvedAt
     out.push({
       id: typeof row.id === 'string' && row.id ? row.id : createLineId(),
       text,
       resolved,
-      resolvedAt:
-        resolved && typeof row.resolvedAt === 'string'
-          ? row.resolvedAt
-          : resolved
-            ? new Date().toISOString()
-            : undefined,
+      resolvedAt,
+      resolvedBy:
+        typeof row.resolvedBy === 'string' ? row.resolvedBy : undefined,
+      resolvedById:
+        typeof row.resolvedById === 'string' ? row.resolvedById : undefined,
+      resolvedUpdatedAt,
+      textUpdatedAt:
+        typeof row.textUpdatedAt === 'string' ? row.textUpdatedAt : undefined,
     })
   }
   return out
@@ -119,4 +143,14 @@ export function isNoteFullyResolved(note: InspectionNote): boolean {
 
 export function noteHasOpenLines(note: InspectionNote): boolean {
   return note.lines.some((l) => !l.resolved)
+}
+
+export function isNoteDeleted(note: InspectionNote): boolean {
+  return Boolean(note.deletedAt)
+}
+
+export function maxIso(a?: string, b?: string): string | undefined {
+  if (!a) return b
+  if (!b) return a
+  return a >= b ? a : b
 }

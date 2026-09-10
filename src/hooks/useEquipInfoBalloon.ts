@@ -12,6 +12,18 @@ const DEFAULT_HOVER_MS = 1800
 const LONG_PRESS_MS = 1000
 const LONG_PRESS_MOVE_PX = 10
 
+/** El hover de un interruptor cancela el globo de equipo (no pelear en chasis/tarjeta). */
+export const SCADA_BREAKER_HOVER = 'scada-breaker-hover'
+
+export function yieldEquipBalloonToBreaker() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new Event(SCADA_BREAKER_HOVER))
+}
+
+function isBreakerHoverTarget(t: EventTarget | null) {
+  return t instanceof Element && Boolean(t.closest('.casc-brk'))
+}
+
 function isCoarsePointer(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -72,6 +84,15 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
   )
 
   useEffect(() => {
+    const onBreakerHover = () => {
+      clearTimer()
+      if (sticky.current || show) close()
+    }
+    window.addEventListener(SCADA_BREAKER_HOVER, onBreakerHover)
+    return () => window.removeEventListener(SCADA_BREAKER_HOVER, onBreakerHover)
+  }, [clearTimer, close, show])
+
+  useEffect(() => {
     if (!show) return
 
     const onPointerDown = (e: PointerEvent) => {
@@ -95,12 +116,16 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     }
   }, [show, close])
 
-  const onMouseEnter = useCallback(() => {
-    if (isCoarsePointer()) return
-    if (sticky.current || show) return
-    clearTimer()
-    timer.current = window.setTimeout(() => openSticky(), delayMs)
-  }, [clearTimer, delayMs, openSticky, show])
+  const onMouseEnter = useCallback(
+    (e?: ReactMouseEvent) => {
+      if (isCoarsePointer()) return
+      if (sticky.current || show) return
+      if (isBreakerHoverTarget(e?.target ?? null)) return
+      clearTimer()
+      timer.current = window.setTimeout(() => openSticky(), delayMs)
+    },
+    [clearTimer, delayMs, openSticky, show],
+  )
 
   const onMouseLeave = useCallback(() => {
     if (isCoarsePointer()) return

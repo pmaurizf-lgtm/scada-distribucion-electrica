@@ -8,6 +8,7 @@ import type { Circuit, ProtectionState } from '../types'
 import type { CircuitLockInfo } from '../utils/parseLocksExcel'
 import { isMotorizedProtectionModel } from '../abtDownstream/ssbBoard'
 import { useCircuitLockInfo } from '../locks/LockInfoContext'
+import { yieldEquipBalloonToBreaker } from '../hooks/useEquipInfoBalloon'
 import {
   LockBadge,
   ManualBreakerSymbol,
@@ -103,6 +104,7 @@ export function BreakerChip({
       data-circuit-id={circuitId}
       onMouseEnter={(e) => {
         if (!circuit || !onHoverInfo) return
+        yieldEquipBalloonToBreaker()
         clearHoverTimer()
         const el = e.currentTarget
         const hint = title ?? aria
@@ -122,7 +124,8 @@ export function BreakerChip({
       onMouseLeave={() => {
         clearHoverTimer()
         setNativeHint(undefined)
-        onHoverInfoEnd?.()
+        /* No cerrar el globo al salir: si aparece encima del chip, el
+           mouseleave lo anulaba y peleaba con el globo del cuadro. */
       }}
     >
       <span className="casc-brk__sym">
