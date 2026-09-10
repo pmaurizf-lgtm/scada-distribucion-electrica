@@ -6,47 +6,105 @@ const UPDATE_CHECK_MS = 5 * 60 * 1000
 /** Flag de sesión: tras reload por SW, mostrar aviso breve. */
 export const PWA_UPDATED_FLAG = 'scada-f110-pwa-just-updated'
 
+const PWA_RELOADING = 'scada-f110-pwa-reloading'
+
+/**
+ * GitHub Pages cachea sw.js (max-age=600). fetch + cache: 'no-store'
+ * antes de registration.update() evita que el HTTP cache sirva el SW viejo.
+ */
+async function pingSwScript(swUrl: string): Promise<boolean> {
+  if (!navigator.onLine) return false
+  const resp = await fetch(swUrl, {
+    cache: 'no-store',
+    headers: {
+      cache: 'no-store',
+      'cache-control': 'no-cache',
+    },
+  })
+  return resp.ok
+}
+
+function markUpdatedAndReload() {
+  try {
+    sessionStorage.setItem(PWA_UPDATED_FLAG, '1')
+    sessionStorage.setItem(PWA_RELOADING, '1')
+  } catch {
+    /* ignore */
+  }
+  window.location.reload()
+}
+
 /**
  * PWA: al publicar un build nuevo, el service worker (skipWaiting + clientsClaim)
  * toma el control y la página se recarga sola — al abrir la app, al volver a
  * primer plano o al recuperar red.
+ *
+ * En GitHub Pages el SW viejo sigue sirviendo index.html/JS cacheados: por eso
+ * localhost (sin SW) muestra el globo y la web publicada no, hasta recargar
+ * con la versión nueva.
  */
 export function registerPwa(): void {
-  registerSW({
+  if (!('serviceWorker' in navigator)) return
+
+  let reloading = false
+  let justReloaded = false
+  try {
+    justReloaded = sessionStorage.getItem(PWA_RELOADING) === '1'
+    if (justReloaded) {
+      // Evitar bucle: el SW puede volver a disparar controllerchange al reclamar.
+      window.setTimeout(() => {
+        try {
+          sessionStorage.removeItem(PWA_RELOADING)
+        } catch {
+          /* ignore */
+        }
+      }, 2500)
+    }
+  } catch {
+    /* ignore */
+  }
+
+  const updateSW = registerSW({
     immediate: true,
     onNeedReload() {
-      try {
-        sessionStorage.setItem(PWA_UPDATED_FLAG, '1')
-      } catch {
-        /* ignore */
-      }
-      window.location.reload()
+      if (reloading || justReloaded) return
+      reloading = true
+      markUpdatedAndReload()
     },
-    onRegisteredSW(_swUrl, registration) {
+    onRegisteredSW(swUrl, registration) {
       if (!registration) return
 
       const checkForUpdate = () => {
-        void registration.update().catch(() => {
-          /* ignore: offline / SW ocupado */
-        })
+        void (async () => {
+          try {
+            if (registration.waiting) {
+              registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+              updateSW(true)
+              return
+            }
+            const fresh = await pingSwScript(swUrl)
+            if (fresh) await registration.update()
+          } catch {
+            /* ignore: offline / SW ocupado */
+          }
+        })()
       }
 
-      // Al abrir / registrar: comprobar ya (no esperar al intervalo).
       checkForUpdate()
-
       window.setInterval(checkForUpdate, UPDATE_CHECK_MS)
 
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') checkForUpdate()
       })
-
-      // iOS / PWA: volver desde segundo plano (bfcache o reactivación).
-      window.addEventListener('pageshow', () => {
-        checkForUpdate()
-      })
-
+      window.addEventListener('pageshow', checkForUpdate)
       window.addEventListener('online', checkForUpdate)
     },
+  })
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading || justReloaded) return
+    reloading = true
+    markUpdatedAndReload()
   })
 }
 

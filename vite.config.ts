@@ -44,6 +44,9 @@ export default defineConfig({
         // Revisar actualizaciones al enfocar la app y en red
         clientsClaim: true,
         skipWaiting: true,
+        cleanupOutdatedCaches: true,
+        // Nueva clave: al activar el SW nuevo se abandonan caches de Pages viejas
+        cacheId: 'scada-f110-v2',
         // El bundle unifilar (abtDownstream + topología) supera con creces 2 MiB
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         globPatterns: [

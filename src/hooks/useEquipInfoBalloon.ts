@@ -77,7 +77,7 @@ function onDocumentPointerMove(e: PointerEvent) {
     if (w.isSticky()) continue
     const root = w.root()
     if (!root) continue
-    if (watchOwnsHit(root, hit)) w.arm()
+    if (watchOwnsHit(root, hit) || root.matches(':hover')) w.arm()
     else w.disarm()
   }
 }
@@ -268,6 +268,26 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     if (isCoarsePointer()) e.preventDefault()
   }, [])
 
+  const onMouseEnter = useCallback(() => {
+    if (isCoarsePointer()) return
+    armHover()
+  }, [armHover])
+
+  const onMouseLeave = useCallback(
+    (e: ReactMouseEvent) => {
+      if (isCoarsePointer()) return
+      const related = e.relatedTarget
+      if (
+        related instanceof Element &&
+        related.closest('.equip-balloon--portal')
+      ) {
+        return
+      }
+      disarmHover()
+    },
+    [disarmHover],
+  )
+
   const setAnchorEl = useCallback((el: HTMLElement | null) => {
     rootRef.current = el
   }, [])
@@ -279,6 +299,8 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     onPointerCancel,
     onClick,
     onContextMenu,
+    onMouseEnter,
+    onMouseLeave,
   }
 
   return {
