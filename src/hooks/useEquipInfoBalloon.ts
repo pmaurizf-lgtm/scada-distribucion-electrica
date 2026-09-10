@@ -34,9 +34,62 @@ function isCoarsePointer(): boolean {
   )
 }
 
+/** ¿El puntero sigue sobre el recuadro? (zoom/cables disparan mouseleave falso). */
+function isPointerOverEquip(
+  root: HTMLElement,
+  x: number,
+  y: number,
+  target: EventTarget | null,
+) {
+  if (target instanceof Element && target.closest('.equip-balloon--portal')) {
+    return true
+  }
+  if (target === root || (target instanceof Node && root.contains(target))) {
+    return true
+  }
+  const r = root.getBoundingClientRect()
+  if (x < r.left || x > r.right || y < r.top || y > r.bottom) return false
+  const top = document.elementFromPoint(x, y)
+  if (top instanceof Element) {
+    const brk = top.closest('.casc-brk')
+    if (brk && !root.contains(brk)) return false
+  }
+  return true
+}
+
+type EquipHoverWatch = {
+  root: () => HTMLElement | null
+  isSticky: () => boolean
+  arm: () => void
+  disarm: () => void
+}
+
+const watches = new Set<EquipHoverWatch>()
+let docBound = false
+
+function onDocumentPointerSample(e: MouseEvent) {
+  for (const w of watches) {
+    if (w.isSticky()) continue
+    const root = w.root()
+    if (!root) continue
+    if (isPointerOverEquip(root, e.clientX, e.clientY, e.target)) w.arm()
+    else w.disarm()
+  }
+}
+
+function bindDocumentHover() {
+  if (docBound || typeof window === 'undefined') return
+  docBound = true
+  window.addEventListener('mousemove', onDocumentPointerSample, {
+    passive: true,
+  })
+  window.addEventListener('wheel', onDocumentPointerSample, { passive: true })
+}
+
 /**
  * Globo de equipo: misma regla que el de interruptor.
- * - Ratón/lápiz: entrar en el recuadro ~1,8 s → globo anclado.
+ * - Ratón/lápiz: ~1,8 s sobre el recuadro → globo anclado.
+ *   No se cancela por mouseleave falso (zoom, cables).
  * - Táctil: pulsación larga (~1 s) → hoja; el doble toque sigue plegando.
  */
 export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
@@ -85,13 +138,32 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     [clearTimer, clearLongPress],
   )
 
-  useEffect(
-    () => () => {
+  const armHover = useCallback(() => {
+    if (sticky.current) return
+    if (timer.current != null) return
+    timer.current = window.setTimeout(() => openSticky(false), delayMs)
+  }, [delayMs, openSticky])
+
+  const disarmHover = useCallback(() => {
+    if (sticky.current) return
+    clearTimer()
+  }, [clearTimer])
+
+  useEffect(() => {
+    bindDocumentHover()
+    const watch: EquipHoverWatch = {
+      root: () => rootRef.current,
+      isSticky: () => sticky.current,
+      arm: armHover,
+      disarm: disarmHover,
+    }
+    watches.add(watch)
+    return () => {
+      watches.delete(watch)
       clearTimer()
       clearLongPress()
-    },
-    [clearTimer, clearLongPress],
-  )
+    }
+  }, [armHover, disarmHover, clearTimer, clearLongPress])
 
   useEffect(() => {
     const onBreakerHover = () => {
@@ -127,30 +199,41 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
   }, [show, close])
 
   const onMouseEnter = useCallback(() => {
-    if (sticky.current) return
-    if (timer.current != null) return
-    timer.current = window.setTimeout(() => openSticky(false), delayMs)
-  }, [delayMs, openSticky])
+    armHover()
+  }, [armHover])
 
-  const onMouseLeave = useCallback(() => {
-    if (sticky.current) return
-    clearTimer()
-  }, [clearTimer])
+  /** Zoom y cables disparan leave con el puntero aún encima: no cancelar. */
+  const onMouseLeave = useCallback(
+    (e: ReactMouseEvent) => {
+      if (sticky.current) return
+      const root = rootRef.current
+      if (!root) return
+      if (e.relatedTarget == null) return
+      if (isPointerOverEquip(root, e.clientX, e.clientY, e.relatedTarget)) return
+      disarmHover()
+    },
+    [disarmHover],
+  )
 
   const onPointerEnter = useCallback(
     (e: ReactPointerEvent) => {
       if (e.pointerType === 'touch') return
-      onMouseEnter()
+      armHover()
     },
-    [onMouseEnter],
+    [armHover],
   )
 
   const onPointerLeave = useCallback(
     (e: ReactPointerEvent) => {
       if (e.pointerType === 'touch') return
-      onMouseLeave()
+      if (sticky.current) return
+      const root = rootRef.current
+      if (!root) return
+      if (e.relatedTarget == null) return
+      if (isPointerOverEquip(root, e.clientX, e.clientY, e.relatedTarget)) return
+      disarmHover()
     },
-    [onMouseLeave],
+    [disarmHover],
   )
 
   const onPointerDown = useCallback(
