@@ -27,17 +27,6 @@ export function yieldCircuitBalloonToEquip() {
   window.dispatchEvent(new Event(SCADA_EQUIP_BALLOON_OPEN))
 }
 
-function isBreakerHoverTarget(t: EventTarget | null) {
-  return t instanceof Element && Boolean(t.closest('.casc-brk'))
-}
-
-function canHoverWithPointer(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(hover: hover)').matches
-  )
-}
-
 function isCoarsePointer(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -45,42 +34,14 @@ function isCoarsePointer(): boolean {
   )
 }
 
-type EquipHoverWatch = {
-  root: () => HTMLElement | null
-  arm: () => void
-  disarm: () => void
-}
-
-const watches = new Set<EquipHoverWatch>()
-let docHoverBound = false
-
-function onDocumentHoverMove(e: MouseEvent) {
-  if (!canHoverWithPointer()) return
-  const top = e.target
-  for (const w of watches) {
-    const root = w.root()
-    if (!root) continue
-    if (top instanceof Node && root.contains(top) && !isBreakerHoverTarget(top)) {
-      w.arm()
-    } else {
-      w.disarm()
-    }
-  }
-}
-
-function bindDocumentHover() {
-  if (docHoverBound || typeof window === 'undefined') return
-  docHoverBound = true
-  window.addEventListener('mousemove', onDocumentHoverMove, { passive: true })
-}
-
 /**
- * Globo de equipo:
- * - Escritorio: hover ~1,8 s → se fija hasta clic fuera / Escape.
- * - Táctil: pulsación larga (~1 s) → globo; doble toque libre para plegar/desplegar.
+ * Globo de equipo: misma regla que el de interruptor.
+ * - Ratón/lápiz: entrar en el recuadro ~1,8 s → globo anclado.
+ * - Táctil: pulsación larga (~1 s) → hoja; el doble toque sigue plegando.
  */
 export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
   const [show, setShow] = useState(false)
+  const [sheet, setSheet] = useState(false)
   const timer = useRef<number | null>(null)
   const sticky = useRef(false)
   const rootRef = useRef<HTMLElement | null>(null)
@@ -108,42 +69,29 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     clearLongPress()
     sticky.current = false
     setShow(false)
+    setSheet(false)
   }, [clearTimer, clearLongPress])
 
-  const openSticky = useCallback(() => {
-    clearTimer()
-    clearLongPress()
-    sticky.current = true
-    setShow(true)
-    yieldCircuitBalloonToEquip()
-    window.dispatchEvent(new CustomEvent('scada-canvas-interact'))
-  }, [clearTimer, clearLongPress])
-
-  const armHover = useCallback(() => {
-    if (sticky.current) return
-    if (timer.current != null) return
-    timer.current = window.setTimeout(() => openSticky(), delayMs)
-  }, [delayMs, openSticky])
-
-  const disarmHover = useCallback(() => {
-    if (sticky.current) return
-    clearTimer()
-  }, [clearTimer])
-
-  useEffect(() => {
-    bindDocumentHover()
-    const watch: EquipHoverWatch = {
-      root: () => rootRef.current,
-      arm: armHover,
-      disarm: disarmHover,
-    }
-    watches.add(watch)
-    return () => {
-      watches.delete(watch)
+  const openSticky = useCallback(
+    (asSheet: boolean) => {
       clearTimer()
       clearLongPress()
-    }
-  }, [armHover, disarmHover, clearTimer, clearLongPress])
+      sticky.current = true
+      setSheet(asSheet)
+      setShow(true)
+      yieldCircuitBalloonToEquip()
+      window.dispatchEvent(new CustomEvent('scada-canvas-interact'))
+    },
+    [clearTimer, clearLongPress],
+  )
+
+  useEffect(
+    () => () => {
+      clearTimer()
+      clearLongPress()
+    },
+    [clearTimer, clearLongPress],
+  )
 
   useEffect(() => {
     const onBreakerHover = () => {
@@ -178,34 +126,36 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     }
   }, [show, close])
 
-  const onMouseOver = useCallback(
-    (e: ReactMouseEvent) => {
-      if (!canHoverWithPointer()) return
-      if (isBreakerHoverTarget(e.target)) {
-        disarmHover()
-        return
-      }
-      armHover()
+  const onMouseEnter = useCallback(() => {
+    if (sticky.current) return
+    if (timer.current != null) return
+    timer.current = window.setTimeout(() => openSticky(false), delayMs)
+  }, [delayMs, openSticky])
+
+  const onMouseLeave = useCallback(() => {
+    if (sticky.current) return
+    clearTimer()
+  }, [clearTimer])
+
+  const onPointerEnter = useCallback(
+    (e: ReactPointerEvent) => {
+      if (e.pointerType === 'touch') return
+      onMouseEnter()
     },
-    [armHover, disarmHover],
+    [onMouseEnter],
   )
 
-  const onMouseOut = useCallback(
-    (e: ReactMouseEvent) => {
-      if (!canHoverWithPointer()) return
-      const related = e.relatedTarget
-      if (related instanceof Node && e.currentTarget.contains(related)) {
-        return
-      }
-      disarmHover()
+  const onPointerLeave = useCallback(
+    (e: ReactPointerEvent) => {
+      if (e.pointerType === 'touch') return
+      onMouseLeave()
     },
-    [disarmHover],
+    [onMouseLeave],
   )
 
   const onPointerDown = useCallback(
     (e: ReactPointerEvent) => {
-      if (!isCoarsePointer()) return
-      if (e.pointerType === 'mouse') return
+      if (e.pointerType === 'mouse' || e.pointerType === 'pen') return
       if (e.button !== 0) return
       longPressFired.current = false
       pressOrigin.current = { x: e.clientX, y: e.clientY }
@@ -213,8 +163,7 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
       longPressTimer.current = window.setTimeout(() => {
         longPressTimer.current = null
         longPressFired.current = true
-        openSticky()
-        // Evita el menú contextual del sistema tras la pulsación larga.
+        openSticky(true)
         try {
           if (navigator.vibrate) navigator.vibrate(12)
         } catch {
@@ -245,11 +194,9 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     clearLongPress()
   }, [clearLongPress])
 
-  /** En táctil no abre/cierra el globo: eso va por pulsación larga. */
   const onClick = useCallback(
     (e: { stopPropagation?: () => void; preventDefault?: () => void }) => {
       if (!isCoarsePointer()) return
-      // Si acabamos de abrir por long-press, no dejes que el click haga otra cosa rara.
       if (longPressFired.current) {
         e.preventDefault?.()
         e.stopPropagation?.()
@@ -268,10 +215,10 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
   }, [])
 
   const bind = {
-    onMouseOver,
-    onMouseOut,
-    onMouseEnter: onMouseOver,
-    onMouseLeave: onMouseOut,
+    onMouseEnter,
+    onMouseLeave,
+    onPointerEnter,
+    onPointerLeave,
     onPointerDown,
     onPointerMove,
     onPointerUp,
@@ -282,8 +229,9 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
 
   return {
     show,
-    onMouseEnter: onMouseOver,
-    onMouseLeave: onMouseOut,
+    sheet,
+    onMouseEnter,
+    onMouseLeave,
     onPointerDown,
     onPointerMove,
     onPointerUp,

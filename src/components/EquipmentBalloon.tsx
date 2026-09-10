@@ -5,7 +5,6 @@ import { originLabel } from '../utils/cascadeModel'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
 import { useNotesOptional } from '../notes'
 import { requestOpenNotes } from '../notes/openNotesEvent'
-import { useIsMobileUi } from '../hooks/useIsMobileUi'
 
 const KIND_LABEL: Record<Equipment['kind'], string> = {
   generador: 'Generador',
@@ -27,6 +26,8 @@ interface EquipmentBalloonProps {
   circuits?: Circuit[]
   /** Ancla del hover (botón/caja del equipo) */
   anchorRef: RefObject<HTMLElement | null>
+  /** Hoja inferior solo en pulsación larga táctil; el hover de escritorio ancla al recuadro. */
+  sheet?: boolean
 }
 
 export function EquipmentBalloon({
@@ -34,9 +35,10 @@ export function EquipmentBalloon({
   feeds,
   circuits,
   anchorRef,
+  sheet = false,
 }: EquipmentBalloonProps) {
   const notesApi = useNotesOptional()
-  const isMobile = useIsMobileUi()
+  const asSheet = sheet
   const noteTarget = { kind: 'equipment' as const, equipmentId: equipment.id }
   const openNotesCount = notesApi?.openCountFor(noteTarget) ?? 0
   const [pos, setPos] = useState<{
@@ -48,7 +50,7 @@ export function EquipmentBalloon({
 
   useLayoutEffect(() => {
     const update = () => {
-      if (isMobile) {
+      if (asSheet) {
         setPos({ left: 0, top: 0, place: 'sheet' })
         return
       }
@@ -81,7 +83,7 @@ export function EquipmentBalloon({
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
     }
-  }, [anchorRef, equipment.id, isMobile])
+  }, [anchorRef, equipment.id, asSheet])
 
   if (!pos || typeof document === 'undefined') return null
 
@@ -109,7 +111,7 @@ export function EquipmentBalloon({
   return createPortal(
     <div
       className={`equip-balloon equip-balloon--portal equip-balloon--${pos.place}${
-        isMobile ? ' equip-balloon--mobile' : ''
+        asSheet ? ' equip-balloon--mobile' : ''
       }`}
       style={
         pos.place === 'sheet'

@@ -565,6 +565,7 @@ export function EquipmentBusDrop({
                   feeds={feedSummaries}
                   circuits={displayFeeds}
                   anchorRef={eqWrapRef}
+                  sheet={eqBalloon.sheet}
                 />
               )}
             </div>
@@ -580,7 +581,6 @@ export function EquipmentBusDrop({
                 eqBalloon.setAnchorEl(el)
               }}
               className="hbus-drop__eq-wrap"
-              {...eqBalloon.bind}
             >
               <button
                 type="button"
@@ -594,14 +594,11 @@ export function EquipmentBusDrop({
                       ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
                       : `${equipment.id} · ${equipment.name}`
                 }
+                {...eqBalloon.bind}
                 onClick={(e) => {
                   e.stopPropagation()
                   eqBalloon.onClick(e)
                 }}
-                onPointerDown={eqBalloon.onPointerDown}
-                onPointerMove={eqBalloon.onPointerMove}
-                onPointerUp={eqBalloon.onPointerUp}
-                onPointerCancel={eqBalloon.onPointerCancel}
                 onDoubleClick={toggleExpand}
               >
                 <span className="hbus-drop__sym">
@@ -683,6 +680,7 @@ export function EquipmentBusDrop({
                   feeds={feedSummaries}
                   circuits={displayFeeds}
                   anchorRef={eqWrapRef}
+                  sheet={eqBalloon.sheet}
                 />
               )}
             </div>

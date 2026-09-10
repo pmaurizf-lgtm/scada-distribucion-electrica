@@ -473,6 +473,7 @@ function EquipCard({
           feeds={feedSummaries}
           circuits={feeds}
           anchorRef={wrapRef}
+          sheet={eqBalloon.sheet}
         />
       )}
     </div>

@@ -560,6 +560,7 @@ function BusDrop({
                   feeds={feedSummaries}
                   circuits={feeds}
                   anchorRef={eqWrapRef}
+                  sheet={eqBalloon.sheet}
                 />
               )}
             </div>
@@ -688,6 +689,7 @@ function BusDrop({
                   feeds={feedSummaries}
                   circuits={feeds}
                   anchorRef={eqWrapRef}
+                  sheet={eqBalloon.sheet}
                 />
               )}
             </div>
@@ -842,6 +844,7 @@ function BusDrop({
                   feeds={feedSummaries}
                   circuits={feeds}
                   anchorRef={eqWrapRef}
+                  sheet={eqBalloon.sheet}
                 />
               )}
             </div>

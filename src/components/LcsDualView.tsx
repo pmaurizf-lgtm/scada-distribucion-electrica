@@ -597,6 +597,7 @@ function LcsOutletDrop({
                   feeds={feedSummaries}
                   circuits={powerFeeds}
                   anchorRef={eqWrapRef}
+                  sheet={eqBalloon.sheet}
                 />
               )}
             </div>

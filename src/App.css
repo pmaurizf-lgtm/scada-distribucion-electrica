@@ -6540,6 +6540,7 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   position: relative;
   isolation: isolate;
   overflow: visible;
+  z-index: 5;
 }
 
 /*
