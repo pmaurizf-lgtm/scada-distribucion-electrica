@@ -45,6 +45,35 @@ function isCoarsePointer(): boolean {
   )
 }
 
+type EquipHoverWatch = {
+  root: () => HTMLElement | null
+  arm: () => void
+  disarm: () => void
+}
+
+const watches = new Set<EquipHoverWatch>()
+let docHoverBound = false
+
+function onDocumentHoverMove(e: MouseEvent) {
+  if (!canHoverWithPointer()) return
+  const top = e.target
+  for (const w of watches) {
+    const root = w.root()
+    if (!root) continue
+    if (top instanceof Node && root.contains(top) && !isBreakerHoverTarget(top)) {
+      w.arm()
+    } else {
+      w.disarm()
+    }
+  }
+}
+
+function bindDocumentHover() {
+  if (docHoverBound || typeof window === 'undefined') return
+  docHoverBound = true
+  window.addEventListener('mousemove', onDocumentHoverMove, { passive: true })
+}
+
 /**
  * Globo de equipo:
  * - Escritorio: hover ~1,8 s → se fija hasta clic fuera / Escape.
@@ -90,22 +119,40 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     window.dispatchEvent(new CustomEvent('scada-canvas-interact'))
   }, [clearTimer, clearLongPress])
 
-  useEffect(
-    () => () => {
+  const armHover = useCallback(() => {
+    if (sticky.current) return
+    if (timer.current != null) return
+    timer.current = window.setTimeout(() => openSticky(), delayMs)
+  }, [delayMs, openSticky])
+
+  const disarmHover = useCallback(() => {
+    if (sticky.current) return
+    clearTimer()
+  }, [clearTimer])
+
+  useEffect(() => {
+    bindDocumentHover()
+    const watch: EquipHoverWatch = {
+      root: () => rootRef.current,
+      arm: armHover,
+      disarm: disarmHover,
+    }
+    watches.add(watch)
+    return () => {
+      watches.delete(watch)
       clearTimer()
       clearLongPress()
-    },
-    [clearTimer, clearLongPress],
-  )
+    }
+  }, [armHover, disarmHover, clearTimer, clearLongPress])
 
   useEffect(() => {
     const onBreakerHover = () => {
       clearTimer()
-      if (sticky.current || show) close()
+      if (sticky.current) close()
     }
     window.addEventListener(SCADA_BREAKER_HOVER, onBreakerHover)
     return () => window.removeEventListener(SCADA_BREAKER_HOVER, onBreakerHover)
-  }, [clearTimer, close, show])
+  }, [clearTimer, close])
 
   useEffect(() => {
     if (!show) return
@@ -131,22 +178,29 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     }
   }, [show, close])
 
-  const onMouseEnter = useCallback(
-    (e?: ReactMouseEvent) => {
+  const onMouseOver = useCallback(
+    (e: ReactMouseEvent) => {
       if (!canHoverWithPointer()) return
-      if (sticky.current || show) return
-      if (isBreakerHoverTarget(e?.target ?? null)) return
-      clearTimer()
-      timer.current = window.setTimeout(() => openSticky(), delayMs)
+      if (isBreakerHoverTarget(e.target)) {
+        disarmHover()
+        return
+      }
+      armHover()
     },
-    [clearTimer, delayMs, openSticky, show],
+    [armHover, disarmHover],
   )
 
-  const onMouseLeave = useCallback(() => {
-    if (!canHoverWithPointer()) return
-    if (sticky.current || show) return
-    clearTimer()
-  }, [clearTimer, show])
+  const onMouseOut = useCallback(
+    (e: ReactMouseEvent) => {
+      if (!canHoverWithPointer()) return
+      const related = e.relatedTarget
+      if (related instanceof Node && e.currentTarget.contains(related)) {
+        return
+      }
+      disarmHover()
+    },
+    [disarmHover],
+  )
 
   const onPointerDown = useCallback(
     (e: ReactPointerEvent) => {
@@ -214,8 +268,10 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
   }, [])
 
   const bind = {
-    onMouseEnter,
-    onMouseLeave,
+    onMouseOver,
+    onMouseOut,
+    onMouseEnter: onMouseOver,
+    onMouseLeave: onMouseOut,
     onPointerDown,
     onPointerMove,
     onPointerUp,
@@ -226,8 +282,8 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
 
   return {
     show,
-    onMouseEnter,
-    onMouseLeave,
+    onMouseEnter: onMouseOver,
+    onMouseLeave: onMouseOut,
     onPointerDown,
     onPointerMove,
     onPointerUp,

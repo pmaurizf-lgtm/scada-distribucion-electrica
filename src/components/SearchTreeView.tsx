@@ -335,10 +335,10 @@ function BreakerMini({
       }
       onMouseEnter={(e) => {
         if (!onHoverInfo) return
-        yieldEquipBalloonToBreaker()
         clearHoverTimer()
         const el = e.currentTarget
         hoverTimer.current = window.setTimeout(() => {
+          yieldEquipBalloonToBreaker()
           onHoverInfo(circuit, el.getBoundingClientRect())
         }, HOVER_DELAY_MS)
       }}

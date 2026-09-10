@@ -3894,7 +3894,7 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
 .hbus-drop__eq-wrap {
   position: relative;
   width: 100%;
-  z-index: 0;
+  z-index: 4;
 }
 
 /* Al mostrar el globo, subir por encima de cables, QT y salidas vecinas */
@@ -6680,7 +6680,8 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   bottom: -1.55rem;
 }
 
-.hbus-drop__eq:disabled {
+.hbus-drop__eq:disabled,
+.hbus-drop__eq[aria-disabled='true'] {
   cursor: default;
 }
 
@@ -6692,7 +6693,7 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   cursor: pointer;
 }
 
-.hbus-drop__eq:not(:disabled):hover,
+.hbus-drop__eq:hover,
 .hbus-drop__eq--open {
   border-color: rgba(230, 194, 0, 0.55);
 }

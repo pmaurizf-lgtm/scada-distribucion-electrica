@@ -1515,7 +1515,7 @@ export const CascadeView = forwardRef<CascadeViewHandle, CascadeViewProps>(
     const isInteractive = (t: EventTarget | null) =>
       t instanceof Element &&
       !!t.closest(
-        'button, a, input, select, textarea, label, .casc-brk, .casc-gen, .circuit-balloon, .equip-balloon, .hbus-drop__eq',
+        'button, a, input, select, textarea, label, .casc-brk, .casc-gen, .circuit-balloon, .equip-balloon, .hbus-drop__eq, .hbus-drop__eq-wrap, .equip-chassis__label',
       )
 
     const commitPinchZoom = () => {

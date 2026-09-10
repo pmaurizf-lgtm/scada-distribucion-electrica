@@ -586,12 +586,13 @@ export function EquipmentBusDrop({
                 type="button"
                 className={`hbus-drop__eq hbus-drop__eq--fam-${equipFam}${expanded ? ' hbus-drop__eq--open' : ''}${eqEnergized ? ' hbus-drop__eq--live' : ''}${spare ? ' hbus-drop__eq--spare' : ''}`}
                 data-equip={equipment.id}
+                aria-disabled={!canExpand}
                 aria-label={
                   spare
                     ? `${localFeed.protectionName} · interruptor de reserva (RESPETO)`
                     : canExpand
                       ? `Doble clic para ${expanded ? 'plegar' : 'desplegar'} salidas`
-                      : undefined
+                      : `${equipment.id} · ${equipment.name}`
                 }
                 onClick={(e) => {
                   e.stopPropagation()
@@ -602,7 +603,6 @@ export function EquipmentBusDrop({
                 onPointerUp={eqBalloon.onPointerUp}
                 onPointerCancel={eqBalloon.onPointerCancel}
                 onDoubleClick={toggleExpand}
-                disabled={!canExpand}
               >
                 <span className="hbus-drop__sym">
                   {spare ? 'R' : symbolFor(equipment.kind, equipment)}

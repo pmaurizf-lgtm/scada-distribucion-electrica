@@ -104,7 +104,6 @@ export function BreakerChip({
       data-circuit-id={circuitId}
       onMouseEnter={(e) => {
         if (!circuit || !onHoverInfo) return
-        yieldEquipBalloonToBreaker()
         clearHoverTimer()
         const el = e.currentTarget
         const hint = title ?? aria
@@ -118,6 +117,7 @@ export function BreakerChip({
         hoverTimer.current = window.setTimeout(() => {
           el.removeAttribute('title')
           setNativeHint(undefined)
+          yieldEquipBalloonToBreaker()
           onHoverInfo(circuit, el.getBoundingClientRect())
         }, 1800)
       }}
