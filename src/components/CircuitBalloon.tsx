@@ -9,6 +9,7 @@ import type { Circuit, ProtectionState } from '../types'
 import { dcp10Of } from '../data/system690'
 import { useNotesOptional } from '../notes'
 import { requestOpenNotes } from '../notes/openNotesEvent'
+import { SCADA_EQUIP_BALLOON_OPEN } from '../hooks/useEquipInfoBalloon'
 
 interface CircuitBalloonProps {
   circuit: Circuit
@@ -104,6 +105,12 @@ export function CircuitBalloon({
       document.removeEventListener('keydown', onKey)
     }
   }, [fixed, onClose, circuit.id])
+
+  useEffect(() => {
+    const onEquipOpen = () => onClose()
+    window.addEventListener(SCADA_EQUIP_BALLOON_OPEN, onEquipOpen)
+    return () => window.removeEventListener(SCADA_EQUIP_BALLOON_OPEN, onEquipOpen)
+  }, [onClose])
 
   useLayoutEffect(() => {
     if (!fixed) return

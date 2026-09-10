@@ -14,14 +14,28 @@ const LONG_PRESS_MOVE_PX = 10
 
 /** El hover de un interruptor cancela el globo de equipo (no pelear en chasis/tarjeta). */
 export const SCADA_BREAKER_HOVER = 'scada-breaker-hover'
+/** Al abrir el globo de equipo, cierra el de interruptor. */
+export const SCADA_EQUIP_BALLOON_OPEN = 'scada-equip-balloon-open'
 
 export function yieldEquipBalloonToBreaker() {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new Event(SCADA_BREAKER_HOVER))
 }
 
+export function yieldCircuitBalloonToEquip() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new Event(SCADA_EQUIP_BALLOON_OPEN))
+}
+
 function isBreakerHoverTarget(t: EventTarget | null) {
   return t instanceof Element && Boolean(t.closest('.casc-brk'))
+}
+
+function canHoverWithPointer(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(hover: hover)').matches
+  )
 }
 
 function isCoarsePointer(): boolean {
@@ -72,6 +86,7 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
     clearLongPress()
     sticky.current = true
     setShow(true)
+    yieldCircuitBalloonToEquip()
     window.dispatchEvent(new CustomEvent('scada-canvas-interact'))
   }, [clearTimer, clearLongPress])
 
@@ -118,7 +133,7 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
 
   const onMouseEnter = useCallback(
     (e?: ReactMouseEvent) => {
-      if (isCoarsePointer()) return
+      if (!canHoverWithPointer()) return
       if (sticky.current || show) return
       if (isBreakerHoverTarget(e?.target ?? null)) return
       clearTimer()
@@ -128,7 +143,7 @@ export function useEquipInfoBalloon(delayMs = DEFAULT_HOVER_MS) {
   )
 
   const onMouseLeave = useCallback(() => {
-    if (isCoarsePointer()) return
+    if (!canHoverWithPointer()) return
     if (sticky.current || show) return
     clearTimer()
   }, [clearTimer, show])

@@ -1454,13 +1454,6 @@ body {
   overflow-y: auto;
 }
 
-/* Con protección abierta, ocultar globo de equipo para no taparlo */
-body:has(.circuit-balloon--fixed) .equip-balloon--portal {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* Notas / perfil por encima de globos */
 body:has(.notes-modal-backdrop) .equip-balloon--portal,
 body:has(.notes-modal-backdrop) .circuit-balloon--fixed,
@@ -2940,9 +2933,9 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   font-size: 0.68rem;
   cursor: pointer;
   flex-shrink: 0;
-  /* Por encima del rótulo del chasis (z 5) y del tramo --from-bus */
+  /* Por encima del rótulo del chasis (z 7) para el globo de protección */
   position: relative;
-  z-index: 6;
+  z-index: 8;
   isolation: isolate;
   transition:
     border-color 0.22s ease,
@@ -4949,8 +4942,8 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  /* Por encima del rótulo del chasis (z 5): si no, el INS no recibe hover */
-  z-index: 6;
+  /* Por encima del rótulo (z 7): el INS recibe hover */
+  z-index: 8;
 }
 
 .ssb-board__riser {
@@ -6028,7 +6021,7 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   top: 0.35rem;
   left: 0.55rem;
   right: auto;
-  z-index: 5;
+  z-index: 7;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -6037,7 +6030,7 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   padding: 0.1rem 0.25rem;
   cursor: pointer;
   user-select: none;
-  /* Solo la etiqueta dispara el globo LCS (no el cuerpo con salidas) */
+  /* El nombre del cuadro recibe hover; los interruptores (z 8) ganan encima. */
   pointer-events: auto;
 }
 
@@ -6094,9 +6087,8 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   width: max-content;
   max-width: none;
   overflow: visible;
-  /* Interruptores del interior por encima del rótulo (globo de protección). */
   position: relative;
-  z-index: 6;
+  z-index: 1;
 }
 
 .hbus--direct .hbus__slot:has(.hbus-drop--lcs-open) {
@@ -6218,7 +6210,7 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
 
 .hbus--lcs-section .casc-brk {
   position: relative;
-  z-index: 6;
+  z-index: 8;
 }
 
 /*
