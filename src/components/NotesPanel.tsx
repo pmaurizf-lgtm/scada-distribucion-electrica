@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useNotes } from '../notes/NotesContext'
+import { exportNotesExcel } from '../notes/exportExcel'
 import {
   isNoteFullyResolved,
   noteHasOpenLines,
@@ -76,6 +77,7 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
   const [filter, setFilter] = useState<Filter>('open')
   const [status, setStatus] = useState<string | null>(null)
   const [ioOpen, setIoOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
 
   const groups = useMemo(() => {
@@ -115,7 +117,25 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
   const vesselLabel = vesselById(vesselId).label
   const openBullets = notes.reduce((sum, n) => sum + openLineCount(n), 0)
 
-  const handleExport = () => {
+  const handleExportExcel = async () => {
+    if (exporting) return
+    setExporting(true)
+    setStatus('Generando Excel…')
+    try {
+      await exportNotesExcel(vesselId, notes)
+      setStatus(
+        `Excel listo: ${notes.length} nota${notes.length === 1 ? '' : 's'} de ${vesselLabel}.`,
+      )
+    } catch (err) {
+      setStatus(
+        err instanceof Error ? err.message : 'No se pudo generar el Excel.',
+      )
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleExportJson = () => {
     const json = exportNotesJson()
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -124,7 +144,7 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
     a.download = `notas-${vesselId}-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
-    setStatus(`Exportadas ${notes.length} notas de ${vesselLabel}.`)
+    setStatus(`JSON exportado: ${notes.length} notas de ${vesselLabel}.`)
   }
 
   const handleImport = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -224,6 +244,14 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                 {ioOpen ? 'Ocultar opciones' : 'Más…'}
               </button>
             )}
+            <button
+              type="button"
+              className="btn btn--active"
+              disabled={exporting}
+              onClick={() => void handleExportExcel()}
+            >
+              {exporting ? 'Generando…' : 'Exportar Excel'}
+            </button>
             {(!isMobile || ioOpen) && (
               <>
                 <button
@@ -237,7 +265,7 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                 >
                   Usuario
                 </button>
-                <button type="button" className="btn" onClick={handleExport}>
+                <button type="button" className="btn" onClick={handleExportJson}>
                   Exportar JSON
                 </button>
                 <button
