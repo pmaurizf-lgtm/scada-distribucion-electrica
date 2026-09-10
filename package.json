@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "notes:rules": "firebase deploy --only firestore:rules"
+    "notes:rules": "npx firebase-tools deploy --only firestore:rules"
   },
   "dependencies": {
     "@types/dagre": "^0.7.54",
@@ -31,7 +31,6 @@
     "oxlint": "^1.75.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.0",
-    "vite-plugin-pwa": "^1.3.0",
-    "firebase-tools": "^14.0.0"
+    "vite-plugin-pwa": "^1.3.0"
   }
 }
