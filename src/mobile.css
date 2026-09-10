@@ -455,9 +455,20 @@ html.scada-mobile .notes-panel__body {
   padding: 0.55rem 0.85rem 1.25rem;
 }
 
-html.scada-mobile .notes-panel__item {
-  min-height: var(--touch-min, 2.75rem);
-  padding: 0.65rem 0.7rem;
+html.scada-mobile .notes-panel__group-title {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+html.scada-mobile .notes-panel__note-block {
+  gap: 0.15rem;
+  padding: 0.4rem 0.55rem 0.5rem;
+}
+
+html.scada-mobile .notes-panel__edit {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.82rem;
 }
 
 html.scada-mobile .notes-panel__bullet-check {

@@ -183,26 +183,26 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
               Notas de revisión
             </h2>
             <p className="notes-modal__hint">
-              {openBullets} viñeta{openBullets === 1 ? '' : 's'} abierta
-              {openBullets === 1 ? '' : 's'} · {notes.length} nota
-              {notes.length === 1 ? '' : 's'}
-              {displayName ? ` · Usuario: ${displayName}` : ''}
+              {openBullets} abierta{openBullets === 1 ? '' : 's'}
+              {displayName ? ` · ${displayName}` : ''}
             </p>
-            <p className="notes-modal__hint notes-panel__sync-hint">
-              {syncHint(sync)}
-              {sync.enabled ? (
-                <>
-                  {' '}
-                  <button
-                    type="button"
-                    className="notes-panel__sync-now"
-                    onClick={() => sync.syncNow()}
-                  >
-                    Actualizar
-                  </button>
-                </>
-              ) : null}
-            </p>
+            {!isMobile && (
+              <p className="notes-modal__hint notes-panel__sync-hint">
+                {syncHint(sync)}
+                {sync.enabled ? (
+                  <>
+                    {' '}
+                    <button
+                      type="button"
+                      className="notes-panel__sync-now"
+                      onClick={() => sync.syncNow()}
+                    >
+                      Actualizar
+                    </button>
+                  </>
+                ) : null}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -234,6 +234,15 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
             ))}
           </div>
           <div className="notes-panel__io">
+            {isMobile && sync.enabled && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => sync.syncNow()}
+              >
+                Actualizar
+              </button>
+            )}
             {isMobile && (
               <button
                 type="button"
@@ -319,34 +328,30 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                 </header>
                 <ul className="notes-panel__items">
                   {g.notes.map((n) => (
-                    <li key={n.id} className="notes-panel__note-block">
-                      <button
-                        type="button"
-                        className={`notes-panel__item${
-                          isNoteFullyResolved(n)
-                            ? ' notes-panel__item--resolved'
-                            : ''
-                        }`}
-                        onClick={() => {
-                          if (!ensureProfile()) return
-                          openEditor({ target: n.target, noteId: n.id })
-                          onClose()
-                        }}
-                      >
-                        <span className="notes-panel__item-main">
-                          <span>
-                            {n.lines[0]?.text || '(sin texto)'}
-                            {n.lines.length > 1
-                              ? ` (+${n.lines.length - 1})`
-                              : ''}
-                          </span>
+                    <li
+                      key={n.id}
+                      className={`notes-panel__note-block${
+                        isNoteFullyResolved(n)
+                          ? ' notes-panel__note-block--resolved'
+                          : ''
+                      }`}
+                    >
+                      <div className="notes-panel__note-meta">
+                        <span>
+                          {n.author} · {formatDate(n.createdAt)}
                         </span>
-                        <span className="notes-panel__item-meta">
-                          {formatDate(n.createdAt)} · {n.author} ·{' '}
-                          {openLineCount(n)} abierta
-                          {openLineCount(n) === 1 ? '' : 's'}
-                        </span>
-                      </button>
+                        <button
+                          type="button"
+                          className="notes-panel__edit"
+                          onClick={() => {
+                            if (!ensureProfile()) return
+                            openEditor({ target: n.target, noteId: n.id })
+                            onClose()
+                          }}
+                        >
+                          Editar
+                        </button>
+                      </div>
                       <ul className="notes-panel__bullets">
                         {n.lines.map((line) => (
                           <li

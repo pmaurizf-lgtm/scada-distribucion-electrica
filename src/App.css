@@ -10554,16 +10554,50 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
 .notes-panel__note-block {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  padding: 0.45rem 0.5rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.notes-panel__note-block--resolved {
+  opacity: 0.72;
+}
+
+.notes-panel__note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--muted, #9aa7b5);
+}
+
+.notes-panel__edit {
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--line-normal, #7ec8b8);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notes-panel__edit:hover {
+  text-decoration: underline;
 }
 
 .notes-panel__bullets {
   list-style: none;
   margin: 0;
-  padding: 0 0 0 0.35rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 
 .notes-panel__bullet {
