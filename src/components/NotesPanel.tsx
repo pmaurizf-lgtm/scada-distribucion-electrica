@@ -80,7 +80,6 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
   const [ioOpen, setIoOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
-  const restoreExcelRef = useRef<HTMLInputElement>(null)
 
   const groups = useMemo(() => {
     const filtered = notes.filter((n) => {
@@ -254,6 +253,27 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
             ))}
           </div>
           <div className="notes-panel__io">
+            <div className="notes-panel__io-excel">
+              <button
+                type="button"
+                className="btn btn--active"
+                disabled={exporting}
+                onClick={() => void handleExportExcel()}
+              >
+                {exporting ? 'Generando…' : 'Exportar Excel'}
+              </button>
+              <label
+                className="btn notes-panel__file-btn"
+                title="Recupera notas desde un Excel exportado con Exportar Excel"
+              >
+                Restaurar Excel…
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={(e) => void handleRestoreExcel(e)}
+                />
+              </label>
+            </div>
             {isMobile && sync.enabled && (
               <button
                 type="button"
@@ -273,22 +293,6 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                 {ioOpen ? 'Ocultar opciones' : 'Más…'}
               </button>
             )}
-            <button
-              type="button"
-              className="btn btn--active"
-              disabled={exporting}
-              onClick={() => void handleExportExcel()}
-            >
-              {exporting ? 'Generando…' : 'Exportar Excel'}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              title="Recupera notas desde un Excel exportado con este botón"
-              onClick={() => restoreExcelRef.current?.click()}
-            >
-              Restaurar Excel…
-            </button>
             {(!isMobile || ioOpen) && (
               <>
                 <button
@@ -320,13 +324,6 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
               accept="application/json,.json"
               hidden
               onChange={handleImport}
-            />
-            <input
-              ref={restoreExcelRef}
-              type="file"
-              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              hidden
-              onChange={(e) => void handleRestoreExcel(e)}
             />
           </div>
         </div>

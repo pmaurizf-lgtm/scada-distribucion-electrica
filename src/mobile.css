@@ -451,6 +451,19 @@ html.scada-mobile .notes-panel__io {
   gap: 0.35rem;
 }
 
+html.scada-mobile .notes-panel__io-excel {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+html.scada-mobile .notes-panel__file-btn {
+  min-height: var(--touch-min, 2.75rem);
+  font-size: 0.9rem;
+  width: 100%;
+}
+
 html.scada-mobile .notes-panel__body {
   padding: 0.55rem 0.85rem 1.25rem;
 }

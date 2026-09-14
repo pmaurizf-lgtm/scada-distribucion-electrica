@@ -10695,6 +10695,31 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   gap: 0.35rem;
 }
 
+.notes-panel__io-excel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.notes-panel__file-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.notes-panel__file-btn input[type='file'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 0;
+  z-index: 1;
+}
+
 .notes-panel__status {
   margin: 0.45rem 1rem 0;
   font-size: 0.78rem;

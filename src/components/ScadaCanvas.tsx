@@ -674,7 +674,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       setNotesPanelOpen(true)
                       if (isMobile) setChromeCollapsed(true)
                     }}
-                    title="Notas de revisión del buque (se sincronizan entre móviles con red)"
+                    title="Notas de revisión del buque (se sincronizan con red)"
                   >
                     Notas
                     {notes.reduce(
