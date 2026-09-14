@@ -1,5 +1,9 @@
 import type { Circuit, DistributionData, Equipment } from '../types'
-import { incomingFeeds, isPendingFeed } from '../utils/cascadeModel'
+import {
+  incomingFeeds,
+  isAux24Feed,
+  isPendingFeed,
+} from '../utils/cascadeModel'
 import {
   findEquipmentByQuery,
   getUpstreamTrace,
@@ -33,7 +37,9 @@ function legFromCircuit(
 }
 
 function pickPrimaryIncoming(feeds: Circuit[]): Circuit | undefined {
-  const real = feeds.filter((c) => !c.virtual && !isPendingFeed(c))
+  const real = feeds.filter(
+    (c) => !c.virtual && !isPendingFeed(c) && !isAux24Feed(c),
+  )
   const norms = real.filter((c) => c.lineType === 'normal')
   if (norms.length) return norms[0]
   return real[0]
@@ -43,6 +49,7 @@ function pickAltIncoming(feeds: Circuit[], primary?: Circuit): Circuit | undefin
   const real = feeds.filter(
     (c) =>
       !c.virtual &&
+      !isAux24Feed(c) &&
       c.id !== primary?.id &&
       (c.lineType === 'alternativa' || isPendingFeed(c)),
   )

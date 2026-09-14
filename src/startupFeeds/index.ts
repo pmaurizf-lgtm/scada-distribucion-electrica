@@ -9,6 +9,7 @@ export { buildStartupTableRows, summarizeGroups } from './tableRows'
 export type { StartupTableRow } from './tableRows'
 export {
   buildOrderedFeedChain,
+  feedLineLabel,
   formatChainArrow,
 } from './feedChain'
 export type { FeedChainHop, FeedLineKind } from './feedChain'

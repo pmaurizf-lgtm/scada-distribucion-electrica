@@ -9262,6 +9262,10 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   background: #fff8e1;
 }
 
+.startup-table__row--aux td {
+  background: #f3e5f5;
+}
+
 .startup-table__row--dest td {
   border-top: 2.5px solid #37474f;
 }
@@ -9307,6 +9311,11 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
 .startup-table__pill--alt {
   background: #ffe0b2;
   color: #e65100;
+}
+
+.startup-table__pill--aux {
+  background: #e1bee7;
+  color: #6a1b9a;
 }
 
 .startup-table__summaries {

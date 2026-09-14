@@ -21,6 +21,7 @@ const COLORS = {
   summaryBg: 'E3F2FD',
   normBg: 'FAFBFC',
   altBg: 'FFF8E1',
+  auxBg: 'F3E5F5',
   destBorder: '37474F',
   lineBorder: '90A4AE',
   thinBorder: 'CFD8DC',
@@ -77,7 +78,7 @@ export async function exportStartupTableExcel(
       (report.unresolved.length
         ? ` · No encontrados: ${report.unresolved.length}`
         : '') +
-      ' · Cada bloque muestra la cadena fuente → destino (Normal y Alternativa si existe).',
+      ' · Cada bloque muestra la cadena fuente → destino (Normal, Alternativa y AUX 24 V si existen).',
   ])
   ws.mergeCells(2, 1, 2, 8)
   sub.getCell(1).font = {
@@ -133,7 +134,9 @@ export async function exportStartupTableExcel(
         ? COLORS.summaryBg
         : r.lineKind === 'alternativa'
           ? COLORS.altBg
-          : COLORS.normBg
+          : r.lineKind === 'aux'
+            ? COLORS.auxBg
+            : COLORS.normBg
 
     excelRow.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = {

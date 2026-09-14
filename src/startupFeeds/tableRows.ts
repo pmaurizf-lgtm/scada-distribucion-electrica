@@ -2,6 +2,7 @@ import { system690 } from '../data/system690'
 import type { DistributionData } from '../types'
 import {
   buildOrderedFeedChain,
+  feedLineLabel,
   formatChainArrow,
   type FeedChainHop,
   type FeedLineKind,
@@ -46,7 +47,7 @@ function pushChainRows(
   isFirstLineOfDest: boolean,
 ): void {
   if (!hops.length) return
-  const lineLabel = lineKind === 'normal' ? 'Normal' : 'Alternativa'
+  const lineLabel = feedLineLabel(lineKind)
   const summary = formatChainArrow(hops)
 
   hops.forEach((h, i) => {
@@ -71,8 +72,8 @@ function pushChainRows(
 }
 
 /**
- * Tabla por destino: cadena completa Normal (+ Alternativa si existe),
- * un escalón por fila (fuente → … → destino).
+ * Tabla por destino: cadena Normal (+ Alternativa / AUX 24 V si existen),
+ * un escalón por fila (fuente → destino).
  */
 export function buildStartupTableRows(
   report: StartupReport,
@@ -101,6 +102,7 @@ export function buildStartupTableRows(
   for (const d of dests) {
     const norm = buildOrderedFeedChain(d.equipmentId, data, 'normal')
     const alt = buildOrderedFeedChain(d.equipmentId, data, 'alternativa')
+    const aux = buildOrderedFeedChain(d.equipmentId, data, 'aux')
 
     const destInfo = {
       equipmentId: d.equipmentId,
@@ -108,7 +110,7 @@ export function buildStartupTableRows(
       local: d.local,
     }
 
-    if (!norm.length && !alt.length) {
+    if (!norm.length && !alt.length && !aux.length) {
       rows.push({
         isDestStart: true,
         isLineStart: true,
@@ -116,7 +118,7 @@ export function buildStartupTableRows(
         destLocal: dash(d.local),
         destName: d.equipmentName,
         lineKind: 'normal',
-        lineLabel: 'Normal',
+        lineLabel: feedLineLabel('normal'),
         step: 1,
         hopEquip: d.equipmentId,
         hopLocal: dash(d.local),
@@ -130,6 +132,13 @@ export function buildStartupTableRows(
 
     pushChainRows(rows, destInfo, 'normal', norm, true)
     pushChainRows(rows, destInfo, 'alternativa', alt, !norm.length)
+    pushChainRows(
+      rows,
+      destInfo,
+      'aux',
+      aux,
+      !norm.length && !alt.length,
+    )
   }
 
   return rows

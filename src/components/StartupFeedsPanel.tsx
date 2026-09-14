@@ -134,7 +134,7 @@ export function StartupFeedsPanel({
           <h1 className="startup-panel__h1">Puesta en marcha · alimentaciones</h1>
           <p className="startup-panel__sub">
             Carga solo los equipos a alimentar; el SCADA calcula la cadena
-            completa aguas arriba (Normal y Alternativa). La tabla lista cada
+            completa aguas arriba (Normal, Alternativa y AUX 24 V). La tabla lista cada
             escalón hasta el destino; el Excel marca bloques y colores por
             alimentación.
           </p>
@@ -246,7 +246,9 @@ export function StartupFeedsPanel({
                           : '',
                         r.lineKind === 'alternativa'
                           ? 'startup-table__row--alt'
-                          : 'startup-table__row--norm',
+                          : r.lineKind === 'aux'
+                            ? 'startup-table__row--aux'
+                            : 'startup-table__row--norm',
                       ]
                         .filter(Boolean)
                         .join(' ')}
@@ -261,7 +263,9 @@ export function StartupFeedsPanel({
                             className={
                               r.lineKind === 'alternativa'
                                 ? 'startup-table__pill startup-table__pill--alt'
-                                : 'startup-table__pill startup-table__pill--norm'
+                                : r.lineKind === 'aux'
+                                  ? 'startup-table__pill startup-table__pill--aux'
+                                  : 'startup-table__pill startup-table__pill--norm'
                             }
                           >
                             {r.lineLabel}
