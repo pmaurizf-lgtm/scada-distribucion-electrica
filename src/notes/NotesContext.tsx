@@ -34,6 +34,7 @@ import {
   useNotesCloudSync,
   type NotesSyncInfo,
 } from './useNotesCloudSync'
+import { mergeExcelNotes, parseNotesExcel } from './importExcel'
 
 export type NotesEditorSession = {
   target: NoteTarget
@@ -71,6 +72,11 @@ type NotesContextValue = {
     updated: number
     skipped: number
   }
+  importNotesExcel: (data: ArrayBuffer) => Promise<{
+    added: number
+    updated: number
+    skipped: number
+  }>
   labelFor: (target: NoteTarget) => string
   kindLabelFor: (target: NoteTarget) => string
   sync: Omit<NotesSyncInfo, 'enqueuePush'>
@@ -291,6 +297,23 @@ export function NotesProvider({
     [allNotes, enqueuePush, vesselId],
   )
 
+  const importNotesExcel = useCallback(
+    async (data: ArrayBuffer) => {
+      const parsed = await parseNotesExcel(data, vesselId)
+      const result = mergeExcelNotes(vesselId, allNotes, parsed.notes)
+      setAllNotes(result.notes)
+      for (const n of result.notes) {
+        if (!n.deletedAt) enqueuePush(n.id, n)
+      }
+      return {
+        added: result.added,
+        updated: result.updated,
+        skipped: result.skipped,
+      }
+    },
+    [allNotes, enqueuePush, vesselId],
+  )
+
   const sync = useMemo(
     () => ({
       enabled: syncEnabled,
@@ -319,6 +342,7 @@ export function NotesProvider({
       canEditNote,
       exportNotesJson,
       importNotesJson,
+      importNotesExcel,
       labelFor: labelForNoteTarget,
       kindLabelFor: kindLabelForNoteTarget,
       sync,
@@ -339,6 +363,7 @@ export function NotesProvider({
       canEditNote,
       exportNotesJson,
       importNotesJson,
+      importNotesExcel,
       sync,
     ],
   )

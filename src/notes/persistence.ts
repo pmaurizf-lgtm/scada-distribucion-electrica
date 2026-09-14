@@ -141,8 +141,12 @@ export function mergeImportedNotes(
       added += 1
       continue
     }
-    if (next.updatedAt > prev.updatedAt) {
-      byId.set(next.id, next)
+    if (next.updatedAt > prev.updatedAt || (prev.deletedAt && !next.deletedAt)) {
+      byId.set(next.id, {
+        ...next,
+        deletedAt: next.deletedAt,
+        updatedAt: next.updatedAt,
+      })
       updated += 1
     } else {
       skipped += 1

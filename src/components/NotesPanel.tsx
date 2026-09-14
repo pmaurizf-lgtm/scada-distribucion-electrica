@@ -38,18 +38,18 @@ function syncHint(sync: {
   lastError: string | null
 }): string {
   if (!sync.enabled) {
-    return 'Este móvil guarda en local. Configura Firebase para compartir entre teléfonos.'
+    return 'Este equipo guarda las notas en local. Configura Firebase para compartirlas.'
   }
   if (sync.state === 'offline') {
     return 'Sin red: las notas se enviarán al reconectar.'
   }
-  if (sync.state === 'syncing') return 'Sincronizando con el resto de móviles…'
+  if (sync.state === 'syncing') return 'Sincronizando notas…'
   if (sync.state === 'error') {
     return sync.lastError
       ? `No se pudo sincronizar: ${sync.lastError}`
       : 'No se pudo sincronizar.'
   }
-  return 'Sincronizado. Las notas de este buque se ven en todos los móviles.'
+  return 'Sincronizado. Las notas de este buque se ven en todos los equipos.'
 }
 
 type Group = {
@@ -68,6 +68,7 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
     setLineResolved,
     exportNotesJson,
     importNotesJson,
+    importNotesExcel,
     labelFor,
     kindLabelFor,
     sync,
@@ -79,6 +80,7 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
   const [ioOpen, setIoOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
+  const restoreExcelRef = useRef<HTMLInputElement>(null)
 
   const groups = useMemo(() => {
     const filtered = notes.filter((n) => {
@@ -145,6 +147,24 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
     a.click()
     URL.revokeObjectURL(url)
     setStatus(`JSON exportado: ${notes.length} notas de ${vesselLabel}.`)
+  }
+
+  const handleRestoreExcel = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setStatus('Restaurando desde Excel…')
+    try {
+      const data = await file.arrayBuffer()
+      const result = await importNotesExcel(data)
+      setStatus(
+        `Restaurado desde Excel: +${result.added} nuevas, ${result.updated} recuperadas/actualizadas, ${result.skipped} omitidas.`,
+      )
+    } catch (err) {
+      setStatus(
+        err instanceof Error ? err.message : 'No se pudo leer el Excel de notas.',
+      )
+    }
   }
 
   const handleImport = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -261,6 +281,14 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
             >
               {exporting ? 'Generando…' : 'Exportar Excel'}
             </button>
+            <button
+              type="button"
+              className="btn"
+              title="Recupera notas desde un Excel exportado con este botón"
+              onClick={() => restoreExcelRef.current?.click()}
+            >
+              Restaurar Excel…
+            </button>
             {(!isMobile || ioOpen) && (
               <>
                 <button
@@ -292,6 +320,13 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
               accept="application/json,.json"
               hidden
               onChange={handleImport}
+            />
+            <input
+              ref={restoreExcelRef}
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              hidden
+              onChange={(e) => void handleRestoreExcel(e)}
             />
           </div>
         </div>
