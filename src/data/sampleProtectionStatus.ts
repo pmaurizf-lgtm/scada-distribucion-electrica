@@ -1,13 +1,15 @@
-import type { ProtectionStatusEntry } from '../types'
-import { system690 } from './system690'
+import type { ProtectionStatusEntry, DistributionData } from '../types'
+import { getTopology } from '../topology'
 import { allSectionCouplers } from '../utils/cascadeModel'
 
 /**
  * Estado inicial: todos los interruptores abiertos (desenergizado → verde).
  * Incluye acopladores de sección QBT1/QBT2 (sintéticos).
  */
-function buildSampleStatus(): ProtectionStatusEntry[] {
-  const fromExcel = system690.circuits.map((c) => ({
+export function buildOpenProtectionStatus(
+  data: DistributionData = getTopology(),
+): ProtectionStatusEntry[] {
+  const fromExcel = data.circuits.map((c) => ({
     circuitId: c.id,
     protectionName: c.protectionName,
     state: 'abierta' as const,
@@ -20,8 +22,9 @@ function buildSampleStatus(): ProtectionStatusEntry[] {
   return [...fromExcel, ...qbts]
 }
 
+/** @deprecated Preferir buildOpenProtectionStatus(data) al cambiar topología. */
 export const sampleProtectionStatus: ProtectionStatusEntry[] =
-  buildSampleStatus()
+  buildOpenProtectionStatus()
 
 export function toProtectionStatusMap(
   entries: ProtectionStatusEntry[],

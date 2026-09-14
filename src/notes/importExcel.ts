@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs'
-import { system690 } from '../data/system690'
+import { getTopology } from '../topology'
 import { isVesselId, type VesselId } from '../vessels/vesselCatalog'
 import { createNoteId } from './persistence'
 import {
@@ -75,11 +75,12 @@ function targetFromRow(kindLabel: string, id: string): NoteTarget | null {
   const trimmed = id.trim()
   if (!trimmed) return null
   const kind = kindLabel.trim().toLowerCase()
+  const data = getTopology()
   const isCircuit =
     kind === 'interruptor' ||
-    system690.circuits.some((c) => c.id === trimmed)
+    data.circuits.some((c) => c.id === trimmed)
   const isEquipment =
-    kind === 'equipo' || system690.equipment.some((e) => e.id === trimmed)
+    kind === 'equipo' || data.equipment.some((e) => e.id === trimmed)
   if (isCircuit && !isEquipment) return { kind: 'circuit', circuitId: trimmed }
   if (isEquipment && !isCircuit) {
     return { kind: 'equipment', equipmentId: trimmed }

@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { displaySourceFileName, system690 } from '../data/system690'
 import {
-  sampleProtectionStatus,
+  buildOpenProtectionStatus,
   toProtectionStatusMap,
 } from '../data/sampleProtectionStatus'
 import type { ProtectionStatusMap } from '../types'
@@ -49,27 +49,24 @@ import {
 } from './CascadeView'
 import { NavantiaLogo } from './NavantiaLogo'
 import { StartupFeedsPanel } from './StartupFeedsPanel'
-import { PwaUpdateToast } from './PwaUpdateToast'
 import { NoteEditorModal } from './NoteEditorModal'
 import { NotesPanel } from './NotesPanel'
 import { useNotes } from '../notes/NotesContext'
 import { useUserProfile } from '../notes/UserProfileContext'
 import { useAuth } from '../auth'
+import {
+  clearTopologyNotice,
+  loadTopologyFromExcel,
+  resetTopologyToEmbedded,
+  useTopologyState,
+} from '../topology'
 
 const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
 const ZOOM_STEP = 0.15
-const PWA_HINT_KEY = 'scada-f110-pwa-hint-dismissed'
 const MAX_LOCK_EXCEL_BYTES = 8 * 1024 * 1024
+const MAX_CIRCUIT_LIST_BYTES = 32 * 1024 * 1024
 const ALLOWED_LOCK_EXCEL_RE = /\.(xlsx|xls|xlsm)$/i
-
-const searchableEquipment = system690.equipment.filter(
-  (e) =>
-    !e.virtual &&
-    !e.id.startsWith('BUS-') &&
-    !e.id.startsWith('SPARE-') &&
-    e.id !== 'ORIGEN-PENDIENTE',
-)
 
 const REST_STATUS_SOURCE = 'reposo · todos abiertos · gens parados'
 
@@ -90,11 +87,6 @@ function locksStatusLine(
     : `${name} · ${REST_STATUS_SOURCE}`
 }
 
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
-
 type ScadaCanvasProps = {
   vesselId: VesselId
   onVesselChange: (id: VesselId) => void
@@ -102,19 +94,22 @@ type ScadaCanvasProps = {
 
 export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const circuitListInputRef = useRef<HTMLInputElement>(null)
   const candadosDetailsRef = useRef<HTMLDetailsElement>(null)
   const cascadeRef = useRef<CascadeViewHandle>(null)
   const isMobile = useIsMobileUi()
   const { notes } = useNotes()
   const { displayName, openProfilePrompt } = useUserProfile()
   const { signOutUser } = useAuth()
+  const topo = useTopologyState()
   const [notesPanelOpen, setNotesPanelOpen] = useState(false)
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
+  const [topologyBusy, setTopologyBusy] = useState(false)
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatusMap>(
     () => {
       const locks = loadVesselLocks(vesselId)
       return withLocksOpen(
-        toProtectionStatusMap(sampleProtectionStatus),
+        toProtectionStatusMap(buildOpenProtectionStatus(system690)),
         locks.lockedCircuits,
       )
     },
@@ -138,6 +133,9 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const [lockTool, setLockTool] = useState<LockTool>('none')
   const [zoom, setZoom] = useState(1)
   const [statusSource, setStatusSource] = useState(() => {
+    if (topo.sessionOverride && topo.fileName) {
+      return `lista circuitos (sesión): ${topo.fileName}`
+    }
     const n = loadVesselLocks(vesselId).lockedCircuits.length
     return locksStatusLine(vesselId, n)
   })
@@ -148,15 +146,6 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const [locateEquipmentId, setLocateEquipmentId] = useState<string | null>(
     null,
   )
-  const [installPrompt, setInstallPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null)
-  const [showPwaHint, setShowPwaHint] = useState(() => {
-    try {
-      return localStorage.getItem(PWA_HINT_KEY) !== '1'
-    } catch {
-      return true
-    }
-  })
   const [startupMode, setStartupMode] = useState(false)
   const [simulationActive, setSimulationActive] = useState(false)
 
@@ -164,6 +153,14 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     // Cada carga: reposo limpio (sin flujo ni candados de sesiones anteriores)
     clearPersistedSim()
   }, [])
+
+  useEffect(() => {
+    if (!topo.notice) return
+    setSearchHint(topo.notice)
+    // Quitar el aviso del store en el siguiente tick para no encadenar updates.
+    const t = window.setTimeout(() => clearTopologyNotice(), 0)
+    return () => window.clearTimeout(t)
+  }, [topo.notice])
 
   useEffect(() => {
     if (isMobile) {
@@ -187,15 +184,6 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
 
   const showChromeMenu = useCallback(() => {
     setChromeCollapsed(false)
-  }, [])
-
-  useEffect(() => {
-    const onBip = (e: Event) => {
-      e.preventDefault()
-      setInstallPrompt(e as BeforeInstallPromptEvent)
-    }
-    window.addEventListener('beforeinstallprompt', onBip)
-    return () => window.removeEventListener('beforeinstallprompt', onBip)
   }, [])
 
   useEffect(() => {
@@ -230,29 +218,24 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     [vesselId, lockedCircuits, lockInfoByCircuit, onVesselChange],
   )
 
+  const searchableEquipment = useMemo(
+    () =>
+      system690.equipment.filter(
+        (e) =>
+          !e.virtual &&
+          !e.id.startsWith('BUS-') &&
+          !e.id.startsWith('SPARE-') &&
+          e.id !== 'ORIGEN-PENDIENTE',
+      ),
+    [topo.revision],
+  )
+
   const { energizedCircuitIds, energizedEquipmentIds, energizedBusHalves } =
     useMemo(
       () =>
         computeEnergyFlow(system690, protectionStatus, runningGenerators),
-      [protectionStatus, runningGenerators],
+      [protectionStatus, runningGenerators, topo.revision],
     )
-
-  const dismissPwaHint = () => {
-    setShowPwaHint(false)
-    try {
-      localStorage.setItem(PWA_HINT_KEY, '1')
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const handleInstallClick = async () => {
-    if (!installPrompt) return
-    await installPrompt.prompt()
-    await installPrompt.userChoice
-    setInstallPrompt(null)
-    dismissPwaHint()
-  }
 
   const toggleGenerator = useCallback(
     (genId: string) => {
@@ -277,7 +260,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     const defaults = defaultLocksForVessel(vesselId)
     setProtectionStatus(
       withLocksOpen(
-        toProtectionStatusMap(sampleProtectionStatus),
+        toProtectionStatusMap(buildOpenProtectionStatus(system690)),
         defaults.lockedCircuits,
       ),
     )
@@ -511,8 +494,49 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       }
       e.target.value = ''
     },
-    [closeCandadosMenu],
+    [closeCandadosMenu, searchableEquipment],
   )
+
+  const handleCircuitListExcelChange = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      if (!ALLOWED_LOCK_EXCEL_RE.test(file.name) || !file.size) {
+        setSearchHint('Archivo de lista de circuitos no válido (.xlsx / .xlsm).')
+        return
+      }
+      if (file.size > MAX_CIRCUIT_LIST_BYTES) {
+        setSearchHint(
+          `Excel demasiado grande (${Math.round(file.size / 1024 / 1024)} MiB). Máx. ${Math.round(
+            MAX_CIRCUIT_LIST_BYTES / 1024 / 1024,
+          )} MiB.`,
+        )
+        return
+      }
+      setTopologyBusy(true)
+      setSearchHint('Cargando lista de circuitos en el unifilar…')
+      try {
+        const buf = await file.arrayBuffer()
+        const stats = loadTopologyFromExcel(buf, file.name)
+        // El unifilar se remonta; el aviso va en topology.notice
+        void stats
+      } catch (err) {
+        setSearchHint(
+          err instanceof Error
+            ? err.message
+            : 'No se pudo leer la lista de circuitos.',
+        )
+      } finally {
+        setTopologyBusy(false)
+      }
+    },
+    [],
+  )
+
+  const handleRestoreEmbeddedTopology = useCallback(() => {
+    resetTopologyToEmbedded()
+  }, [])
 
   const handleLocate = (e: FormEvent) => {
     e.preventDefault()
@@ -566,10 +590,6 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     cascadeRef.current?.collapseAll()
   }
 
-  const isIos =
-    typeof navigator !== 'undefined' &&
-    /iPad|iPhone|iPod/.test(navigator.userAgent)
-
   const shellClass = [
     'app-shell',
     'app-shell--cascade',
@@ -603,6 +623,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                 {system690.sourceFile
                   ? displaySourceFileName(system690.sourceFile)
                   : system690.vessel}
+                {topo.sessionOverride ? ' · sesión (no guardada)' : ''}
               </p>
               <label className="topbar__vessel">
                 <span className="topbar__vessel-label">Buque</span>
@@ -790,12 +811,49 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                         </button>
                       </div>
                     </details>
+                    <details className="candados-menu">
+                      <summary
+                        className={`btn${topo.sessionOverride ? ' btn--active' : ''}`}
+                        title="Cargar una nueva lista de circuitos en el unifilar (solo esta sesión; no se guarda)"
+                      >
+                        {topologyBusy ? 'Cargando…' : 'Lista circuitos'}
+                      </summary>
+                      <div className="candados-menu__panel" role="menu">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="candados-menu__item"
+                          disabled={topologyBusy}
+                          title="Excel lista de circuitos (mismas columnas que el unifilar). Solo memoria de sesión."
+                          onClick={() => circuitListInputRef.current?.click()}
+                        >
+                          Cargar Excel…
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="candados-menu__item"
+                          disabled={!topo.sessionOverride || topologyBusy}
+                          title="Volver a la topología embebida en la app"
+                          onClick={handleRestoreEmbeddedTopology}
+                        >
+                          Restaurar embebida
+                        </button>
+                      </div>
+                    </details>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                       hidden
                       onChange={handleLockExcelChange}
+                    />
+                    <input
+                      ref={circuitListInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                      hidden
+                      onChange={(e) => void handleCircuitListExcelChange(e)}
                     />
                 </div>
               </div>
@@ -974,33 +1032,6 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
           </div>
         </header>
 
-        {isMobile && showPwaHint && (
-          <div className="pwa-install" role="status">
-            <p className="pwa-install__text">
-              <strong>Instalar en el móvil</strong>
-              {installPrompt
-                ? ' — añade F110 DPS a la pantalla de inicio para usarla sin conexión.'
-                : isIos
-                  ? ' — en Safari: Compartir → «Añadir a pantalla de inicio».'
-                  : ' — en el menú del navegador: «Instalar aplicación» / «Añadir a pantalla de inicio».'}
-            </p>
-            <div className="pwa-install__actions">
-              {installPrompt && (
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={() => void handleInstallClick()}
-                >
-                  Instalar
-                </button>
-              )}
-              <button type="button" className="btn" onClick={dismissPwaHint}>
-                Entendido
-              </button>
-            </div>
-          </div>
-        )}
-
         {searchHint && <div className="banner">{searchHint}</div>}
         {lockTool !== 'none' && (
           <div className="banner banner--tool">
@@ -1096,10 +1127,8 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
           gens: {runningGenerators.size} en marcha · candados:{' '}
           {lockedCircuits.size} · flujo: {energizedCircuitIds.size} circ. · zoom{' '}
           {Math.round(zoom * 100)}% · {statusSource}
-          {isMobile ? ' · PWA' : ''}
         </span>
       </footer>
-      <PwaUpdateToast enabled={true} />
       {isMobile && chromeCollapsed && (
         <button
           type="button"

@@ -1,0 +1,26 @@
+---
+description: Trasladar cambios de escritorio GitHub a la UI móvil automáticamente
+alwaysApply: true
+---
+
+# Escritorio → móvil (GitHub) automático
+
+En este proyecto hay **dos copias**:
+
+| Copia | Ruta | UI |
+|-------|------|-----|
+| Local | `scada-distribucion-electrica-local` | Solo escritorio (`useIsMobileUi` → siempre `false`) |
+| GitHub | `scada-distribucion-electrica` | Escritorio **y** móvil (mismo código + `mobile.css` + PWA) |
+
+## Regla del usuario (salvo que diga lo contrario)
+
+1. Los cambios que afecten a la app de **escritorio en GitHub** deben **trasladarse también a la versión móvil** de forma automática (misma codebase: UX táctil, `html.scada-mobile`, paneles, menús, selectores de archivo, etc.).
+2. Tras cambios relevantes en local que deban llegar a Pages/móvil: **replicar en el repo GitHub**, hacer **commit y push a `main`** (con aprobación si hace falta), para que el despliegue móvil las reciba.
+3. No hace falta que el usuario pida «también en móvil» ni «súbelo a GitHub» cada vez, **salvo** que diga explícitamente lo contrario (p. ej. «solo local», «no subas», «no móvil»).
+
+## Cómo cumplirlo
+
+- En componentes con `isMobile` / `Más…` / chrome colapsable: el nuevo control debe ser usable en móvil (visible o dentro del flujo táctil; inputs `file` con `<label>` si iOS lo requiere).
+- Revisar `src/mobile.css` si el layout nuevo lo necesita.
+- No reactivar UI móvil en la copia **local** (sigue siendo escritorio-only).
+- No romper baselines congelados MSB 690 / 4SFS.

@@ -10,6 +10,7 @@ import { UserProfileModal } from './components/UserProfileModal'
 import { hasDisplayName } from './notes/userProfile'
 import { useScadaMobileHtmlClass } from './hooks/useScadaMobileHtmlClass'
 import { AuthProvider, LoginGate, useAuth } from './auth'
+import { useTopologyState } from './topology'
 
 function AppShell({
   vesselId,
@@ -19,6 +20,7 @@ function AppShell({
   onVesselChange: (id: VesselId) => void
 }) {
   const { openProfilePrompt, profile } = useUserProfile()
+  const topo = useTopologyState()
   const needsName = !profile && !hasDisplayName()
   useScadaMobileHtmlClass()
 
@@ -32,7 +34,11 @@ function AppShell({
 
   return (
     <NotesProvider vesselId={vesselId}>
-      <ScadaCanvas vesselId={vesselId} onVesselChange={onVesselChange} />
+      <ScadaCanvas
+        key={`topo-${topo.revision}-${vesselId}`}
+        vesselId={vesselId}
+        onVesselChange={onVesselChange}
+      />
       <UserProfileModal required={needsName} />
     </NotesProvider>
   )

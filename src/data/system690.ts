@@ -113,10 +113,25 @@ const base: DistributionData = {
   ),
 }
 
-/** Datos 690 V + ABT→TRF→LCS/400 Hz + RESPETO (690 y MSB-4SFS) */
-export const system690: DistributionData = augmentSpareCircuits(
+/** Topología embebida de build (no mutar). */
+export const embeddedSystem690: DistributionData = augmentSpareCircuits(
   mergeAbtDownstream(base),
 )
+
+/**
+ * Topología activa del unifilar.
+ * En sesión puede sustituirse por una lista Excel (solo memoria; sin persistir).
+ * Los `import { system690 }` reciben el valor vivo al remontar la UI.
+ */
+export let system690: DistributionData = embeddedSystem690
+
+export function setSessionSystem690(data: DistributionData): void {
+  system690 = data
+}
+
+export function restoreEmbeddedSystem690(): void {
+  system690 = embeddedSystem690
+}
 
 /** Denominación DCP-10 (Excel F/J) a partir del tag PUMA (E/I) */
 export function dcp10Of(pumaId: string): string | undefined {
