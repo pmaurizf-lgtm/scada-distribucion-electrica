@@ -13,9 +13,6 @@ export function authErrorMessage(err: unknown): string {
       return 'Esta cuenta está deshabilitada.'
     case 'auth/too-many-requests':
       return 'Demasiados intentos. Espera unos minutos.'
-    case 'auth/popup-closed-by-user':
-    case 'auth/cancelled-popup-request':
-      return 'Se canceló el acceso con Google.'
     case 'auth/operation-not-allowed':
       return 'Este método de acceso no está activado en Firebase.'
     case 'auth/unauthorized-domain':

@@ -19,13 +19,14 @@ function usesPasswordProvider(user: User): boolean {
 }
 
 /**
+ * Solo cuentas de correo/contraseña creadas por el administrador.
  * Acceso permitido si:
  * - el correo está en VITE_ALLOWED_EMAILS, o
  * - existe Firestore allowlist/{email} con enabled !== false, o
- * - no hay lista en env y la cuenta es correo/contraseña (creada por el administrador).
- * Google siempre exige lista blanca o documento allowlist.
+ * - no hay lista en env (cualquier cuenta password dada de alta).
  */
 export async function isUserAllowed(user: User): Promise<boolean> {
+  if (!usesPasswordProvider(user)) return false
   const normalized = normalizeEmail(user.email ?? '')
   if (!normalized) return false
   const envList = parseAllowedEmails(import.meta.env.VITE_ALLOWED_EMAILS)
@@ -41,6 +42,6 @@ export async function isUserAllowed(user: User): Promise<boolean> {
     }
   }
 
-  if (envList.length === 0 && usesPasswordProvider(user)) return true
+  if (envList.length === 0) return true
   return false
 }

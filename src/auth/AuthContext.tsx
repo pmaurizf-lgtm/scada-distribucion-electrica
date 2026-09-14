@@ -7,13 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import {
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  type User,
-} from 'firebase/auth'
+import { signInWithEmailAndPassword, signOut, type User } from 'firebase/auth'
 import { getFirebase, isSignedInUser, waitForAuthUser } from '../firebase/app'
 import { isNotesSyncConfigured } from '../notes/syncConfig'
 import { isUserAllowed } from './allowlist'
@@ -32,7 +26,6 @@ type AuthContextValue = {
   email: string | null
   error: string | null
   signInWithPassword: (email: string, password: string) => Promise<void>
-  signInWithGoogle: () => Promise<void>
   signOutUser: () => Promise<void>
   clearError: () => void
 }
@@ -131,28 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signInWithGoogle = useCallback(async () => {
-    const fb = getFirebase()
-    if (!fb) {
-      setStatus('misconfigured')
-      return
-    }
-    setError(null)
-    try {
-      const provider = new GoogleAuthProvider()
-      provider.setCustomParameters({ prompt: 'select_account' })
-      const cred = await signInWithPopup(fb.auth, provider)
-      const admitted = await admitOrReject(cred.user)
-      if (admitted === 'forbidden') {
-        setStatus('forbidden')
-        setError('Esta cuenta no está autorizada para usar la aplicación.')
-      }
-    } catch (err) {
-      setStatus('unauthenticated')
-      setError(authErrorMessage(err))
-    }
-  }, [])
-
   const signOutUser = useCallback(async () => {
     const fb = getFirebase()
     setError(null)
@@ -168,21 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: user?.email ?? null,
       error,
       signInWithPassword,
-      signInWithGoogle,
       signOutUser,
       clearError: () => {
         setError(null)
         if (status === 'forbidden') setStatus('unauthenticated')
       },
     }),
-    [
-      status,
-      user,
-      error,
-      signInWithPassword,
-      signInWithGoogle,
-      signOutUser,
-    ],
+    [status, user, error, signInWithPassword, signOutUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

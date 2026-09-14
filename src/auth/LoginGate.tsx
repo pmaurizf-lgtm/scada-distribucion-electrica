@@ -2,8 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from './AuthContext'
 
 export function LoginGate() {
-  const { status, error, signInWithPassword, signInWithGoogle, clearError } =
-    useAuth()
+  const { status, error, signInWithPassword, clearError } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -14,16 +13,6 @@ export function LoginGate() {
     setBusy(true)
     try {
       await signInWithPassword(email, password)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const onGoogle = async () => {
-    if (busy) return
-    setBusy(true)
-    try {
-      await signInWithGoogle()
     } finally {
       setBusy(false)
     }
@@ -92,14 +81,6 @@ export function LoginGate() {
                 {busy ? 'Entrando…' : 'Entrar'}
               </button>
             </form>
-            <button
-              type="button"
-              className="btn login-gate__google"
-              onClick={() => void onGoogle()}
-              disabled={busy}
-            >
-              Entrar con Google
-            </button>
           </>
         )}
       </div>

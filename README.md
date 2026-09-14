@@ -17,8 +17,8 @@ Abre la URL que muestre Vite (normalmente `http://localhost:5173`).
 
 La app no se abre con la URL sola: hace falta una cuenta de Firebase dada de alta.
 
-1. Firebase Console → Authentication: activa **Correo/contraseña** (y **Google** si lo usas) y desactiva **Anónimo**.
-2. Crea usuarios (Add user) o usa Google con un correo autorizado.
+1. Firebase Console → Authentication: activa **Correo/contraseña** y desactiva **Anónimo**. No uses Google.
+2. Crea usuarios (Add user) con correo y contraseña.
 3. Lista blanca: secret `VITE_ALLOWED_EMAILS` (correos separados por coma) **o** Firestore `allowlist/{email}` con `{ enabled: true }`.
 4. Authorized domains: `localhost` y `pmaurizf-lgtm.github.io`.
 5. `firebase deploy --only firestore:rules`.
