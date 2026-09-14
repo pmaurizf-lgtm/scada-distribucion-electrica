@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   getDocs,
   onSnapshot,
@@ -7,7 +8,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getFirebase, isSignedInUser, waitForAuthUser } from '../firebase/app'
-import type { VesselId } from '../vessels/vesselCatalog'
+import { VESSELS, type VesselId } from '../vessels/vesselCatalog'
 import { coerceNoteLines, type InspectionNote, type NoteTarget } from './types'
 
 export async function ensureNotesAuth(): Promise<void> {
@@ -106,7 +107,40 @@ export async function pushVesselNote(note: InspectionNote): Promise<void> {
   if (!fb) return
   await ensureNotesAuth()
   const ref = doc(fb.db, 'vessels', note.vesselId, 'notes', note.id)
-  await setDoc(ref, noteToFirestore(note), { merge: true })
+  const payload = noteToFirestore(note)
+  if (!note.deletedAt) payload.deletedAt = deleteField()
+  await setDoc(ref, payload, { merge: true })
+}
+
+/** Recupera el borrado masivo (autor vacío + deletedAt). No toca bajas hechas a mano. */
+export async function restoreBulkWipedNotes(
+  vesselId: VesselId,
+): Promise<InspectionNote[]> {
+  const remote = await pullVesselNotes(vesselId)
+  const now = new Date().toISOString()
+  const out: InspectionNote[] = []
+  for (const n of remote) {
+    const wiped = Boolean(n.deletedAt) && !n.author.trim()
+    if (!wiped) {
+      out.push(n)
+      continue
+    }
+    const restored = { ...n, deletedAt: undefined, updatedAt: now }
+    await pushVesselNote(restored)
+    out.push(restored)
+  }
+  return out
+}
+
+let bulkRestoreDone = false
+
+/** Una vez por sesión: restaura el borrado masivo en todos los buques. */
+export async function restoreAllBulkWipedNotes(): Promise<void> {
+  if (bulkRestoreDone) return
+  for (const v of VESSELS) {
+    await restoreBulkWipedNotes(v.id)
+  }
+  bulkRestoreDone = true
 }
 
 export function subscribeVesselNotes(

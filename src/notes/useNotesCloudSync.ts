@@ -109,7 +109,10 @@ export function useNotesCloudSync(
 
   const pullAndMerge = useCallback(async () => {
     if (!enabled) return
-    const { pullVesselNotes } = await import('./firebaseSync')
+    const { pullVesselNotes, restoreAllBulkWipedNotes } = await import(
+      './firebaseSync'
+    )
+    await restoreAllBulkWipedNotes()
     const remote = await pullVesselNotes(vesselId)
     const merged = mergeNoteLists(notesRef.current, remote)
     if (notesFingerprint(merged) !== notesFingerprint(notesRef.current)) {
