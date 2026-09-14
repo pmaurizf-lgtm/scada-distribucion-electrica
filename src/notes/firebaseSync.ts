@@ -1,79 +1,24 @@
-import { initializeApp, getApps } from 'firebase/app'
-import { getAuth, onAuthStateChanged, signInAnonymously, type Auth } from 'firebase/auth'
 import {
   collection,
   doc,
   getDocs,
-  getFirestore,
-  initializeFirestore,
   onSnapshot,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   setDoc,
-  type Firestore,
   type Unsubscribe,
 } from 'firebase/firestore'
+import { getFirebase, isSignedInUser, waitForAuthUser } from '../firebase/app'
 import type { VesselId } from '../vessels/vesselCatalog'
 import { coerceNoteLines, type InspectionNote, type NoteTarget } from './types'
-import { getFirebaseWebConfig } from './syncConfig'
 
-const APP_NAME = 'scada-notes'
-
-let auth: Auth | null = null
-let db: Firestore | null = null
-let authReady: Promise<void> | null = null
-
-function ensureFirebase(): { auth: Auth; db: Firestore } | null {
-  const cfg = getFirebaseWebConfig()
-  if (!cfg) return null
-  const app =
-    getApps().find((a) => a.name === APP_NAME) ??
-    initializeApp(
-      {
-        apiKey: cfg.apiKey,
-        authDomain: cfg.authDomain,
-        projectId: cfg.projectId,
-        appId: cfg.appId,
-      },
-      APP_NAME,
-    )
-  if (!auth) auth = getAuth(app)
-  if (!db) {
-    try {
-      db = initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager(),
-        }),
-      })
-    } catch {
-      db = getFirestore(app)
-    }
+export async function ensureNotesAuth(): Promise<void> {
+  const user = await waitForAuthUser()
+  if (!isSignedInUser(user)) {
+    throw new Error('Sesión no válida')
   }
-  return { auth, db }
-}
-
-export function ensureNotesAuth(): Promise<void> {
-  const fb = ensureFirebase()
-  if (!fb) return Promise.resolve()
-  if (authReady) return authReady
-  authReady = new Promise((resolve, reject) => {
-    const unsub = onAuthStateChanged(fb.auth, (user) => {
-      if (user) {
-        unsub()
-        resolve()
-        return
-      }
-      signInAnonymously(fb.auth).then(() => {
-        unsub()
-        resolve()
-      }).catch(reject)
-    })
-  })
-  return authReady
 }
 
 function notesCol(vesselId: VesselId) {
-  const fb = ensureFirebase()
+  const fb = getFirebase()
   if (!fb) return null
   return collection(fb.db, 'vessels', vesselId, 'notes')
 }
@@ -157,7 +102,7 @@ export async function pullVesselNotes(
 }
 
 export async function pushVesselNote(note: InspectionNote): Promise<void> {
-  const fb = ensureFirebase()
+  const fb = getFirebase()
   if (!fb) return
   await ensureNotesAuth()
   const ref = doc(fb.db, 'vessels', note.vesselId, 'notes', note.id)
