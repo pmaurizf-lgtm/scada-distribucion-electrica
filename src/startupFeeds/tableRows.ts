@@ -175,26 +175,26 @@ function isDownstreamLcsTrfId(id: string): boolean {
 }
 
 /**
- * TRF entre LCS y SSB (u otro destino): alimentado desde LCS,
- * no desde un SSB / BUS-SSB (esos se consideran «interior» del cuadro).
+ * TRF interno de SSB-4PWS: Q04 → TRF → BUS-SSB-*-115 → Q51/Q52…
+ * (no listar; sí listar TRF externos alimentados desde SSB, p. ej. TRF-4PWS2201).
  */
-function isLcsOutletTrf(
+function feedsSsb115InternalBus(
   trfId: string,
   data: DistributionData,
 ): boolean {
-  if (!isDownstreamLcsTrfId(trfId)) return false
-  const incoming = data.circuits.filter(
-    (c) => !c.virtual && c.destinationId === trfId,
-  )
-  if (!incoming.length) return false
-  const fromSsb = incoming.some(
-    (c) => /^SSB-/i.test(c.originId) || /^BUS-SSB-/i.test(c.originId),
-  )
-  if (fromSsb) return false
-  return incoming.some(
+  return data.circuits.some(
     (c) =>
-      /^LCS-/i.test(c.originId) || /^BUS-LCS-/i.test(c.originId),
+      c.originId === trfId &&
+      (/^BUS-SSB-.+-115$/i.test(c.destinationId) ||
+        c.notes === 'ssb-115-bus'),
   )
+}
+
+/** TRF de informe: externos (LCS→TRF o SSB→TRF→otro), no internos 115 V. */
+function isReportTrf(trfId: string, data: DistributionData): boolean {
+  if (!isDownstreamLcsTrfId(trfId)) return false
+  if (feedsSsb115InternalBus(trfId, data)) return false
+  return true
 }
 
 function boardRowFromEquipment(
@@ -215,8 +215,9 @@ function boardRowFromEquipment(
 }
 
 /**
- * SSB y TRF (aguas abajo de LCS, fuera de SSB) únicos en las cadenas
- * Normal / Alternativa / AUX de los destinos del informe.
+ * SSB y TRF únicos en las cadenas Normal / Alternativa / AUX.
+ * Incluye TRF externos alimentados desde SSB; excluye TRF internos
+ * SSB-4PWS (salida a BUS-115 con Q51/Q52…).
  */
 export function collectStartupBoards(
   report: StartupReport,
@@ -234,7 +235,7 @@ export function collectStartupBoards(
 
   const consider = (id: string) => {
     if (isSsbEquipmentId(id)) ssbIds.add(id)
-    if (isLcsOutletTrf(id, data)) trfIds.add(id)
+    if (isReportTrf(id, data)) trfIds.add(id)
   }
 
   for (const destId of dests) {
