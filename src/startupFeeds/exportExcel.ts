@@ -1,6 +1,9 @@
 import ExcelJS from 'exceljs'
 import type { StartupReport } from './types'
-import { buildStartupTableRows } from './tableRows'
+import {
+  buildStartupTableRows,
+  collectStartupSsbs,
+} from './tableRows'
 
 function slug(title: string): string {
   return (
@@ -27,6 +30,7 @@ const COLORS = {
   thinBorder: 'CFD8DC',
   muted: '546E7A',
   text: '1A2330',
+  ssbBg: 'E8F5E9',
 }
 
 function thinBorder(color = COLORS.thinBorder): Partial<ExcelJS.Borders> {
@@ -34,9 +38,116 @@ function thinBorder(color = COLORS.thinBorder): Partial<ExcelJS.Borders> {
   return { top: side, left: side, bottom: side, right: side }
 }
 
+function paintHeader(row: ExcelJS.Row): void {
+  row.height = 22
+  row.eachCell((cell) => {
+    cell.font = {
+      bold: true,
+      size: 10,
+      color: { argb: `FF${COLORS.headerFg}` },
+    }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: `FF${COLORS.headerBg}` },
+    }
+    cell.alignment = {
+      vertical: 'middle',
+      horizontal: 'center',
+      wrapText: true,
+    }
+    cell.border = thinBorder('0D47A1')
+  })
+}
+
+function addSsbSummarySheet(
+  wb: ExcelJS.Workbook,
+  report: StartupReport,
+): void {
+  const ssbs = collectStartupSsbs(report)
+  const ws = wb.addWorksheet('SSB necesarios', {
+    views: [{ state: 'frozen', ySplit: 3 }],
+    properties: { defaultRowHeight: 18 },
+  })
+
+  ws.columns = [
+    { header: 'SSB (PUMA)', key: 'id', width: 20 },
+    { header: 'Nombre', key: 'name', width: 36 },
+    { header: 'Código NME', key: 'nme', width: 16 },
+    { header: 'Local', key: 'local', width: 16 },
+  ]
+
+  const titleRow = ws.addRow([
+    'Cuadros secundarios (SSB) necesarios para la puesta en marcha',
+  ])
+  titleRow.height = 24
+  ws.mergeCells(1, 1, 1, 4)
+  titleRow.getCell(1).font = {
+    bold: true,
+    size: 14,
+    color: { argb: `FF${COLORS.title}` },
+  }
+  titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' }
+
+  const sub = ws.addRow([
+    `Informe: ${report.title || 'Alimentaciones puesta en marcha'} · ${ssbs.length} SSB único${ssbs.length === 1 ? '' : 's'} (sin repeticiones) · destinos: ${report.resolvedIds.length}`,
+  ])
+  ws.mergeCells(2, 1, 2, 4)
+  sub.getCell(1).font = {
+    size: 9,
+    italic: true,
+    color: { argb: `FF${COLORS.muted}` },
+  }
+
+  const header = ws.addRow(['SSB (PUMA)', 'Nombre', 'Código NME', 'Local'])
+  paintHeader(header)
+
+  if (!ssbs.length) {
+    const empty = ws.addRow([
+      '—',
+      'No aparecen cuadros SSB en las cadenas de este listado',
+      '—',
+      '—',
+    ])
+    empty.eachCell((cell) => {
+      cell.font = {
+        size: 9,
+        italic: true,
+        color: { argb: `FF${COLORS.muted}` },
+      }
+      cell.border = thinBorder()
+    })
+    return
+  }
+
+  for (const s of ssbs) {
+    const row = ws.addRow([s.equipmentId, s.name, s.nme674Id, s.local])
+    row.eachCell((cell, col) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: `FF${COLORS.ssbBg}` },
+      }
+      cell.font = {
+        size: 9,
+        color: { argb: `FF${COLORS.text}` },
+        bold: col === 1,
+      }
+      cell.alignment = { vertical: 'middle', horizontal: 'left' }
+      cell.border = thinBorder()
+    })
+  }
+
+  ws.autoFilter = {
+    from: { row: 3, column: 1 },
+    to: { row: 3 + Math.max(ssbs.length, 1), column: 4 },
+  }
+}
+
 /**
  * Excel de la tabla resumen: cadena completa por destino,
  * con colores, bordes y separación entre alimentaciones.
+ * Incluye hoja «SSB necesarios» (únicos, con NME y local).
  */
 export async function exportStartupTableExcel(
   report: StartupReport,
@@ -97,25 +208,7 @@ export async function exportStartupTableExcel(
     'Protección entrada',
     'Cadena completa',
   ])
-  header.height = 22
-  header.eachCell((cell) => {
-    cell.font = {
-      bold: true,
-      size: 10,
-      color: { argb: `FF${COLORS.headerFg}` },
-    }
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: `FF${COLORS.headerBg}` },
-    }
-    cell.alignment = {
-      vertical: 'middle',
-      horizontal: 'center',
-      wrapText: true,
-    }
-    cell.border = thinBorder('0D47A1')
-  })
+  paintHeader(header)
 
   for (const r of rows) {
     const excelRow = ws.addRow([
@@ -185,6 +278,8 @@ export async function exportStartupTableExcel(
     from: { row: 3, column: 1 },
     to: { row: 3 + rows.length, column: 8 },
   }
+
+  addSsbSummarySheet(wb, report)
 
   const buf = await wb.xlsx.writeBuffer()
   const blob = new Blob([buf], {

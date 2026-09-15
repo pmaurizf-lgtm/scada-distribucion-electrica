@@ -148,3 +148,55 @@ export function summarizeGroups(groups: StartupGroup[]): string {
   const nDest = groups.reduce((a, g) => a + g.destinations.length, 0)
   return `${groups.length} origen${groups.length === 1 ? '' : 'es'} · ${nDest} destino${nDest === 1 ? '' : 's'}`
 }
+
+export type StartupSsbRow = {
+  equipmentId: string
+  name: string
+  nme674Id: string
+  local: string
+}
+
+function isSsbEquipmentId(id: string): boolean {
+  return /^SSB-/i.test(id)
+}
+
+/**
+ * Cuadros secundarios (SSB) únicos que aparecen en las cadenas
+ * Normal / Alternativa / AUX de los destinos del informe.
+ */
+export function collectStartupSsbs(
+  report: StartupReport,
+  data: DistributionData = system690,
+): StartupSsbRow[] {
+  const eqById = new Map(data.equipment.map((e) => [e.id, e]))
+  const seen = new Set<string>()
+
+  const dests = report.groups.flatMap((g) =>
+    g.destinations.length
+      ? g.destinations.map((d) => d.equipmentId)
+      : [g.originId],
+  )
+
+  for (const destId of dests) {
+    if (isSsbEquipmentId(destId)) seen.add(destId)
+    for (const kind of ['normal', 'alternativa', 'aux'] as const) {
+      const hops = buildOrderedFeedChain(destId, data, kind)
+      for (const h of hops) {
+        if (isSsbEquipmentId(h.equipmentId)) seen.add(h.equipmentId)
+      }
+    }
+  }
+
+  return [...seen]
+    .sort((a, b) => a.localeCompare(b, 'es'))
+    .map((id) => {
+      const eq = eqById.get(id)
+      return {
+        equipmentId: id,
+        name: eq?.name?.trim() || id,
+        nme674Id: eq?.nme674Id?.trim() || '—',
+        local: eq?.local?.trim() || '—',
+      }
+    })
+}
+
