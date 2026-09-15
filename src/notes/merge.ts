@@ -22,17 +22,15 @@ function mergeLine(a?: NoteLine, b?: NoteLine): NoteLine | null {
 }
 
 /** Fusiona dos versiones de la misma nota (id).
- * La baja lógica gana, salvo si la versión más nueva es una restauración. */
+ * La baja lógica gana, salvo si la otra copia está viva y es igual de reciente
+ * o más nueva (p. ej. restauración desde Excel). */
 export function mergeNotePair(
   a: InspectionNote,
   b: InspectionNote,
 ): InspectionNote {
-  const newer = a.updatedAt >= b.updatedAt ? a : b
-  const older = newer === a ? b : a
   const undeleted =
-    !newer.deletedAt &&
-    Boolean(older.deletedAt) &&
-    newer.updatedAt > older.updatedAt
+    (!a.deletedAt && Boolean(b.deletedAt) && a.updatedAt >= b.updatedAt) ||
+    (!b.deletedAt && Boolean(a.deletedAt) && b.updatedAt >= a.updatedAt)
   const deletedAt = undeleted ? undefined : maxIso(a.deletedAt, b.deletedAt)
   const base = a.createdAt <= b.createdAt ? a : b
   if (deletedAt) {

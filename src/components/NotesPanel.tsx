@@ -152,12 +152,12 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    setStatus('Restaurando desde Excel…')
+    setStatus('Restaurando desde Excel y subiendo a la nube…')
     try {
       const data = await file.arrayBuffer()
       const result = await importNotesExcel(data)
       setStatus(
-        `Restaurado desde Excel: +${result.added} nuevas, ${result.updated} recuperadas/actualizadas, ${result.skipped} omitidas.`,
+        `Restaurado y sincronizado: +${result.added} nuevas, ${result.updated} recuperadas/actualizadas, ${result.skipped} omitidas.`,
       )
     } catch (err) {
       setStatus(

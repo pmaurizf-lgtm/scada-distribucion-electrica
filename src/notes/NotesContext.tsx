@@ -98,6 +98,7 @@ export function NotesProvider({
   const notes = useMemo(() => visibleNotes(allNotes), [allNotes])
   const {
     enqueuePush,
+    adoptAndPushAll,
     enabled: syncEnabled,
     state: syncState,
     lastError: syncLastError,
@@ -287,14 +288,14 @@ export function NotesProvider({
       const parsed: unknown = JSON.parse(raw)
       const result = mergeImportedNotes(vesselId, allNotes, parsed)
       setAllNotes(result.notes)
-      for (const n of result.notes) enqueuePush(n.id)
+      void adoptAndPushAll(result.notes)
       return {
         added: result.added,
         updated: result.updated,
         skipped: result.skipped,
       }
     },
-    [allNotes, enqueuePush, vesselId],
+    [adoptAndPushAll, allNotes, vesselId],
   )
 
   const importNotesExcel = useCallback(
@@ -302,16 +303,14 @@ export function NotesProvider({
       const parsed = await parseNotesExcel(data, vesselId)
       const result = mergeExcelNotes(vesselId, allNotes, parsed.notes)
       setAllNotes(result.notes)
-      for (const n of result.notes) {
-        if (!n.deletedAt) enqueuePush(n.id, n)
-      }
+      await adoptAndPushAll(result.notes)
       return {
         added: result.added,
         updated: result.updated,
         skipped: result.skipped,
       }
     },
-    [allNotes, enqueuePush, vesselId],
+    [adoptAndPushAll, allNotes, vesselId],
   )
 
   const sync = useMemo(
