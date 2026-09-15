@@ -46,7 +46,7 @@ export default defineConfig({
         skipWaiting: true,
         cleanupOutdatedCaches: true,
         // Nueva clave: fuerza abandonar caches PWA viejas en el móvil
-        cacheId: 'scada-f110-v6-server-pull',
+        cacheId: 'scada-f110-v7-nuke-cache',
         // El bundle unifilar (abtDownstream + topología) supera con creces 2 MiB
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         globPatterns: [
@@ -58,7 +58,7 @@ export default defineConfig({
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'scada-html-v6',
+              cacheName: 'scada-html-v7',
               networkTimeoutSeconds: 4,
             },
           },
