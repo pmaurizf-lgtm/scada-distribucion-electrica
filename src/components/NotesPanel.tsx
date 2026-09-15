@@ -205,23 +205,21 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
               {openBullets} abierta{openBullets === 1 ? '' : 's'}
               {displayName ? ` · ${displayName}` : ''}
             </p>
-            {!isMobile && (
-              <p className="notes-modal__hint notes-panel__sync-hint">
-                {syncHint(sync)}
-                {sync.enabled ? (
-                  <>
-                    {' '}
-                    <button
-                      type="button"
-                      className="notes-panel__sync-now"
-                      onClick={() => sync.syncNow()}
-                    >
-                      Actualizar
-                    </button>
-                  </>
-                ) : null}
-              </p>
-            )}
+            <p className="notes-modal__hint notes-panel__sync-hint">
+              {syncHint(sync)}
+              {sync.enabled ? (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    className="notes-panel__sync-now"
+                    onClick={() => sync.syncNow()}
+                  >
+                    Actualizar
+                  </button>
+                </>
+              ) : null}
+            </p>
           </div>
           <button
             type="button"
@@ -274,15 +272,6 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                 />
               </label>
             </div>
-            {isMobile && sync.enabled && (
-              <button
-                type="button"
-                className="btn"
-                onClick={() => sync.syncNow()}
-              >
-                Actualizar
-              </button>
-            )}
             {isMobile && (
               <button
                 type="button"

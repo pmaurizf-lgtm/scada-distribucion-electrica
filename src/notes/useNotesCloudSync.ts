@@ -77,7 +77,9 @@ export function useNotesCloudSync(
       const { pushVesselNote } = await import('./firebaseSync')
       const byId = new Map(notesRef.current.map((n) => [n.id, n]))
       for (const id of ids) {
-        const note = byId.get(id) ?? pendingNotes.current.get(id)
+        // El snapshot pendiente gana: evita que un pull en vuelo vuelva a
+        // subir una baja lógica y pise una restauración Excel.
+        const note = pendingNotes.current.get(id) ?? byId.get(id)
         if (!note) {
           pending.current.delete(id)
           pendingNotes.current.delete(id)
@@ -124,16 +126,19 @@ export function useNotesCloudSync(
       await pushIds([...pending.current])
       return
     }
-    let merged: InspectionNote[] = notesRef.current
-    setNotes((prev) => {
-      merged = mergeNoteLists(prev, remote)
-      if (notesFingerprint(merged) === notesFingerprint(prev)) {
-        return prev
+    const merged = mergeNoteLists(notesRef.current, remote)
+    // Reaplicar snapshots pendientes (p. ej. Excel) por si el merge trae bajas viejas.
+    for (const [id, snap] of pendingNotes.current) {
+      const cur = merged.find((n) => n.id === id)
+      if (!cur) {
+        merged.push(snap)
+        continue
       }
-      notesRef.current = merged
-      return merged
-    })
-    const localIds = new Set(merged.map((n) => n.id))
+      const idx = merged.findIndex((n) => n.id === id)
+      merged[idx] = mergeNoteLists([cur], [snap])[0]!
+    }
+    notesRef.current = merged
+    setNotes(merged)
     const remoteIds = new Set(remote.map((n) => n.id))
     for (const n of merged) {
       const rem = remote.find((r) => r.id === n.id)
@@ -147,11 +152,10 @@ export function useNotesCloudSync(
         pendingNotes.current.set(n.id, n)
       }
     }
-    for (const id of localIds) {
-      if (!remoteIds.has(id)) {
-        const n = merged.find((x) => x.id === id)
-        pending.current.add(id)
-        if (n) pendingNotes.current.set(id, n)
+    for (const n of merged) {
+      if (!remoteIds.has(n.id)) {
+        pending.current.add(n.id)
+        pendingNotes.current.set(n.id, n)
       }
     }
     savePending(vesselId, pending.current)
@@ -226,6 +230,28 @@ export function useNotesCloudSync(
       unsub = subscribeVesselNotes(
         vesselId,
         (remote) => {
+          if (pendingNotes.current.size > 0) {
+            // Durante restauración/subida: fusionar y reaplicar pendientes.
+            setNotes((prev) => {
+              let merged = mergeNoteLists(prev, remote)
+              for (const [id, snap] of pendingNotes.current) {
+                const cur = merged.find((n) => n.id === id)
+                if (!cur) {
+                  merged = [...merged, snap]
+                  continue
+                }
+                merged = merged.map((n) =>
+                  n.id === id ? mergeNoteLists([n], [snap])[0]! : n,
+                )
+              }
+              if (notesFingerprint(merged) === notesFingerprint(prev)) {
+                return prev
+              }
+              notesRef.current = merged
+              return merged
+            })
+            return
+          }
           setNotes((prev) => {
             const merged = mergeNoteLists(prev, remote)
             if (notesFingerprint(merged) === notesFingerprint(prev)) {
@@ -252,11 +278,21 @@ export function useNotesCloudSync(
       void pullAndMerge().then(markOk).catch(markError)
     }
     const onOffline = () => setState('offline')
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      if (!navigator.onLine) return
+      setState('syncing')
+      void pullAndMerge().then(markOk).catch(markError)
+    }
     window.addEventListener('online', onOnline)
     window.addEventListener('offline', onOffline)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onVisible)
     return () => {
       window.removeEventListener('online', onOnline)
       window.removeEventListener('offline', onOffline)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onVisible)
     }
   }, [enabled, markError, markOk, pullAndMerge])
 

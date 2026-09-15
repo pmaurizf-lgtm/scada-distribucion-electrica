@@ -46,7 +46,7 @@ export default defineConfig({
         skipWaiting: true,
         cleanupOutdatedCaches: true,
         // Nueva clave: al activar el SW nuevo se abandonan caches de Pages viejas
-        cacheId: 'scada-f110-v3-auth',
+        cacheId: 'scada-f110-v4-notes-sync',
         // El bundle unifilar (abtDownstream + topología) supera con creces 2 MiB
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         globPatterns: [
