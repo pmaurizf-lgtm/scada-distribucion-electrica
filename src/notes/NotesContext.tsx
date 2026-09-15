@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useAuth } from '../auth'
 import type { VesselId } from '../vessels/vesselCatalog'
 import { kindLabelForNoteTarget, labelForNoteTarget } from './labels'
 import { SCADA_OPEN_NOTES_EVENT } from './openNotesEvent'
@@ -92,6 +93,7 @@ export function NotesProvider({
   vesselId: VesselId
   children: ReactNode
 }) {
+  const { isAdmin } = useAuth()
   const [allNotes, setAllNotes] = useState<InspectionNote[]>(() =>
     loadVesselNotes(vesselId),
   )
@@ -158,8 +160,13 @@ export function NotesProvider({
     return isNoteAuthor(note, who.authorId, who.author)
   }, [])
 
-  const canDeleteNote = canEditNote
-
+  const canDeleteNote = useCallback(
+    (note: InspectionNote) => {
+      if (isAdmin) return true
+      return canEditNote(note)
+    },
+    [canEditNote, isAdmin],
+  )
   const createNote = useCallback(
     (target: NoteTarget, lines: string | NoteLine[]): InspectionNote | null => {
       const who = currentAuthor()
@@ -266,10 +273,14 @@ export function NotesProvider({
   const deleteNote = useCallback(
     (id: string) => {
       const who = currentAuthor()
-      if (!who) return false
+      if (!who && !isAdmin) return false
       const now = new Date().toISOString()
       const target = allNotes.find((n) => n.id === id)
-      if (!target || !isNoteAuthor(target, who.authorId, who.author)) {
+      if (!target) return false
+      if (
+        !isAdmin &&
+        (!who || !isNoteAuthor(target, who.authorId, who.author))
+      ) {
         return false
       }
       const deleted: InspectionNote = {
@@ -281,7 +292,7 @@ export function NotesProvider({
       enqueuePush(id, deleted)
       return true
     },
-    [allNotes, enqueuePush],
+    [allNotes, enqueuePush, isAdmin],
   )
 
   const exportNotesJson = useCallback(() => {

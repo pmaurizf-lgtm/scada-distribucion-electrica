@@ -41,6 +41,7 @@ import {
 import { LockInfoProvider } from '../locks/LockInfoContext'
 import { LockBalloon, placeLockBalloon } from './LockBalloon'
 import { useIsMobileUi } from '../hooks/useIsMobileUi'
+import { useAuth } from '../auth'
 import {
   CascadeView,
   type CascadeFocus,
@@ -53,7 +54,6 @@ import { NoteEditorModal } from './NoteEditorModal'
 import { NotesPanel } from './NotesPanel'
 import { useNotes } from '../notes/NotesContext'
 import { useUserProfile } from '../notes/UserProfileContext'
-import { useAuth } from '../auth'
 import {
   clearTopologyNotice,
   loadTopologyFromExcel,
@@ -100,7 +100,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const isMobile = useIsMobileUi()
   const { notes } = useNotes()
   const { displayName, openProfilePrompt } = useUserProfile()
-  const { signOutUser } = useAuth()
+  const { signOutUser, isAdmin } = useAuth()
   const topo = useTopologyState()
   const [notesPanelOpen, setNotesPanelOpen] = useState(false)
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
@@ -753,13 +753,14 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     >
                       {simulationActive ? 'Dejar de simular' : 'Simular estado'}
                     </button>
+                    {isAdmin && (
                     <details
                       ref={candadosDetailsRef}
                       className={`candados-menu${lockTool !== 'none' ? ' candados-menu--active' : ''}`}
                     >
                       <summary
                         className={`btn btn--lock${lockTool !== 'none' ? ' btn--active' : ''}`}
-                        title="Poner / quitar candado o cargar lista desde Excel"
+                        title="Poner / quitar candado o cargar lista desde Excel (solo admin)"
                       >
                         Candados
                       </summary>
@@ -811,10 +812,12 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                         </button>
                       </div>
                     </details>
+                    )}
+                    {isAdmin && (
                     <details className="candados-menu">
                       <summary
                         className={`btn${topo.sessionOverride ? ' btn--active' : ''}`}
-                        title="Cargar una nueva lista de circuitos en el unifilar (solo esta sesión; no se guarda)"
+                        title="Cargar una nueva lista de circuitos en el unifilar (solo esta sesión; no se guarda) — solo admin"
                       >
                         {topologyBusy ? 'Cargando…' : 'Lista circuitos'}
                       </summary>
@@ -855,6 +858,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       hidden
                       onChange={(e) => void handleCircuitListExcelChange(e)}
                     />
+                    )}
                 </div>
               </div>
               <div className="zoom-controls" role="group" aria-label="Zoom">

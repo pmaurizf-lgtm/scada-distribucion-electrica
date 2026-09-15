@@ -20,8 +20,9 @@ La app no se abre con la URL sola: hace falta una cuenta de Firebase dada de alt
 1. Firebase Console → Authentication: activa **Correo/contraseña** y desactiva **Anónimo**. No uses Google.
 2. Crea usuarios (Add user) con correo y contraseña.
 3. Lista blanca: secret `VITE_ALLOWED_EMAILS` (correos separados por coma) **o** Firestore `allowlist/{email}` con `{ enabled: true }`.
-4. Authorized domains: `localhost` y `pmaurizf-lgtm.github.io`.
-5. `firebase deploy --only firestore:rules`.
+4. **Administradores**: secret `VITE_ADMIN_EMAILS` **o** en Firestore `allowlist/{email}` con `{ enabled: true, role: "admin" }`. Solo ellos ven: restaurar notas Excel, borrar cualquier nota, candados manuales y cargar lista de circuitos.
+5. Authorized domains: `localhost` y `pmaurizf-lgtm.github.io`.
+6. `firebase deploy --only firestore:rules`.
 
 ## Qué incluye el boceto
 
