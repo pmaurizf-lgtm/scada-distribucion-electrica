@@ -13,6 +13,7 @@ import {
 import { vesselById } from '../vessels/vesselCatalog'
 import { useUserProfile } from '../notes/UserProfileContext'
 import { useIsMobileUi } from '../hooks/useIsMobileUi'
+import { forceRefreshApp } from '../registerPwa'
 
 type Filter = 'open' | 'resolved' | 'all'
 
@@ -264,7 +265,7 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                 className="btn notes-panel__file-btn"
                 title="Recupera notas desde un Excel exportado con Exportar Excel"
               >
-                Restaurar Excel…
+                {isMobile ? 'Restaurar notas…' : 'Restaurar Excel…'}
                 <input
                   type="file"
                   accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -272,6 +273,15 @@ export function NotesPanel({ open, onClose }: NotesPanelProps) {
                 />
               </label>
             </div>
+            {isMobile && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void forceRefreshApp()}
+              >
+                Actualizar app
+              </button>
+            )}
             {isMobile && (
               <button
                 type="button"

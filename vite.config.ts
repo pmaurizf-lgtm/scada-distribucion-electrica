@@ -45,14 +45,24 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         cleanupOutdatedCaches: true,
-        // Nueva clave: al activar el SW nuevo se abandonan caches de Pages viejas
-        cacheId: 'scada-f110-v4-notes-sync',
+        // Nueva clave: fuerza abandonar caches PWA viejas en el móvil
+        cacheId: 'scada-f110-v5-force-refresh',
         // El bundle unifilar (abtDownstream + topología) supera con creces 2 MiB
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         globPatterns: [
           '**/*.{js,css,html,ico,svg,png,woff2,json,xlsx}',
         ],
         navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'scada-html-v5',
+              networkTimeoutSeconds: 4,
+            },
+          },
+        ],
       },
       devOptions: {
         // Evita ruido del SW en desarrollo local
