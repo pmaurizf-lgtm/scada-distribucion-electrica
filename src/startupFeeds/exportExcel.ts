@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs'
 import type { StartupReport } from './types'
 import {
   buildStartupTableRows,
-  collectStartupSsbs,
+  collectStartupBoards,
 } from './tableRows'
 
 function slug(title: string): string {
@@ -64,24 +64,29 @@ function addSsbSummarySheet(
   wb: ExcelJS.Workbook,
   report: StartupReport,
 ): void {
-  const ssbs = collectStartupSsbs(report)
-  const ws = wb.addWorksheet('SSB necesarios', {
+  const boards = collectStartupBoards(report)
+  const nSsb = boards.filter((b) => b.kind === 'SSB').length
+  const nTrf = boards.filter((b) => b.kind === 'TRF').length
+  const ws = wb.addWorksheet('SSB y TRF', {
     views: [{ state: 'frozen', ySplit: 3 }],
     properties: { defaultRowHeight: 18 },
   })
 
   ws.columns = [
-    { header: 'SSB (PUMA)', key: 'id', width: 20 },
+    { header: 'Tipo', key: 'kind', width: 8 },
+    { header: 'Código (PUMA)', key: 'id', width: 20 },
     { header: 'Nombre', key: 'name', width: 36 },
     { header: 'Código NME', key: 'nme', width: 16 },
-    { header: 'Local', key: 'local', width: 16 },
+    { header: 'Local', key: 'local', width: 14 },
+    { header: 'Nombre local', key: 'localName', width: 36 },
+    { header: 'Notas', key: 'notes', width: 28 },
   ]
 
   const titleRow = ws.addRow([
-    'Cuadros secundarios (SSB) necesarios para la puesta en marcha',
+    'SSB y TRF necesarios para la puesta en marcha',
   ])
   titleRow.height = 24
-  ws.mergeCells(1, 1, 1, 4)
+  ws.mergeCells(1, 1, 1, 7)
   titleRow.getCell(1).font = {
     bold: true,
     size: 14,
@@ -90,24 +95,35 @@ function addSsbSummarySheet(
   titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' }
 
   const sub = ws.addRow([
-    `Informe: ${report.title || 'Alimentaciones puesta en marcha'} · ${ssbs.length} SSB único${ssbs.length === 1 ? '' : 's'} (sin repeticiones) · destinos: ${report.resolvedIds.length}`,
+    `Informe: ${report.title || 'Alimentaciones puesta en marcha'} · ${nSsb} SSB + ${nTrf} TRF (únicos, sin repeticiones) · destinos: ${report.resolvedIds.length} · TRF: aguas abajo de LCS, excl. TRF-6PWS y TRF interiores de SSB`,
   ])
-  ws.mergeCells(2, 1, 2, 4)
+  ws.mergeCells(2, 1, 2, 7)
   sub.getCell(1).font = {
     size: 9,
     italic: true,
     color: { argb: `FF${COLORS.muted}` },
   }
 
-  const header = ws.addRow(['SSB (PUMA)', 'Nombre', 'Código NME', 'Local'])
+  const header = ws.addRow([
+    'Tipo',
+    'Código (PUMA)',
+    'Nombre',
+    'Código NME',
+    'Local',
+    'Nombre local',
+    'Notas',
+  ])
   paintHeader(header)
 
-  if (!ssbs.length) {
+  if (!boards.length) {
     const empty = ws.addRow([
       '—',
-      'No aparecen cuadros SSB en las cadenas de este listado',
+      '—',
+      'No aparecen SSB ni TRF (LCS→…) en las cadenas de este listado',
       '—',
       '—',
+      '—',
+      '',
     ])
     empty.eachCell((cell) => {
       cell.font = {
@@ -120,34 +136,43 @@ function addSsbSummarySheet(
     return
   }
 
-  for (const s of ssbs) {
-    const row = ws.addRow([s.equipmentId, s.name, s.nme674Id, s.local])
+  for (const b of boards) {
+    const row = ws.addRow([
+      b.kind,
+      b.equipmentId,
+      b.name,
+      b.nme674Id,
+      b.local,
+      b.localName,
+      b.notes,
+    ])
+    const bg = b.kind === 'TRF' ? 'E3F2FD' : COLORS.ssbBg
     row.eachCell((cell, col) => {
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: `FF${COLORS.ssbBg}` },
+        fgColor: { argb: `FF${bg}` },
       }
       cell.font = {
         size: 9,
         color: { argb: `FF${COLORS.text}` },
-        bold: col === 1,
+        bold: col === 1 || col === 2,
       }
-      cell.alignment = { vertical: 'middle', horizontal: 'left' }
+      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: col === 7 }
       cell.border = thinBorder()
     })
   }
 
   ws.autoFilter = {
     from: { row: 3, column: 1 },
-    to: { row: 3 + Math.max(ssbs.length, 1), column: 4 },
+    to: { row: 3 + Math.max(boards.length, 1), column: 7 },
   }
 }
 
 /**
  * Excel de la tabla resumen: cadena completa por destino,
  * con colores, bordes y separación entre alimentaciones.
- * Incluye hoja «SSB necesarios» (únicos, con NME y local).
+ * Incluye hoja «SSB y TRF» (únicos, con NME, local, nombre local y notas).
  */
 export async function exportStartupTableExcel(
   report: StartupReport,

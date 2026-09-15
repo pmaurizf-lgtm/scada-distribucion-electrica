@@ -149,27 +149,82 @@ export function summarizeGroups(groups: StartupGroup[]): string {
   return `${groups.length} origen${groups.length === 1 ? '' : 'es'} · ${nDest} destino${nDest === 1 ? '' : 's'}`
 }
 
-export type StartupSsbRow = {
+export type StartupBoardKind = 'SSB' | 'TRF'
+
+export type StartupBoardRow = {
+  kind: StartupBoardKind
   equipmentId: string
   name: string
   nme674Id: string
   local: string
+  localName: string
+  /** Columna vacía para anotaciones del usuario en Excel. */
+  notes: string
 }
+
+/** @deprecated Usar StartupBoardRow */
+export type StartupSsbRow = StartupBoardRow
 
 function isSsbEquipmentId(id: string): boolean {
   return /^SSB-/i.test(id)
 }
 
+/** TRF aguas abajo de LCS (no TRF-6PWS de la cadena ABT). */
+function isDownstreamLcsTrfId(id: string): boolean {
+  return /^TRF-/i.test(id) && !/^TRF-6PWS/i.test(id)
+}
+
 /**
- * Cuadros secundarios (SSB) únicos que aparecen en las cadenas
+ * TRF entre LCS y SSB (u otro destino): alimentado desde LCS,
+ * no desde un SSB / BUS-SSB (esos se consideran «interior» del cuadro).
+ */
+function isLcsOutletTrf(
+  trfId: string,
+  data: DistributionData,
+): boolean {
+  if (!isDownstreamLcsTrfId(trfId)) return false
+  const incoming = data.circuits.filter(
+    (c) => !c.virtual && c.destinationId === trfId,
+  )
+  if (!incoming.length) return false
+  const fromSsb = incoming.some(
+    (c) => /^SSB-/i.test(c.originId) || /^BUS-SSB-/i.test(c.originId),
+  )
+  if (fromSsb) return false
+  return incoming.some(
+    (c) =>
+      /^LCS-/i.test(c.originId) || /^BUS-LCS-/i.test(c.originId),
+  )
+}
+
+function boardRowFromEquipment(
+  kind: StartupBoardKind,
+  id: string,
+  eqById: Map<string, { name?: string; nme674Id?: string; local?: string; localName?: string }>,
+): StartupBoardRow {
+  const eq = eqById.get(id)
+  return {
+    kind,
+    equipmentId: id,
+    name: eq?.name?.trim() || id,
+    nme674Id: eq?.nme674Id?.trim() || '—',
+    local: eq?.local?.trim() || '—',
+    localName: eq?.localName?.trim() || '—',
+    notes: '',
+  }
+}
+
+/**
+ * SSB y TRF (aguas abajo de LCS, fuera de SSB) únicos en las cadenas
  * Normal / Alternativa / AUX de los destinos del informe.
  */
-export function collectStartupSsbs(
+export function collectStartupBoards(
   report: StartupReport,
   data: DistributionData = system690,
-): StartupSsbRow[] {
+): StartupBoardRow[] {
   const eqById = new Map(data.equipment.map((e) => [e.id, e]))
-  const seen = new Set<string>()
+  const ssbIds = new Set<string>()
+  const trfIds = new Set<string>()
 
   const dests = report.groups.flatMap((g) =>
     g.destinations.length
@@ -177,26 +232,35 @@ export function collectStartupSsbs(
       : [g.originId],
   )
 
+  const consider = (id: string) => {
+    if (isSsbEquipmentId(id)) ssbIds.add(id)
+    if (isLcsOutletTrf(id, data)) trfIds.add(id)
+  }
+
   for (const destId of dests) {
-    if (isSsbEquipmentId(destId)) seen.add(destId)
+    consider(destId)
     for (const kind of ['normal', 'alternativa', 'aux'] as const) {
       const hops = buildOrderedFeedChain(destId, data, kind)
-      for (const h of hops) {
-        if (isSsbEquipmentId(h.equipmentId)) seen.add(h.equipmentId)
-      }
+      for (const h of hops) consider(h.equipmentId)
     }
   }
 
-  return [...seen]
-    .sort((a, b) => a.localeCompare(b, 'es'))
-    .map((id) => {
-      const eq = eqById.get(id)
-      return {
-        equipmentId: id,
-        name: eq?.name?.trim() || id,
-        nme674Id: eq?.nme674Id?.trim() || '—',
-        local: eq?.local?.trim() || '—',
-      }
-    })
+  const rows: StartupBoardRow[] = [
+    ...[...ssbIds]
+      .sort((a, b) => a.localeCompare(b, 'es'))
+      .map((id) => boardRowFromEquipment('SSB', id, eqById)),
+    ...[...trfIds]
+      .sort((a, b) => a.localeCompare(b, 'es'))
+      .map((id) => boardRowFromEquipment('TRF', id, eqById)),
+  ]
+  return rows
+}
+
+/** @deprecated Usar collectStartupBoards */
+export function collectStartupSsbs(
+  report: StartupReport,
+  data: DistributionData = system690,
+): StartupBoardRow[] {
+  return collectStartupBoards(report, data).filter((r) => r.kind === 'SSB')
 }
 

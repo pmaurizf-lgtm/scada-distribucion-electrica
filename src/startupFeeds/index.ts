@@ -5,8 +5,18 @@ export {
   looksLikeEquipmentId,
 } from './parseDestinationsExcel'
 export { buildStartupReport } from './buildStartupForest'
-export { buildStartupTableRows, collectStartupSsbs, summarizeGroups } from './tableRows'
-export type { StartupSsbRow, StartupTableRow } from './tableRows'
+export {
+  buildStartupTableRows,
+  collectStartupBoards,
+  collectStartupSsbs,
+  summarizeGroups,
+} from './tableRows'
+export type {
+  StartupBoardKind,
+  StartupBoardRow,
+  StartupSsbRow,
+  StartupTableRow,
+} from './tableRows'
 export {
   buildOrderedFeedChain,
   feedLineLabel,
