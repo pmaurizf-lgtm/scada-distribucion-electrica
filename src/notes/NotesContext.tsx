@@ -79,7 +79,7 @@ type NotesContextValue = {
   }>
   labelFor: (target: NoteTarget) => string
   kindLabelFor: (target: NoteTarget) => string
-  sync: Omit<NotesSyncInfo, 'enqueuePush'>
+  sync: Omit<NotesSyncInfo, 'enqueuePush' | 'adoptAndPushAll'>
 }
 
 const NotesContext = createContext<NotesContextValue | null>(null)
