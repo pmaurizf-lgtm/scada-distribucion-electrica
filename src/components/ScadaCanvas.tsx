@@ -60,12 +60,19 @@ import {
   resetTopologyToEmbedded,
   useTopologyState,
 } from '../topology'
+import {
+  clearEnergizations,
+  loadEnergizationsFromExcel,
+  refreshEnergizationsForTopology,
+  useEnergizationOverlay,
+} from '../energizations'
 
 const ZOOM_MIN = 0.25
 const ZOOM_MAX = 2.5
 const ZOOM_STEP = 0.15
 const MAX_LOCK_EXCEL_BYTES = 8 * 1024 * 1024
 const MAX_CIRCUIT_LIST_BYTES = 32 * 1024 * 1024
+const MAX_ENERGIZATION_BYTES = 16 * 1024 * 1024
 const ALLOWED_LOCK_EXCEL_RE = /\.(xlsx|xls|xlsm)$/i
 
 const REST_STATUS_SOURCE = 'reposo · todos abiertos · gens parados'
@@ -95,6 +102,7 @@ type ScadaCanvasProps = {
 export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const circuitListInputRef = useRef<HTMLInputElement>(null)
+  const energizationInputRef = useRef<HTMLInputElement>(null)
   const candadosDetailsRef = useRef<HTMLDetailsElement>(null)
   const cascadeRef = useRef<CascadeViewHandle>(null)
   const isMobile = useIsMobileUi()
@@ -102,6 +110,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const { displayName, openProfilePrompt } = useUserProfile()
   const { signOutUser, isAdmin } = useAuth()
   const topo = useTopologyState()
+  const energ = useEnergizationOverlay()
   const [notesPanelOpen, setNotesPanelOpen] = useState(false)
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
   const [topologyBusy, setTopologyBusy] = useState(false)
@@ -161,6 +170,16 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     const t = window.setTimeout(() => clearTopologyNotice(), 0)
     return () => window.clearTimeout(t)
   }, [topo.notice])
+
+  useEffect(() => {
+    if (!energ.notice) return
+    setSearchHint(energ.notice)
+  }, [energ.notice])
+
+  useEffect(() => {
+    if (!energ.active) return
+    refreshEnergizationsForTopology(system690)
+  }, [topo.revision, energ.active])
 
   useEffect(() => {
     if (isMobile) {
@@ -518,9 +537,8 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       setSearchHint('Cargando lista de circuitos en el unifilar…')
       try {
         const buf = await file.arrayBuffer()
-        const stats = loadTopologyFromExcel(buf, file.name)
-        // El unifilar se remonta; el aviso va en topology.notice
-        void stats
+        loadTopologyFromExcel(buf, file.name)
+        refreshEnergizationsForTopology(system690)
       } catch (err) {
         setSearchHint(
           err instanceof Error
@@ -536,7 +554,45 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
 
   const handleRestoreEmbeddedTopology = useCallback(() => {
     resetTopologyToEmbedded()
+    refreshEnergizationsForTopology(system690)
   }, [])
+
+  const handleEnergizationExcelChange = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      if (!ALLOWED_LOCK_EXCEL_RE.test(file.name) || !file.size) {
+        setSearchHint('Archivo de energizaciones no válido (.xlsx / .xlsm).')
+        return
+      }
+      if (file.size > MAX_ENERGIZATION_BYTES) {
+        setSearchHint(
+          `Excel demasiado grande (${Math.round(file.size / 1024 / 1024)} MiB). Máx. ${Math.round(
+            MAX_ENERGIZATION_BYTES / 1024 / 1024,
+          )} MiB.`,
+        )
+        return
+      }
+      setSearchHint('Cargando energizaciones a bordo…')
+      try {
+        const buf = await file.arrayBuffer()
+        const stats = loadEnergizationsFromExcel(buf, file.name, system690)
+        if (stats.matched === 0) {
+          setSearchHint(
+            `Ningún código de cable del Excel coincide con circuitRef del unifilar (${stats.skippedUnknown} filas leídas).`,
+          )
+        }
+      } catch (err) {
+        setSearchHint(
+          err instanceof Error
+            ? err.message
+            : 'No se pudo leer el Excel de energizaciones.',
+        )
+      }
+    },
+    [],
+  )
 
   const handleLocate = (e: FormEvent) => {
     e.preventDefault()
@@ -624,6 +680,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                   ? displaySourceFileName(system690.sourceFile)
                   : system690.vessel}
                 {topo.sessionOverride ? ' · sesión (no guardada)' : ''}
+                {energ.active ? ' · energizaciones cargadas' : ''}
               </p>
               <label className="topbar__vessel">
                 <span className="topbar__vessel-label">Buque</span>
@@ -813,6 +870,13 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                         </button>
                       </div>
                     </details>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                      hidden
+                      onChange={handleLockExcelChange}
+                    />
                     )}
                     {isAdmin && (
                     <>
@@ -847,13 +911,6 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       </div>
                     </details>
                     <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                      hidden
-                      onChange={handleLockExcelChange}
-                    />
-                    <input
                       ref={circuitListInputRef}
                       type="file"
                       accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
@@ -861,6 +918,47 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       onChange={(e) => void handleCircuitListExcelChange(e)}
                     />
                     </>
+                    )}
+                    {isAdmin && (
+                    <details className="candados-menu">
+                      <summary
+                        className={`btn${energ.active ? ' btn--active' : ''}`}
+                        title="Cargar Excel de energizaciones a bordo (col. A código, E SI/NO) — solo admin"
+                      >
+                        Energizaciones
+                      </summary>
+                      <div className="candados-menu__panel" role="menu">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="candados-menu__item"
+                          title="ControlSeguimientoEnergizaciones: A código cable, B origen, C destino, E SI/NO"
+                          onClick={() => energizationInputRef.current?.click()}
+                        >
+                          Cargar Excel…
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="candados-menu__item"
+                          disabled={!energ.active}
+                          title="Quitar la capa de energizaciones de esta sesión"
+                          onClick={() => {
+                            clearEnergizations()
+                            setSearchHint('Energizaciones descartadas.')
+                          }}
+                        >
+                          Quitar capa
+                        </button>
+                      </div>
+                    </details>
+                    <input
+                      ref={energizationInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                      hidden
+                      onChange={(e) => void handleEnergizationExcelChange(e)}
+                    />
                     )}
                 </div>
               </div>
