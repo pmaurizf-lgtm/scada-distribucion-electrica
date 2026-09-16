@@ -41,7 +41,6 @@ import {
 import { LockInfoProvider } from '../locks/LockInfoContext'
 import { LockBalloon, placeLockBalloon } from './LockBalloon'
 import { useIsMobileUi } from '../hooks/useIsMobileUi'
-import { useAuth } from '../auth'
 import {
   CascadeView,
   type CascadeFocus,
@@ -54,6 +53,7 @@ import { NoteEditorModal } from './NoteEditorModal'
 import { NotesPanel } from './NotesPanel'
 import { useNotes } from '../notes/NotesContext'
 import { useUserProfile } from '../notes/UserProfileContext'
+import { useAuth } from '../auth'
 import {
   clearTopologyNotice,
   loadTopologyFromExcel,
@@ -726,6 +726,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     }
                   >
                     Usuario
+                    {isAdmin ? ' · Admin' : ''}
                   </button>
                   <button
                     type="button"
