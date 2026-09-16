@@ -66,6 +66,7 @@ import {
   loadEnergizationsFromExcel,
   refreshEnergizationsForTopology,
   setBoardEnergizationsEnabled,
+  setEnergizationsVessel,
   useEnergizationOverlay,
 } from '../energizations'
 
@@ -113,6 +114,11 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const { signOutUser, isAdmin } = useAuth()
   const topo = useTopologyState()
   const energ = useEnergizationOverlay()
+
+  useEffect(() => {
+    setEnergizationsVessel(vesselId, system690)
+  }, [vesselId])
+
   const [notesPanelOpen, setNotesPanelOpen] = useState(false)
   const [chromeCollapsed, setChromeCollapsed] = useState(false)
   const [topologyBusy, setTopologyBusy] = useState(false)
@@ -579,7 +585,12 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       setSearchHint('Cargando energizaciones a bordo…')
       try {
         const buf = await file.arrayBuffer()
-        const stats = loadEnergizationsFromExcel(buf, file.name, system690)
+        const stats = loadEnergizationsFromExcel(
+          buf,
+          file.name,
+          system690,
+          vesselId,
+        )
         if (stats.unchanged) return
         if (stats.matched === 0) {
           setSearchHint(
@@ -594,7 +605,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
         )
       }
     },
-    [],
+    [vesselId],
   )
 
   const handleLocate = (e: FormEvent) => {
@@ -688,8 +699,8 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                 {topo.sessionOverride ? ' · sesión (no guardada)' : ''}
                 {energ.hasData
                   ? energ.enabled
-                    ? ' · energizaciones activas'
-                    : ' · energizaciones memorizadas (capa off)'
+                    ? ` · energizaciones activas (${vesselId})`
+                    : ` · energizaciones memorizadas (${vesselId}, capa off)`
                   : ''}
               </p>
               <label className="topbar__vessel">
@@ -936,7 +947,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     <details className="candados-menu">
                       <summary
                         className={`btn${boardLayerOn ? ' btn--active' : ''}`}
-                        title="Capa de energizaciones a bordo (Excel col. A código, E SI/NO) — solo admin"
+                        title={`Capa de energizaciones de ${vesselId} (Excel col. A código, E SI/NO) — solo admin`}
                       >
                         Energizaciones
                       </summary>
