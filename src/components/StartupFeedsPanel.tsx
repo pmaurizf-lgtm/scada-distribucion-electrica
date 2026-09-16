@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { system690 } from '../data/system690'
+import { useNotes } from '../notes/NotesContext'
 import type { ProtectionState } from '../types'
 import {
   buildStartupReport,
@@ -29,6 +30,7 @@ export function StartupFeedsPanel({
   const MAX_FEEDS_EXCEL_BYTES = 10 * 1024 * 1024
   const ALLOWED_FEEDS_EXCEL_RE = /\.(xlsx|xls|xlsm)$/i
 
+  const { notes } = useNotes()
   const excelRef = useRef<HTMLInputElement>(null)
   const [title, setTitle] = useState('Alimentaciones puesta en marcha')
   const [manualText, setManualText] = useState('')
@@ -114,7 +116,7 @@ export function StartupFeedsPanel({
     setHint('Generando PDF (un árbol por página + tabla) y Excel…')
     try {
       await exportStartupPdf(payload, trees, table)
-      await exportStartupTableExcel(payload)
+      await exportStartupTableExcel(payload, notes)
       setHint(
         `Informe generado · ${title} (PDF: un árbol/página + tabla · Excel)`,
       )

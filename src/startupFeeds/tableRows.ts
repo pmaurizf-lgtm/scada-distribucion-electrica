@@ -1,4 +1,8 @@
 import { system690 } from '../data/system690'
+import {
+  isNoteDeleted,
+  type InspectionNote,
+} from '../notes/types'
 import type { DistributionData } from '../types'
 import {
   buildOrderedFeedChain,
@@ -158,7 +162,7 @@ export type StartupBoardRow = {
   nme674Id: string
   local: string
   localName: string
-  /** Columna vacía para anotaciones del usuario en Excel. */
+  /** Notas de inspección asociadas al equipo (y a sus interruptores). */
   notes: string
 }
 
@@ -197,10 +201,69 @@ function isReportTrf(trfId: string, data: DistributionData): boolean {
   return true
 }
 
+function circuitBelongsToBoard(
+  circuitId: string,
+  boardId: string,
+  data: DistributionData,
+): boolean {
+  const c = data.circuits.find((x) => x.id === circuitId)
+  if (!c) return false
+  return c.originId === boardId || c.destinationId === boardId
+}
+
+function formatNoteBlock(note: InspectionNote, circuitLabel?: string): string {
+  const bullets = note.lines
+    .map((l) => `${l.resolved ? '☑' : '☐'} ${l.text.trim()}`)
+    .filter((l) => l.length > 2)
+    .join('\n')
+  if (!bullets) return ''
+  const who = note.author?.trim() || '—'
+  const head = circuitLabel
+    ? `${circuitLabel} · ${who}`
+    : who
+  return `${head}\n${bullets}`
+}
+
+/** Texto de notas para la columna Excel de un SSB/TRF. */
+export function formatNotesForStartupBoard(
+  equipmentId: string,
+  notes: InspectionNote[],
+  data: DistributionData = system690,
+): string {
+  const related = notes
+    .filter((n) => !isNoteDeleted(n))
+    .filter((n) => {
+      if (n.target.kind === 'equipment') {
+        return n.target.equipmentId === equipmentId
+      }
+      return circuitBelongsToBoard(n.target.circuitId, equipmentId, data)
+    })
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+
+  if (!related.length) return ''
+
+  return related
+    .map((note) => {
+      if (note.target.kind === 'equipment') {
+        return formatNoteBlock(note)
+      }
+      const c = data.circuits.find((x) => x.id === note.target.circuitId)
+      const label =
+        c?.protectionName?.trim() ||
+        c?.circuitRef?.trim() ||
+        note.target.circuitId
+      return formatNoteBlock(note, label)
+    })
+    .filter(Boolean)
+    .join('\n\n')
+}
+
 function boardRowFromEquipment(
   kind: StartupBoardKind,
   id: string,
   eqById: Map<string, { name?: string; nme674Id?: string; local?: string; localName?: string }>,
+  notes: InspectionNote[],
+  data: DistributionData,
 ): StartupBoardRow {
   const eq = eqById.get(id)
   return {
@@ -210,7 +273,7 @@ function boardRowFromEquipment(
     nme674Id: eq?.nme674Id?.trim() || '—',
     local: eq?.local?.trim() || '—',
     localName: eq?.localName?.trim() || '—',
-    notes: '',
+    notes: formatNotesForStartupBoard(id, notes, data),
   }
 }
 
@@ -222,6 +285,7 @@ function boardRowFromEquipment(
 export function collectStartupBoards(
   report: StartupReport,
   data: DistributionData = system690,
+  notes: InspectionNote[] = [],
 ): StartupBoardRow[] {
   const eqById = new Map(data.equipment.map((e) => [e.id, e]))
   const ssbIds = new Set<string>()
@@ -249,10 +313,10 @@ export function collectStartupBoards(
   const rows: StartupBoardRow[] = [
     ...[...ssbIds]
       .sort((a, b) => a.localeCompare(b, 'es'))
-      .map((id) => boardRowFromEquipment('SSB', id, eqById)),
+      .map((id) => boardRowFromEquipment('SSB', id, eqById, notes, data)),
     ...[...trfIds]
       .sort((a, b) => a.localeCompare(b, 'es'))
-      .map((id) => boardRowFromEquipment('TRF', id, eqById)),
+      .map((id) => boardRowFromEquipment('TRF', id, eqById, notes, data)),
   ]
   return rows
 }
@@ -261,7 +325,8 @@ export function collectStartupBoards(
 export function collectStartupSsbs(
   report: StartupReport,
   data: DistributionData = system690,
+  notes: InspectionNote[] = [],
 ): StartupBoardRow[] {
-  return collectStartupBoards(report, data).filter((r) => r.kind === 'SSB')
+  return collectStartupBoards(report, data, notes).filter((r) => r.kind === 'SSB')
 }
 

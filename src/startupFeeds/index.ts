@@ -9,6 +9,7 @@ export {
   buildStartupTableRows,
   collectStartupBoards,
   collectStartupSsbs,
+  formatNotesForStartupBoard,
   summarizeGroups,
 } from './tableRows'
 export type {

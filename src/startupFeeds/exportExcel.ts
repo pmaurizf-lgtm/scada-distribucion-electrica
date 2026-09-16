@@ -1,10 +1,10 @@
 import ExcelJS from 'exceljs'
+import type { InspectionNote } from '../notes/types'
 import type { StartupReport } from './types'
 import {
   buildStartupTableRows,
   collectStartupBoards,
 } from './tableRows'
-
 function slug(title: string): string {
   return (
     title
@@ -63,8 +63,9 @@ function paintHeader(row: ExcelJS.Row): void {
 function addSsbSummarySheet(
   wb: ExcelJS.Workbook,
   report: StartupReport,
+  notes: InspectionNote[] = [],
 ): void {
-  const boards = collectStartupBoards(report)
+  const boards = collectStartupBoards(report, undefined, notes)
   const nSsb = boards.filter((b) => b.kind === 'SSB').length
   const nTrf = boards.filter((b) => b.kind === 'TRF').length
   const ws = wb.addWorksheet('SSB y TRF', {
@@ -79,9 +80,8 @@ function addSsbSummarySheet(
     { header: 'Código NME', key: 'nme', width: 16 },
     { header: 'Local', key: 'local', width: 14 },
     { header: 'Nombre local', key: 'localName', width: 36 },
-    { header: 'Notas', key: 'notes', width: 28 },
+    { header: 'Notas', key: 'notes', width: 48 },
   ]
-
   const titleRow = ws.addRow([
     'SSB y TRF necesarios para la puesta en marcha',
   ])
@@ -147,6 +147,8 @@ function addSsbSummarySheet(
       b.notes,
     ])
     const bg = b.kind === 'TRF' ? 'E3F2FD' : COLORS.ssbBg
+    const noteLines = b.notes ? b.notes.split('\n').length : 1
+    row.height = Math.min(18 + Math.max(0, noteLines - 1) * 12, 96)
     row.eachCell((cell, col) => {
       cell.fill = {
         type: 'pattern',
@@ -158,7 +160,7 @@ function addSsbSummarySheet(
         color: { argb: `FF${COLORS.text}` },
         bold: col === 1 || col === 2,
       }
-      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: col === 7 }
+      cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: col === 7 }
       cell.border = thinBorder()
     })
   }
@@ -176,6 +178,7 @@ function addSsbSummarySheet(
  */
 export async function exportStartupTableExcel(
   report: StartupReport,
+  notes: InspectionNote[] = [],
 ): Promise<void> {
   const rows = buildStartupTableRows(report)
   const wb = new ExcelJS.Workbook()
@@ -304,7 +307,7 @@ export async function exportStartupTableExcel(
     to: { row: 3 + rows.length, column: 8 },
   }
 
-  addSsbSummarySheet(wb, report)
+  addSsbSummarySheet(wb, report, notes)
 
   const buf = await wb.xlsx.writeBuffer()
   const blob = new Blob([buf], {
