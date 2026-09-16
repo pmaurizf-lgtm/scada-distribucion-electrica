@@ -814,6 +814,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     </details>
                     )}
                     {isAdmin && (
+                    <>
                     <details className="candados-menu">
                       <summary
                         className={`btn${topo.sessionOverride ? ' btn--active' : ''}`}
@@ -858,6 +859,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       hidden
                       onChange={(e) => void handleCircuitListExcelChange(e)}
                     />
+                    </>
                     )}
                 </div>
               </div>
