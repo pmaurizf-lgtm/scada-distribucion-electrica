@@ -62,8 +62,10 @@ import {
 } from '../topology'
 import {
   clearEnergizations,
+  isBoardLayerVisible,
   loadEnergizationsFromExcel,
   refreshEnergizationsForTopology,
+  setBoardEnergizationsEnabled,
   useEnergizationOverlay,
 } from '../energizations'
 
@@ -177,9 +179,9 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   }, [energ.notice])
 
   useEffect(() => {
-    if (!energ.active) return
+    if (!energ.hasData) return
     refreshEnergizationsForTopology(system690)
-  }, [topo.revision, energ.active])
+  }, [topo.revision, energ.hasData])
 
   useEffect(() => {
     if (isMobile) {
@@ -578,6 +580,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       try {
         const buf = await file.arrayBuffer()
         const stats = loadEnergizationsFromExcel(buf, file.name, system690)
+        if (stats.unchanged) return
         if (stats.matched === 0) {
           setSearchHint(
             `Ningún código de cable del Excel coincide con circuitRef del unifilar (${stats.skippedUnknown} filas leídas).`,
@@ -646,11 +649,14 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     cascadeRef.current?.collapseAll()
   }
 
+  const boardLayerOn = isBoardLayerVisible(energ)
+
   const shellClass = [
     'app-shell',
     'app-shell--cascade',
     isMobile ? 'app-shell--mobile' : '',
     isMobile && chromeCollapsed ? 'app-shell--chrome-collapsed' : '',
+    boardLayerOn ? 'scada--board-energizations' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -680,7 +686,11 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                   ? displaySourceFileName(system690.sourceFile)
                   : system690.vessel}
                 {topo.sessionOverride ? ' · sesión (no guardada)' : ''}
-                {energ.active ? ' · energizaciones cargadas' : ''}
+                {energ.hasData
+                  ? energ.enabled
+                    ? ' · energizaciones activas'
+                    : ' · energizaciones memorizadas (capa off)'
+                  : ''}
               </p>
               <label className="topbar__vessel">
                 <span className="topbar__vessel-label">Buque</span>
@@ -925,12 +935,30 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     <>
                     <details className="candados-menu">
                       <summary
-                        className={`btn${energ.active ? ' btn--active' : ''}`}
-                        title="Cargar Excel de energizaciones a bordo (col. A código, E SI/NO) — solo admin"
+                        className={`btn${boardLayerOn ? ' btn--active' : ''}`}
+                        title="Capa de energizaciones a bordo (Excel col. A código, E SI/NO) — solo admin"
                       >
                         Energizaciones
                       </summary>
                       <div className="candados-menu__panel" role="menu">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className={`candados-menu__item${boardLayerOn ? ' candados-menu__item--on' : ''}`}
+                          disabled={!energ.hasData}
+                          title={
+                            energ.hasData
+                              ? boardLayerOn
+                                ? 'Ocultar capa (datos memorizados)'
+                                : 'Mostrar capa sobre el unifilar'
+                              : 'Carga un Excel primero'
+                          }
+                          onClick={() =>
+                            setBoardEnergizationsEnabled(!energ.enabled)
+                          }
+                        >
+                          {boardLayerOn ? 'Desactivar capa' : 'Activar capa'}
+                        </button>
                         <button
                           type="button"
                           role="menuitem"
@@ -944,14 +972,14 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                           type="button"
                           role="menuitem"
                           className="candados-menu__item"
-                          disabled={!energ.active}
-                          title="Quitar la capa de energizaciones de esta sesión"
+                          disabled={!energ.hasData}
+                          title="Borrar Excel memorizado y quitar la capa"
                           onClick={() => {
                             clearEnergizations()
-                            setSearchHint('Energizaciones descartadas.')
+                            setSearchHint('Energizaciones borradas.')
                           }}
                         >
-                          Quitar capa
+                          Borrar datos
                         </button>
                       </div>
                     </details>
