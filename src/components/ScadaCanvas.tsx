@@ -812,6 +812,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       {simulationActive ? 'Dejar de simular' : 'Simular estado'}
                     </button>
                     {isAdmin && (
+                    <>
                     <details
                       ref={candadosDetailsRef}
                       className={`candados-menu${lockTool !== 'none' ? ' candados-menu--active' : ''}`}
@@ -877,6 +878,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       hidden
                       onChange={handleLockExcelChange}
                     />
+                    </>
                     )}
                     {isAdmin && (
                     <>
@@ -920,6 +922,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     </>
                     )}
                     {isAdmin && (
+                    <>
                     <details className="candados-menu">
                       <summary
                         className={`btn${energ.active ? ' btn--active' : ''}`}
@@ -959,6 +962,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                       hidden
                       onChange={(e) => void handleEnergizationExcelChange(e)}
                     />
+                    </>
                     )}
                 </div>
               </div>
