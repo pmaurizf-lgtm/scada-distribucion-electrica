@@ -1272,12 +1272,28 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 11.5rem;
+  min-width: 14rem;
+  max-width: min(22rem, 92vw);
   padding: 0.35rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--bg-elevated, #1a222c);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.candados-menu__meta {
+  margin: 0 0 0.25rem;
+  padding: 0.35rem 0.45rem 0.4rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--muted, #8fa39b);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.candados-menu__meta-time,
+.candados-menu__meta-count {
+  opacity: 0.9;
 }
 
 .candados-menu__item {
