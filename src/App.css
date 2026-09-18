@@ -1493,11 +1493,9 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
 @keyframes equip-balloon-in {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-100% + 6px)) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -100%) scale(1);
   }
 }
 
@@ -4017,7 +4015,23 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
 .hbus-drop__eq-wrap {
   position: relative;
   width: 100%;
-  z-index: 6;
+  z-index: 8;
+  pointer-events: auto;
+}
+
+/*
+ * Los cables de acometida solapan el recuadro (margin negativo) y robaban el
+ * hover: el globo solo acababa armándose tras zoom/scroll. El Q sigue clicable.
+ */
+.hbus-drop__tops .hbus-drop__wire,
+.hbus-drop__tops .hbus-drop__free-end,
+.hbus-drop__leg .hbus-drop__wire,
+.hbus-drop__leg .hbus-drop__free-end {
+  pointer-events: none;
+}
+
+.hbus-drop__leg .casc-brk,
+.hbus-drop__tops .casc-brk {
   pointer-events: auto;
 }
 
