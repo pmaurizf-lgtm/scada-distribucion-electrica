@@ -18,5 +18,25 @@ service cloud.firestore {
         && request.resource.data.vesselId == vesselId;
       allow delete: if false;
     }
+
+    /* Candados LOTO · un doc de estado por buque */
+    match /vessels/{vesselId}/locks/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && docId == 'state'
+        && request.resource.data.vesselId == vesselId
+        && request.resource.data.updatedAt is string;
+      allow delete: if false;
+    }
+
+    /* Energizaciones a bordo · un doc de estado por buque */
+    match /vessels/{vesselId}/energizations/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && docId == 'state'
+        && request.resource.data.vesselId == vesselId
+        && request.resource.data.updatedAt is string;
+      allow delete: if false;
+    }
   }
 }
