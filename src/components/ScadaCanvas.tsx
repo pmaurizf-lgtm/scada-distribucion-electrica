@@ -7,7 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from 'react'
-import { displaySourceFileName, system690 } from '../data/system690'
+import { system690 } from '../data/system690'
 import {
   buildOpenProtectionStatus,
   toProtectionStatusMap,
@@ -57,9 +57,12 @@ import { useUserProfile } from '../notes/UserProfileContext'
 import { useAuth } from '../auth'
 import {
   clearTopologyNotice,
+  circuitListRevisionLabel,
   loadTopologyFromExcel,
   resetTopologyToEmbedded,
+  selectCircuitListRevision,
   useTopologyState,
+  type CircuitListRevision,
 } from '../topology'
 import {
   clearEnergizations,
@@ -717,6 +720,16 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     refreshEnergizationsForTopology(system690)
   }, [])
 
+  const handleCircuitListRevisionChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      const next = e.target.value as CircuitListRevision
+      if (next !== 'C' && next !== 'D') return
+      selectCircuitListRevision(next)
+      refreshEnergizationsForTopology(system690)
+    },
+    [],
+  )
+
   const handleEnergizationExcelChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
@@ -844,15 +857,31 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
               <p className="topbar__brand-title">
                 {vesselById(vesselId).label}
               </p>
+              <label className="topbar__vessel topbar__circuit-list">
+                <span className="topbar__vessel-label">Lista circuitos</span>
+                <select
+                  className="topbar__vessel-select topbar__circuit-list-select"
+                  value={topo.listRevision}
+                  aria-label="Revisión de lista de circuitos"
+                  title="El unifilar y los informes usan la revisión seleccionada"
+                  onChange={handleCircuitListRevisionChange}
+                >
+                  <option value="C">
+                    {circuitListRevisionLabel('C')}
+                  </option>
+                  <option value="D">
+                    {circuitListRevisionLabel('D')}
+                  </option>
+                </select>
+              </label>
               <p>
-                {system690.sourceFile
-                  ? displaySourceFileName(system690.sourceFile)
-                  : system690.vessel}
-                {topo.sessionOverride ? ' · sesión (no guardada)' : ''}
+                {topo.sessionOverride ? 'Rev.D · sesión (no guardada)' : ''}
                 {energ.hasData
-                  ? energ.enabled
-                    ? ` · energizaciones activas (${vesselId})`
-                    : ` · energizaciones memorizadas (${vesselId}, capa off)`
+                  ? `${topo.sessionOverride ? ' · ' : ''}${
+                      energ.enabled
+                        ? `energizaciones activas (${vesselId})`
+                        : `energizaciones memorizadas (${vesselId}, capa off)`
+                    }`
                   : ''}
               </p>
               <label className="topbar__vessel">
@@ -1082,30 +1111,40 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                     <details className="candados-menu">
                       <summary
                         className={`btn${topo.sessionOverride ? ' btn--active' : ''}`}
-                        title="Cargar una nueva lista de circuitos en el unifilar (solo esta sesión; no se guarda) — solo admin"
+                        title={
+                          topo.listRevision === 'D'
+                            ? 'Cargar una nueva lista Rev.D en el unifilar (solo esta sesión; no se guarda) — solo admin'
+                            : 'Selecciona Rev.D en «Lista circuitos» para cargar un Excel nuevo'
+                        }
                       >
-                        {topologyBusy ? 'Cargando…' : 'Lista circuitos'}
+                        {topologyBusy ? 'Cargando…' : 'Actualizar Rev.D'}
                       </summary>
                       <div className="candados-menu__panel" role="menu">
                         <button
                           type="button"
                           role="menuitem"
                           className="candados-menu__item"
-                          disabled={topologyBusy}
-                          title="Excel lista de circuitos (mismas columnas que el unifilar). Solo memoria de sesión."
+                          disabled={
+                            topologyBusy || topo.listRevision !== 'D'
+                          }
+                          title={
+                            topo.listRevision === 'D'
+                              ? 'Excel lista de circuitos (mismas columnas que el unifilar). Solo memoria de sesión sobre Rev.D.'
+                              : 'Cambia a Rev.D en el desplegable del topbar para habilitar la carga'
+                          }
                           onClick={() => circuitListInputRef.current?.click()}
                         >
-                          Cargar Excel…
+                          Cargar Excel Rev.D…
                         </button>
                         <button
                           type="button"
                           role="menuitem"
                           className="candados-menu__item"
                           disabled={!topo.sessionOverride || topologyBusy}
-                          title="Volver a la topología embebida en la app"
+                          title="Volver a la Rev.D embebida en la app"
                           onClick={handleRestoreEmbeddedTopology}
                         >
-                          Restaurar embebida
+                          Restaurar Rev.D embebida
                         </button>
                       </div>
                     </details>

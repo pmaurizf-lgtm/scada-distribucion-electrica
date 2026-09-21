@@ -1019,6 +1019,10 @@ body {
   cursor: pointer;
 }
 
+.topbar__circuit-list-select {
+  max-width: min(28rem, 72vw);
+}
+
 .topbar__vessel-select:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
   outline-offset: 1px;

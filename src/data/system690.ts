@@ -7,6 +7,7 @@ import type {
   ServiceClass,
 } from '../types'
 import raw from './system690.json'
+import topologyRevC from './topologyRevC.json'
 import dcp10Map from './dcp10Map.json'
 import nme674Map from './nme674Map.json'
 import { augmentSpareCircuits } from '../utils/spareCircuits'
@@ -113,24 +114,36 @@ const base: DistributionData = {
   ),
 }
 
-/** Topología embebida de build (no mutar). */
-export const embeddedSystem690: DistributionData = augmentSpareCircuits(
+/** Topología embebida Rev.D (lista actual; se actualiza en releases). */
+export const embeddedRevD: DistributionData = augmentSpareCircuits(
   mergeAbtDownstream(base),
 )
 
 /**
- * Topología activa del unifilar.
- * En sesión puede sustituirse por una lista Excel (solo memoria; sin persistir).
- * Los `import { system690 }` reciben el valor vivo al remontar la UI.
+ * Alias histórico: el parser de Excel y spares MSB usan Rev.D como plantilla
+ * de paneles virtuales.
  */
-export let system690: DistributionData = embeddedSystem690
+export const embeddedSystem690: DistributionData = embeddedRevD
+
+/** Topología embebida Rev.C (consulta; congelada en build). */
+export const embeddedRevC: DistributionData = topologyRevC as DistributionData
+
+export type CircuitListRevision = 'C' | 'D'
+
+/**
+ * Topología activa del unifilar.
+ * Por defecto Rev.C; conmuta a Rev.D (o Excel de sesión sobre D).
+ */
+export let system690: DistributionData = embeddedRevC
 
 export function setSessionSystem690(data: DistributionData): void {
   system690 = data
 }
 
-export function restoreEmbeddedSystem690(): void {
-  system690 = embeddedSystem690
+export function restoreEmbeddedSystem690(
+  revision: CircuitListRevision = 'C',
+): void {
+  system690 = revision === 'D' ? embeddedRevD : embeddedRevC
 }
 
 /** Denominación DCP-10 (Excel F/J) a partir del tag PUMA (E/I) */
