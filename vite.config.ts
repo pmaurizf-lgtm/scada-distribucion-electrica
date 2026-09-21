@@ -48,7 +48,7 @@ export default defineConfig({
         // Nueva clave: fuerza abandonar caches PWA viejas en el móvil
         cacheId: 'scada-f110-v12-equip-hover-fix',
         // El bundle unifilar (abtDownstream + topología) supera con creces 2 MiB
-        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
         globPatterns: [
           '**/*.{js,css,html,ico,svg,png,woff2,json,xlsx}',
         ],
