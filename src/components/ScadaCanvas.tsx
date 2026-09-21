@@ -203,29 +203,50 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   )
   useEnergizationsCloudSync(vesselId)
 
-  const bumpPublishLocks = useCallback((fileName?: string | null) => {
-    if (fileName !== undefined) {
-      setLocksFileName(fileName)
-      locksFileNameRef.current = fileName
-    }
-    locksUpdatedAtRef.current = new Date().toISOString()
-    setLocksUpdatedAt(locksUpdatedAtRef.current)
-    window.setTimeout(() => {
+  const bumpPublishLocks = useCallback(
+    (
+      fileName?: string | null,
+      /** Obligatorio tras setState: el ref aún puede tener la lista anterior (p. ej. seed 332). */
+      snapshot?: {
+        lockedCircuits: string[] | Set<string>
+        lockInfoByCircuit: Record<string, CircuitLockInfo>
+      },
+    ) => {
+      if (fileName !== undefined) {
+        setLocksFileName(fileName)
+        locksFileNameRef.current = fileName
+      }
+      const lockedArr = snapshot
+        ? Array.isArray(snapshot.lockedCircuits)
+          ? [...snapshot.lockedCircuits]
+          : [...snapshot.lockedCircuits]
+        : [...lockedCircuitsRef.current]
+      const info = snapshot
+        ? { ...snapshot.lockInfoByCircuit }
+        : { ...lockInfoRef.current }
+      if (snapshot) {
+        lockedCircuitsRef.current = new Set(lockedArr)
+        lockInfoRef.current = info
+      }
+      const updatedAt = new Date().toISOString()
+      locksUpdatedAtRef.current = updatedAt
+      setLocksUpdatedAt(updatedAt)
       saveVesselLocks(vesselId, {
-        lockedCircuits: lockedCircuitsRef.current,
-        lockInfoByCircuit: lockInfoRef.current,
-        updatedAt: locksUpdatedAtRef.current,
+        lockedCircuits: lockedArr,
+        lockInfoByCircuit: info,
+        updatedAt,
         fileName: locksFileNameRef.current,
       })
       publishLocks({
-        updatedAt: locksUpdatedAtRef.current,
-        lockedCircuits: [...lockedCircuitsRef.current],
-        lockInfoByCircuit: lockInfoRef.current,
+        updatedAt,
+        lockedCircuits: lockedArr,
+        lockInfoByCircuit: info,
         fileName: locksFileNameRef.current,
         source: fileName ? 'excel' : 'local',
       })
-    }, 0)
-  }, [publishLocks, vesselId])
+    },
+    [publishLocks, vesselId],
+  )
 
   const [lockBalloon, setLockBalloon] = useState<{
     info: CircuitLockInfo
@@ -470,10 +491,14 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       )
       return
     }
-    setLockedCircuits((prev) => new Set(prev).add(circuitId))
+    const nextLocked = new Set(lockedCircuitsRef.current).add(circuitId)
+    setLockedCircuits(nextLocked)
     setProtectionStatus((prev) => ({ ...prev, [circuitId]: 'abierta' }))
     setStatusSource('candado aplicado · interruptor abierto y bloqueado')
-    bumpPublishLocks()
+    bumpPublishLocks(undefined, {
+      lockedCircuits: nextLocked,
+      lockInfoByCircuit: lockInfoRef.current,
+    })
   }, [simulationActive, bumpPublishLocks])
 
   const handleUnlockCircuit = useCallback((circuitId: string) => {
@@ -483,20 +508,18 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       )
       return
     }
-    setLockedCircuits((prev) => {
-      const next = new Set(prev)
-      next.delete(circuitId)
-      return next
-    })
-    setLockInfoByCircuit((prev) => {
-      if (!(circuitId in prev)) return prev
-      const next = { ...prev }
-      delete next[circuitId]
-      return next
-    })
+    const nextLocked = new Set(lockedCircuitsRef.current)
+    nextLocked.delete(circuitId)
+    const nextInfo = { ...lockInfoRef.current }
+    delete nextInfo[circuitId]
+    setLockedCircuits(nextLocked)
+    setLockInfoByCircuit(nextInfo)
     setLockBalloon(null)
     setStatusSource('candado retirado · interruptor manipulable')
-    bumpPublishLocks()
+    bumpPublishLocks(undefined, {
+      lockedCircuits: nextLocked,
+      lockInfoByCircuit: nextInfo,
+    })
   }, [simulationActive, bumpPublishLocks])
 
   const showLockInfo = useCallback(
@@ -586,7 +609,10 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
             `Candados cargados: ${circuitIds.length} interruptores (nº LOTO en col. L)${extra}. Pulsa el candado para ver el número. Se sincronizan en la nube.`,
           )
           closeCandadosMenu()
-          bumpPublishLocks(file.name)
+          bumpPublishLocks(file.name, {
+            lockedCircuits: circuitIds,
+            lockInfoByCircuit: locks,
+          })
           return
         }
 
@@ -609,18 +635,16 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
           return
         }
         setLockedCircuits(new Set(circuitIds))
-        setLockInfoByCircuit((prev) => {
-          const next = { ...prev }
-          for (const id of circuitIds) {
-            if (!next[id]) {
-              next[id] = {
-                lockNumber: '—',
-                interruptor: id,
-              }
+        const nextInfo = { ...lockInfoRef.current }
+        for (const id of circuitIds) {
+          if (!nextInfo[id]) {
+            nextInfo[id] = {
+              lockNumber: '—',
+              interruptor: id,
             }
           }
-          return next
-        })
+        }
+        setLockInfoByCircuit(nextInfo)
         setProtectionStatus((prev) => {
           const next = { ...prev }
           for (const id of circuitIds) next[id] = 'abierta'
@@ -638,7 +662,10 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
           `Candados cargados: ${circuitIds.length} interruptores abiertos y bloqueados${extra}. Se sincronizan en la nube.`,
         )
         closeCandadosMenu()
-        bumpPublishLocks(file.name)
+        bumpPublishLocks(file.name, {
+          lockedCircuits: circuitIds,
+          lockInfoByCircuit: nextInfo,
+        })
       } catch {
         setSearchHint(
           'No se pudo leer el Excel de candados (col. D interruptor, L nº candado; CCM: cruzar D con N).',
