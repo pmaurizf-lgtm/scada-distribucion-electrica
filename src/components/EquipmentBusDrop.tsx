@@ -38,7 +38,7 @@ import {
   SktUnifilarSymbol,
 } from './BreakerSymbols'
 import { EquipmentBalloon } from './EquipmentBalloon'
-import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
+import { isSsb2Pws2209, hasSsb2209StructuredLayout } from '../abtDownstream/ssb2pws2209'
 import { isOutletSideOriginLive } from '../abtDownstream/ssbBoard'
 import {
   eqBoardClass,
@@ -330,7 +330,8 @@ export function EquipmentBusDrop({
   const ssbChassisOpen =
     Boolean(children) &&
     Boolean(rootClassName?.includes('hbus-drop--ssb-open'))
-  const is2209 = isSsb2Pws2209(equipment.id)
+  const is2209 =
+    isSsb2Pws2209(equipment.id) && hasSsb2209StructuredLayout(system690)
   const eqBalloon = useEquipInfoBalloon()
   const eqWrapRef = useRef<HTMLDivElement>(null)
 

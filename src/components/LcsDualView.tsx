@@ -35,7 +35,7 @@ import {
   nestableChildFeeders,
   pairedRemoteFeeds,
 } from '../utils/cascadeModel'
-import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
+import { isSsb2Pws2209, hasSsb2209StructuredLayout } from '../abtDownstream/ssb2pws2209'
 import { Aux24Incoming } from './Aux24Incoming'
 import { BreakerChip } from './BreakerChip'
 import { EquipmentBalloon } from './EquipmentBalloon'
@@ -389,7 +389,8 @@ function LcsOutletDrop({
   const localFeed = powerFeeds.find((c) => c.id === circuit.id) ?? circuit
   const remoteFeeds = pairedRemoteFeeds(powerFeeds, localFeed)
   const dualIncoming = remoteFeeds.length > 0
-  const is2209 = isSsb2Pws2209(equipment.id)
+  const is2209 =
+    isSsb2Pws2209(equipment.id) && hasSsb2209StructuredLayout(system690)
   const localFlowing = energizedCircuitIds.has(circuit.id)
   const eqEnergized = energizedEquipmentIds.has(equipment.id)
   const isAltLocal = circuit.lineType === 'alternativa'

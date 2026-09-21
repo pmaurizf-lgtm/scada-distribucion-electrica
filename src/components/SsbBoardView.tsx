@@ -17,7 +17,7 @@ import {
   isSsbIncomingCircuit,
   ssbIncomingCircuit,
 } from '../abtDownstream/ssbBoard'
-import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
+import { isSsb2Pws2209, hasSsb2209StructuredLayout } from '../abtDownstream/ssb2pws2209'
 import { isSsb2Pws4531 } from '../abtDownstream/ssb2pws4531'
 import {
   childFeeders,
@@ -66,7 +66,7 @@ export function SsbBoardView({
   /** Circuito LCS → SSB (energía de acometida). */
   feed: Circuit
 } & SharedProps) {
-  if (isSsb2Pws2209(ssb.id)) {
+  if (isSsb2Pws2209(ssb.id) && hasSsb2209StructuredLayout(system690)) {
     return (
       <Ssb2209BoardView
         ssb={ssb}

@@ -47,7 +47,7 @@ import {
   isSsb115InternalBus,
   isSsbIncomingCircuit,
 } from '../abtDownstream/ssbBoard'
-import { isSsb2Pws2209 } from '../abtDownstream/ssb2pws2209'
+import { isSsb2Pws2209, hasSsb2209StructuredLayout } from '../abtDownstream/ssb2pws2209'
 import { Aux24Incoming } from './Aux24Incoming'
 import { useEquipInfoBalloon } from '../hooks/useEquipInfoBalloon'
 import { useIsMobileUi } from '../hooks/useIsMobileUi'
@@ -483,7 +483,8 @@ function BusDrop({
     hasSsbBoardLayout(equipment) &&
     !isDownstreamPanelBoard(equipment) &&
     expanded
-  const ssb2209 = isSsb2Pws2209(equipment.id)
+  const ssb2209 =
+    isSsb2Pws2209(equipment.id) && hasSsb2209StructuredLayout(system690)
   const equipFam = equipFamOf(equipment, isLcsEquipment(equipment.id))
   const expandLabel = isTrfWithLoadCenter(system690, equipment.id)
     ? expanded

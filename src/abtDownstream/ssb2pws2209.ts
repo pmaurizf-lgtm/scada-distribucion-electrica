@@ -96,3 +96,21 @@ export function buildSsb2209Model(data: DistributionData): Ssb2209Model {
     s3Outlets: from(SSB_2209_S3),
   }
 }
+
+/**
+ * ¿Topología multi-barra Rev.D (QN/QA → S1/S2/S3)?
+ * Rev.C trae salidas planas Q01… desde el propio SSB y buses huérfanos sin
+ * circuitos: en ese caso hay que usar el SsbBoardView genérico.
+ */
+export function hasSsb2209StructuredLayout(data: DistributionData): boolean {
+  const m = buildSsb2209Model(data)
+  return Boolean(
+    m.qn &&
+      m.s1 &&
+      (m.q03Outlets.length > 0 ||
+        m.s3Outlets.length > 0 ||
+        m.q03 ||
+        m.q01 ||
+        m.q04),
+  )
+}

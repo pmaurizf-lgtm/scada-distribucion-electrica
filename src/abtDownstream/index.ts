@@ -59,6 +59,7 @@ export {
 
 export {
   buildSsb2209Model,
+  hasSsb2209StructuredLayout,
   isSsb2Pws2209,
   isSsb2209SectionBus,
   isSsb2209Ups,
