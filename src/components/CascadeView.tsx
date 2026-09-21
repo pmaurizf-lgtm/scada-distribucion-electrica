@@ -43,6 +43,7 @@ import { isMsb4Sfs, isScv4Sfs, isSbt6Pws, isSbtToScvDirectFeed } from '../voltag
 import { Msb4SfsBoardView } from './Msb4SfsBoardView'
 import {
   hasSsbBoardLayout,
+  isDownstreamPanelBoard,
   isSsb115InternalBus,
   isSsbIncomingCircuit,
 } from '../abtDownstream/ssbBoard'
@@ -479,8 +480,8 @@ function BusDrop({
     !isAux24Feed(circuit) && isMsb4Sfs(equipment.id) && expanded
   const ssbOpen =
     !msb4sfsOpen &&
-    Boolean(equipment.incomingSwitch || /^SSB-[12]SFS/i.test(equipment.id)) &&
     hasSsbBoardLayout(equipment) &&
+    !isDownstreamPanelBoard(equipment) &&
     expanded
   const ssb2209 = isSsb2Pws2209(equipment.id)
   const equipFam = equipFamOf(equipment, isLcsEquipment(equipment.id))

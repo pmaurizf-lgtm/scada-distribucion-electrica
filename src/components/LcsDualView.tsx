@@ -20,6 +20,7 @@ import {
 } from '../abtDownstream'
 import {
   hasSsbBoardLayout,
+  isDownstreamPanelBoard,
   isOutletSideOriginLive,
   isSsbIncomingCircuit,
 } from '../abtDownstream/ssbBoard'
@@ -369,9 +370,9 @@ function LcsOutletDrop({
     !isAux24Feed(circuit) &&
     (kids.length > 0 || hasSsbBoardLayout(equipment))
   const expanded = expandedEquip.has(equipment.id)
-  /** Solo SSB con INS/NSX: chasis dedicado. CCM usa EquipmentBusDrop (doble acometida). */
+  /** SSB / 400 Hz: chasis barra→salidas (también bus-only sin INS, p. ej. Rev.C). CCM usa EquipmentBusDrop. */
   const ssbOpen =
-    Boolean(equipment.incomingSwitch) &&
+    !isDownstreamPanelBoard(equipment) &&
     hasSsbBoardLayout(equipment) &&
     expanded
   const aux24Feeds = useMemo(

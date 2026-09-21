@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 :root {
   --bg: #0e1614;
@@ -6311,6 +6311,16 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   width: 2px;
   position: relative;
   z-index: 2;
+}
+
+/*
+ * Red de seguridad: salidas anidadas bajo LCS (--direct) sin .hbus--ssb-section
+ * (p. ej. topología sin INS). No deben heredar el pull de --lcs-bus-gap.
+ */
+.hbus--lcs-section .hbus--direct .hbus-drop__leg--local .hbus-drop__wire--from-bus {
+  margin-top: -4px !important;
+  min-height: 1.15rem !important;
+  flex: 0 0 1.15rem !important;
 }
 
 /* MSB-4SFS: salidas unidas a la barra (después del stub corto SSB).

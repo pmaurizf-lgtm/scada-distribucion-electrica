@@ -89,8 +89,12 @@ export function isDownstreamPanelBoard(equipment: Equipment): boolean {
 export function hasSsbBoardLayout(equipment: Equipment): boolean {
   if (isSsbIncomingSwitchName(equipment.incomingSwitch)) return true
   if (isDownstreamPanelBoard(equipment)) return true
-  // Cuadros 400 Hz sin INS materializado: barra + salidas (bus-only).
-  if (/^SSB-[12]SFS/i.test(equipment.id)) return true
+  /*
+   * Todos los SSB-* (incl. Rev.C sin INS materializado): barra + salidas
+   * en modo bus-only. Sin esto, las salidas heredan --lcs-bus-gap del LCS
+   * y la pata --from-bus se mete en el recuadro del equipo.
+   */
+  if (/^SSB-/i.test(equipment.id)) return true
   return false
 }
 
