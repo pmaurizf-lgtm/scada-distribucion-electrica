@@ -1,9 +1,13 @@
 /**
- * Candados LOTO por buque (independientes).
- * El unifilar (circuitos / interruptores) es compartido.
+ * Candados LOTO por buque (independientes de la revisión C/D del unifilar).
+ * Los IDs de circuito se reenganchan a la topología activa vía `interruptor`.
  * Sync cloud: vessels/{vesselId}/locks/state (LWW por updatedAt).
  */
-import type { CircuitLockInfo } from './parseLocksExcel'
+import type { DistributionData } from '../types'
+import {
+  remapLocksToTopology,
+  type CircuitLockInfo,
+} from './parseLocksExcel'
 import type { VesselId } from '../vessels/vesselCatalog'
 import { vesselUsesSeedLocks } from '../vessels/vesselCatalog'
 import lockListSeed from '../data/lockList.json'
@@ -86,6 +90,53 @@ export function loadVesselLocks(vesselId: VesselId): {
     }
   } catch {
     return defaultLocksForVessel(vesselId)
+  }
+}
+
+/**
+ * Carga candados del buque y los resuelve contra la topología activa
+ * (misma lista LOTO en Rev.C y Rev.D).
+ */
+export function loadVesselLocksForTopology(
+  vesselId: VesselId,
+  data: DistributionData,
+): {
+  lockedCircuits: string[]
+  lockInfoByCircuit: Record<string, CircuitLockInfo>
+  updatedAt: string
+  fileName: string | null
+} {
+  const raw = loadVesselLocks(vesselId)
+  if (Object.keys(raw.lockInfoByCircuit).length === 0) {
+    return raw
+  }
+  const remapped = remapLocksToTopology(data, raw.lockInfoByCircuit)
+  return {
+    ...raw,
+    lockedCircuits: remapped.lockedCircuits,
+    lockInfoByCircuit: remapped.lockInfoByCircuit,
+  }
+}
+
+/** Seed / defaults remapeados a la topología activa. */
+export function defaultLocksForTopology(
+  vesselId: VesselId,
+  data: DistributionData,
+): {
+  lockedCircuits: string[]
+  lockInfoByCircuit: Record<string, CircuitLockInfo>
+  updatedAt: string
+  fileName: string | null
+} {
+  const raw = defaultLocksForVessel(vesselId)
+  if (Object.keys(raw.lockInfoByCircuit).length === 0) {
+    return raw
+  }
+  const remapped = remapLocksToTopology(data, raw.lockInfoByCircuit)
+  return {
+    ...raw,
+    lockedCircuits: remapped.lockedCircuits,
+    lockInfoByCircuit: remapped.lockInfoByCircuit,
   }
 }
 

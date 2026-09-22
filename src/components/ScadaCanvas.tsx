@@ -24,13 +24,14 @@ import {
   applyLocksToProtectionStatus,
   parseLockEntriesFromWorkbook,
   parseLockTargetsFromWorkbook,
+  remapLocksToTopology,
   resolveLockCircuitIds,
   resolveLockEntries,
   type CircuitLockInfo,
 } from '../utils/parseLocksExcel'
 import {
-  defaultLocksForVessel,
-  loadVesselLocks,
+  defaultLocksForTopology,
+  loadVesselLocksForTopology,
   saveVesselLocks,
 } from '../utils/vesselLocksPersistence'
 import {
@@ -129,7 +130,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   const [topologyBusy, setTopologyBusy] = useState(false)
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatusMap>(
     () => {
-      const locks = loadVesselLocks(vesselId)
+      const locks = loadVesselLocksForTopology(vesselId, system690)
       return withLocksOpen(
         toProtectionStatusMap(buildOpenProtectionStatus(system690)),
         locks.lockedCircuits,
@@ -137,17 +138,20 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     },
   )
   const [lockedCircuits, setLockedCircuits] = useState<Set<string>>(() => {
-    const locks = loadVesselLocks(vesselId)
-    return new Set(locks.lockedCircuits)
+    return new Set(
+      loadVesselLocksForTopology(vesselId, system690).lockedCircuits,
+    )
   })
   const [lockInfoByCircuit, setLockInfoByCircuit] = useState<
     Record<string, CircuitLockInfo>
-  >(() => ({ ...loadVesselLocks(vesselId).lockInfoByCircuit }))
+  >(() => ({
+    ...loadVesselLocksForTopology(vesselId, system690).lockInfoByCircuit,
+  }))
   const [locksFileName, setLocksFileName] = useState<string | null>(
-    () => loadVesselLocks(vesselId).fileName,
+    () => loadVesselLocksForTopology(vesselId, system690).fileName,
   )
   const [locksUpdatedAt, setLocksUpdatedAt] = useState(
-    () => loadVesselLocks(vesselId).updatedAt,
+    () => loadVesselLocksForTopology(vesselId, system690).updatedAt,
   )
   const locksUpdatedAtRef = useRef(locksUpdatedAt)
   const lockedCircuitsRef = useRef(lockedCircuits)
@@ -176,23 +180,27 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       lockInfoByCircuit: Record<string, CircuitLockInfo>
       fileName?: string | null
     }) => {
+      const remapped = remapLocksToTopology(
+        system690,
+        remote.lockInfoByCircuit,
+      )
       applyingLocksRemoteRef.current = true
       locksUpdatedAtRef.current = remote.updatedAt
       setLocksUpdatedAt(remote.updatedAt)
-      setLockedCircuits(new Set(remote.lockedCircuits))
-      setLockInfoByCircuit({ ...remote.lockInfoByCircuit })
+      setLockedCircuits(new Set(remapped.lockedCircuits))
+      setLockInfoByCircuit({ ...remapped.lockInfoByCircuit })
       setLocksFileName(remote.fileName ?? null)
       setProtectionStatus((prev) =>
-        applyLocksToProtectionStatus(prev, remote.lockedCircuits),
+        applyLocksToProtectionStatus(prev, remapped.lockedCircuits),
       )
       saveVesselLocks(vesselId, {
-        lockedCircuits: remote.lockedCircuits,
-        lockInfoByCircuit: remote.lockInfoByCircuit,
+        lockedCircuits: remapped.lockedCircuits,
+        lockInfoByCircuit: remapped.lockInfoByCircuit,
         updatedAt: remote.updatedAt,
         fileName: remote.fileName ?? null,
       })
       setStatusSource(
-        locksStatusLine(vesselId, remote.lockedCircuits.length) +
+        locksStatusLine(vesselId, remapped.lockedCircuits.length) +
           ' · sync nube',
       )
     },
@@ -266,7 +274,8 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
     if (topo.sessionOverride && topo.fileName) {
       return `lista circuitos (sesión): ${topo.fileName}`
     }
-    const n = loadVesselLocks(vesselId).lockedCircuits.length
+    const n = loadVesselLocksForTopology(vesselId, system690).lockedCircuits
+      .length
     return locksStatusLine(vesselId, n)
   })
   const [locateQuery, setLocateQuery] = useState('')
@@ -356,7 +365,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
         updatedAt: locksUpdatedAtRef.current,
         fileName: locksFileName,
       })
-      const loaded = loadVesselLocks(next)
+      const loaded = loadVesselLocksForTopology(next, system690)
       locksUpdatedAtRef.current = loaded.updatedAt
       setLocksUpdatedAt(loaded.updatedAt)
       setLockedCircuits(new Set(loaded.lockedCircuits))
@@ -413,7 +422,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
   )
 
   const resetToRestState = useCallback(() => {
-    const defaults = defaultLocksForVessel(vesselId)
+    const defaults = defaultLocksForTopology(vesselId, system690)
     setProtectionStatus(
       withLocksOpen(
         toProtectionStatusMap(buildOpenProtectionStatus(system690)),
@@ -494,13 +503,33 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
       )
       return
     }
+    const circuit = system690.circuits.find((c) => c.id === circuitId)
     const nextLocked = new Set(lockedCircuitsRef.current).add(circuitId)
+    const prevInfo = lockInfoRef.current[circuitId]
+    const nextInfo = {
+      ...lockInfoRef.current,
+      [circuitId]: {
+        lockNumber: prevInfo?.lockNumber ?? '—',
+        interruptor:
+          prevInfo?.interruptor ??
+          circuit?.circuitRef ??
+          (circuit
+            ? `${circuit.originId}-${circuit.protectionName}`
+            : circuitId),
+        shortName: prevInfo?.shortName ?? circuit?.protectionName,
+        siteEquipment: prevInfo?.siteEquipment ?? circuit?.originId,
+        local: prevInfo?.local,
+        comment: prevInfo?.comment,
+      },
+    }
+    lockInfoRef.current = nextInfo
     setLockedCircuits(nextLocked)
+    setLockInfoByCircuit(nextInfo)
     setProtectionStatus((prev) => ({ ...prev, [circuitId]: 'abierta' }))
     setStatusSource('candado aplicado · interruptor abierto y bloqueado')
     bumpPublishLocks(undefined, {
       lockedCircuits: nextLocked,
-      lockInfoByCircuit: lockInfoRef.current,
+      lockInfoByCircuit: nextInfo,
     })
   }, [simulationActive, bumpPublishLocks])
 

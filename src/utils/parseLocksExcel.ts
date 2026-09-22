@@ -317,3 +317,48 @@ export function applyLocksToProtectionStatus(
   for (const id of circuitIds) next[id] = 'abierta'
   return next
 }
+
+/**
+ * Reengancha candados a la topología activa (Rev.C / Rev.D / Excel).
+ * Los IDs de circuito cambian entre revisiones; la meta estable es `interruptor`
+ * (y shortName / siteEquipment / comment) de CircuitLockInfo.
+ */
+export function remapLocksToTopology(
+  data: DistributionData,
+  lockInfoByCircuit: Record<string, CircuitLockInfo>,
+  equipmentPool?: Equipment[],
+): {
+  lockedCircuits: string[]
+  lockInfoByCircuit: Record<string, CircuitLockInfo>
+  unresolved: string[]
+} {
+  const seen = new Set<string>()
+  const entries: LockExcelEntry[] = []
+  for (const info of Object.values(lockInfoByCircuit)) {
+    if (!info?.interruptor) continue
+    const key = `${info.lockNumber}|${info.interruptor}|${info.comment ?? ''}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    entries.push({
+      interruptor: info.interruptor,
+      shortName: info.shortName,
+      siteEquipment: info.siteEquipment,
+      local: info.local,
+      lockNumber: info.lockNumber,
+      comment: info.comment,
+    })
+  }
+  if (entries.length === 0) {
+    return { lockedCircuits: [], lockInfoByCircuit: {}, unresolved: [] }
+  }
+  const { locks, unresolved } = resolveLockEntries(
+    data,
+    entries,
+    equipmentPool,
+  )
+  return {
+    lockedCircuits: Object.keys(locks),
+    lockInfoByCircuit: locks,
+    unresolved,
+  }
+}
