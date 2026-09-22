@@ -181,16 +181,60 @@ export function DeckPlanViewer({
     setTick((t) => t + 1)
   }
 
-  const exportOverrides = () => {
-    const json = exportOverridesJson()
-    void navigator.clipboard?.writeText(json).catch(() => {
+  const [exportHint, setExportHint] = useState<string | null>(null)
+  const [exportPreview, setExportPreview] = useState<string | null>(null)
+
+  const exportOverrides = (e?: { stopPropagation?: () => void; preventDefault?: () => void }) => {
+    e?.stopPropagation?.()
+    e?.preventDefault?.()
+    try {
+      const json = exportOverridesJson()
+      setExportPreview(json)
+      setExportHint(
+        'Aquí tienes el JSON. Cópialo o usa «Descargar archivo» y sustituye src/data/deckPlans/overrides.json',
+      )
+
+      // Descarga (Safari a menudo ignora <a download> sin estar en el DOM)
       const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
+      a.href = url
       a.download = 'overrides.json'
+      a.rel = 'noopener'
+      a.style.display = 'none'
+      document.body.appendChild(a)
       a.click()
-      URL.revokeObjectURL(a.href)
-    })
+      a.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 2_000)
+
+      if (navigator.clipboard?.writeText) {
+        void navigator.clipboard.writeText(json).then(
+          () =>
+            setExportHint(
+              'JSON copiado al portapapeles y listo para descargar. Pégalo en src/data/deckPlans/overrides.json',
+            ),
+          () => undefined,
+        )
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setExportHint(`Error al exportar: ${msg}`)
+      window.alert(`Error al exportar overrides: ${msg}`)
+    }
+  }
+
+  const downloadExportPreview = () => {
+    if (!exportPreview) return
+    const blob = new Blob([exportPreview], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'overrides.json'
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 2_000)
   }
 
   if (typeof document === 'undefined') return null
@@ -332,11 +376,60 @@ export function DeckPlanViewer({
             >
               {adjustMode ? 'Clic en el local…' : 'Ajustar marca'}
             </button>
-            <button type="button" className="btn" onClick={exportOverrides}>
+            <button
+              type="button"
+              className="btn"
+              onMouseDown={(ev) => {
+                ev.preventDefault()
+                ev.stopPropagation()
+              }}
+              onClick={exportOverrides}
+            >
               Exportar overrides
             </button>
           </div>
         </div>
+        {exportHint ? (
+          <p className="deck-plan-modal__export-hint" role="status">
+            {exportHint}
+          </p>
+        ) : null}
+        {exportPreview ? (
+          <div className="deck-plan-modal__export-box">
+            <div className="deck-plan-modal__export-box-actions">
+              <button type="button" className="btn" onClick={downloadExportPreview}>
+                Descargar archivo
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(exportPreview)
+                  setExportHint('Copiado al portapapeles')
+                }}
+              >
+                Copiar
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setExportPreview(null)
+                  setExportHint(null)
+                }}
+              >
+                Cerrar panel
+              </button>
+            </div>
+            <textarea
+              className="deck-plan-modal__export-ta"
+              readOnly
+              value={exportPreview}
+              rows={8}
+              onFocus={(ev) => ev.currentTarget.select()}
+            />
+          </div>
+        ) : null}
 
         <div
           ref={viewportRef}
