@@ -46,7 +46,7 @@ export default defineConfig({
         skipWaiting: true,
         cleanupOutdatedCaches: true,
         // Nueva clave: fuerza abandonar caches PWA viejas en el móvil
-        cacheId: 'scada-f110-v12-equip-hover-fix',
+        cacheId: 'scada-f110-v13-deck-plan-names',
         // El bundle unifilar (abtDownstream + topología) supera con creces 2 MiB
         maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
         globPatterns: [
@@ -60,7 +60,7 @@ export default defineConfig({
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'scada-html-v12',
+              cacheName: 'scada-html-v13',
               networkTimeoutSeconds: 4,
             },
           },
@@ -68,7 +68,7 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.includes('/deck-plans/'),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'scada-deck-plans',
+              cacheName: 'scada-deck-plans-v13',
               expiration: {
                 maxEntries: 24,
                 maxAgeSeconds: 60 * 60 * 24 * 30,

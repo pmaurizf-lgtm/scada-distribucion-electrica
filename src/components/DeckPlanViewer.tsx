@@ -66,6 +66,20 @@ export function DeckPlanViewer({
 
   const plan = hit ? getDeckPlan(hit.planId) : undefined
   const hasIndexedHits = hits.length > 0
+  const selectedPlanId = hit?.planId || fallbackPlanId
+
+  const selectPlan = (planId: string) => {
+    const hitIdx = hits.findIndex((h) => h.planId === planId)
+    if (hitIdx >= 0) {
+      setIndex(hitIdx)
+      setAdjustMode(false)
+    } else {
+      setFallbackPlanId(planId)
+      setIndex(0)
+      setImgSize({ w: 0, h: 0 })
+      setAdjustMode(true)
+    }
+  }
 
   const viewportRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(START_Z)
@@ -296,6 +310,19 @@ export function DeckPlanViewer({
 
         <div className="deck-plan-modal__toolbar">
           <div className="deck-plan-modal__nav">
+            <label className="deck-plan-modal__plan-pick">
+              Plano
+              <select
+                value={selectedPlanId}
+                onChange={(e) => selectPlan(e.target.value)}
+              >
+                {listDeckPlans().map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             {hasIndexedHits ? (
               <>
                 <button
@@ -310,7 +337,6 @@ export function DeckPlanViewer({
                 </button>
                 <span className="deck-plan-modal__count">
                   {index + 1} / {hits.length}
-                  {plan ? ` · ${plan.label}` : ''}
                 </span>
                 <button
                   type="button"
@@ -322,28 +348,9 @@ export function DeckPlanViewer({
                 </button>
               </>
             ) : (
-              <>
-                <label className="deck-plan-modal__plan-pick">
-                  Plano
-                  <select
-                    value={fallbackPlanId}
-                    onChange={(e) => {
-                      setFallbackPlanId(e.target.value)
-                      setImgSize({ w: 0, h: 0 })
-                      setAdjustMode(true)
-                    }}
-                  >
-                    {listDeckPlans().map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span className="deck-plan-modal__count">
-                  Sin índice OCR — coloca la marca
-                </span>
-              </>
+              <span className="deck-plan-modal__count">
+                Sin marca en este plano — usa «Ajustar marca»
+              </span>
             )}
           </div>
           <div className="deck-plan-modal__zoom">
