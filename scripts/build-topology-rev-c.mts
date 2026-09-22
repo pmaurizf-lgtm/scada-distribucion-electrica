@@ -57,12 +57,23 @@ console.log({
 
 // Layout multi-barra SSB-2PWS2209 (misma estructura que Rev.D).
 const { spawnSync } = await import('node:child_process')
-const patch = spawnSync(
+const patch2209 = spawnSync(
   process.execPath,
   [path.join(root, 'scripts', 'patch-ssb-2pws2209-topology.mjs'), outPath],
   { stdio: 'inherit' },
 )
-if (patch.status !== 0) {
+if (patch2209.status !== 0) {
   console.error('Fallo el patch SSB-2PWS2209 sobre Rev.C')
-  process.exit(patch.status ?? 1)
+  process.exit(patch2209.status ?? 1)
+}
+
+// ABT→TRF un enlace; devanados TRF→LCS virtuales (árbol/unifilar como Rev.D).
+const patchTrf = spawnSync(
+  process.execPath,
+  [path.join(root, 'scripts', 'patch-abt-trf-lcs-topology.mjs'), outPath],
+  { stdio: 'inherit' },
+)
+if (patchTrf.status !== 0) {
+  console.error('Fallo el patch ABT/TRF/LCS sobre Rev.C')
+  process.exit(patchTrf.status ?? 1)
 }
