@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # false: evita bloqueos "in progress deployment" al cancelar mid-deploy
+  cancel-in-progress: false
 
 jobs:
   build:
