@@ -54,3 +54,15 @@ console.log({
   outMiB: +(outStat.size / 1024 / 1024).toFixed(2),
   ...stats,
 })
+
+// Layout multi-barra SSB-2PWS2209 (misma estructura que Rev.D).
+const { spawnSync } = await import('node:child_process')
+const patch = spawnSync(
+  process.execPath,
+  [path.join(root, 'scripts', 'patch-ssb-2pws2209-topology.mjs'), outPath],
+  { stdio: 'inherit' },
+)
+if (patch.status !== 0) {
+  console.error('Fallo el patch SSB-2PWS2209 sobre Rev.C')
+  process.exit(patch.status ?? 1)
+}
