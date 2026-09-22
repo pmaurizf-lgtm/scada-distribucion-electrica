@@ -88,3 +88,14 @@ if (patchTies.status !== 0) {
   console.error('Fallo el patch acopladores LCS sobre Rev.C')
   process.exit(patchTies.status ?? 1)
 }
+
+// Cadenas JBX→SKT/carga (Rev.D / import-jbx-all-chains); lista Rev.C deja JBX como hoja.
+const patchJbx = spawnSync(
+  process.execPath,
+  [path.join(root, 'scripts', 'patch-jbx-chains-topology.mjs'), outPath],
+  { stdio: 'inherit' },
+)
+if (patchJbx.status !== 0) {
+  console.error('Fallo el patch cadenas JBX sobre Rev.C')
+  process.exit(patchJbx.status ?? 1)
+}
