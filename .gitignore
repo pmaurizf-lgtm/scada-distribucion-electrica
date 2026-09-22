@@ -26,6 +26,18 @@ dist-ssr
 # Local tooling
 .tools/
 
+# Destino Synology (rutas locales SMB)
+nas/deploy.env
+
+# PNG fuente de planos (JPEG publicados en public/deck-plans)
+planos/**
+!planos/.gitkeep
+planos/_preview/
+
+# Tesseract.js language data (descarga local del OCR)
+eng.traineddata
+*.traineddata
+
 .tmp-pdf/
 
 

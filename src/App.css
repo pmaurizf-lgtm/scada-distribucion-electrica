@@ -10427,6 +10427,146 @@ body:has(.notes-modal-backdrop) .circuit-balloon {
   box-shadow: 0 0 0 1px rgba(230, 194, 0, 0.25);
 }
 
+.equip-balloon__header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.equip-balloon__plan-btn {
+  border-color: rgba(110, 180, 220, 0.65) !important;
+  background: rgba(70, 140, 180, 0.28) !important;
+  color: #c8e6f5 !important;
+  box-shadow: 0 0 0 1px rgba(110, 180, 220, 0.25) !important;
+}
+
+.equip-balloon__plan-btn:hover {
+  background: rgba(70, 140, 180, 0.42) !important;
+}
+
+/* —— Visor plano de cubierta —— */
+.deck-plan-backdrop {
+  z-index: 12000;
+}
+
+.deck-plan-modal {
+  width: min(1100px, 96vw);
+  height: min(860px, 94vh);
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.deck-plan-modal__header {
+  flex: 0 0 auto;
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.deck-plan-modal__local-name {
+  font-weight: 500;
+  font-size: 0.85em;
+  opacity: 0.85;
+}
+
+.deck-plan-modal__eq {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+.deck-plan-modal__toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 1rem 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.deck-plan-modal__nav,
+.deck-plan-modal__zoom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.deck-plan-modal__count {
+  font-size: 0.78rem;
+  opacity: 0.85;
+  min-width: 7rem;
+  text-align: center;
+}
+
+.deck-plan-modal__plan-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.deck-plan-modal__plan-pick select {
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+}
+
+.deck-plan-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  background: #050808;
+  touch-action: none;
+  cursor: grab;
+}
+
+.deck-plan-viewport--adjust {
+  cursor: crosshair;
+}
+
+.deck-plan-viewport:active:not(.deck-plan-viewport--adjust) {
+  cursor: grabbing;
+}
+
+.deck-plan-viewport__empty {
+  margin: 2rem;
+  opacity: 0.75;
+}
+
+.deck-plan-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.deck-plan-stage__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+.deck-plan-mark {
+  position: absolute;
+  border: 2px solid #e6c200;
+  background: rgba(230, 194, 0, 0.18);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 12px rgba(230, 194, 0, 0.45);
+  border-radius: 4px;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
 .equip-balloon__notes-btn--header:hover {
   background: rgba(230, 194, 0, 0.35);
 }

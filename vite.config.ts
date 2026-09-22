@@ -52,6 +52,8 @@ export default defineConfig({
         globPatterns: [
           '**/*.{js,css,html,ico,svg,png,woff2,json,xlsx}',
         ],
+        // Planos JPEG grandes: bajo demanda, no precache PWA
+        globIgnores: ['**/deck-plans/**'],
         navigateFallback: 'index.html',
         runtimeCaching: [
           {
@@ -60,6 +62,17 @@ export default defineConfig({
             options: {
               cacheName: 'scada-html-v12',
               networkTimeoutSeconds: 4,
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/deck-plans/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'scada-deck-plans',
+              expiration: {
+                maxEntries: 24,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
             },
           },
         ],

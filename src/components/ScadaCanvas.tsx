@@ -52,6 +52,7 @@ import {
 import { NavantiaLogo } from './NavantiaLogo'
 import { StartupFeedsPanel } from './StartupFeedsPanel'
 import { NoteEditorModal } from './NoteEditorModal'
+import { DeckPlanHost } from './DeckPlanHost'
 import { NotesPanel } from './NotesPanel'
 import { useNotes } from '../notes/NotesContext'
 import { useUserProfile } from '../notes/UserProfileContext'
@@ -1510,6 +1511,7 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
         onClose={() => setNotesPanelOpen(false)}
       />
       <NoteEditorModal />
+      <DeckPlanHost />
 
       <footer className="statusbar">
         <span>

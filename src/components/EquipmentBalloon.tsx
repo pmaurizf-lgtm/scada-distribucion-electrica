@@ -5,6 +5,7 @@ import { originLabel } from '../utils/cascadeModel'
 import { labelSecondaryDenom } from '../utils/equipmentLabels'
 import { useNotesOptional } from '../notes'
 import { requestOpenNotes } from '../notes/openNotesEvent'
+import { requestOpenDeckPlan } from '../deckPlans'
 
 const KIND_LABEL: Record<Equipment['kind'], string> = {
   generador: 'Generador',
@@ -116,6 +117,23 @@ export function EquipmentBalloon({
     }
   }
 
+  const openDeckPlan = (e: {
+    stopPropagation: () => void
+    preventDefault?: () => void
+  }) => {
+    e.stopPropagation()
+    e.preventDefault?.()
+    const loc = equipment.local?.trim()
+    if (!loc) return
+    requestOpenDeckPlan({
+      local: loc,
+      localName: equipment.localName,
+      equipmentId: equipment.id,
+    })
+  }
+
+  const hasLocal = Boolean(equipment.local?.trim())
+
   return createPortal(
     <div
       className={`equip-balloon equip-balloon--portal equip-balloon--${pos.place}${
@@ -137,25 +155,41 @@ export function EquipmentBalloon({
             <span className="equip-balloon__dcp">{secondary.value}</span>
           )}
         </div>
-        <button
-          type="button"
-          className="btn equip-balloon__notes-btn equip-balloon__notes-btn--header"
-          onMouseDown={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-          }}
-          onClick={openNotes}
-        >
-          Notas
-          {openNotesCount > 0 ? (
-            <span
-              className="notes-badge"
-              aria-label={`${openNotesCount} abiertas`}
+        <div className="equip-balloon__header-actions">
+          {hasLocal ? (
+            <button
+              type="button"
+              className="btn equip-balloon__notes-btn equip-balloon__notes-btn--header equip-balloon__plan-btn"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+              onClick={openDeckPlan}
+              title="Ver local en plano de cubierta"
             >
-              {openNotesCount}
-            </span>
+              Plano
+            </button>
           ) : null}
-        </button>
+          <button
+            type="button"
+            className="btn equip-balloon__notes-btn equip-balloon__notes-btn--header"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            onClick={openNotes}
+          >
+            Notas
+            {openNotesCount > 0 ? (
+              <span
+                className="notes-badge"
+                aria-label={`${openNotesCount} abiertas`}
+              >
+                {openNotesCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
       </header>
       <div className="equip-balloon__body">
       <dl className="equip-balloon__kv">

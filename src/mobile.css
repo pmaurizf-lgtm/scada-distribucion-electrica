@@ -347,11 +347,23 @@ html.scada-mobile:has(.notes-modal-backdrop) .chrome-fab {
 
 /* ——— Notas / globos (portales en body: html.scada-mobile) ——— */
 
-html.scada-mobile .notes-modal-backdrop,
-.notes-modal-backdrop--mobile {
-  padding: 0;
+html.scada-mobile .deck-plan-modal,
+.deck-plan-modal.notes-modal--mobile {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  max-width: none;
+  border-radius: 0;
+}
+
+html.scada-mobile .deck-plan-modal__toolbar {
+  flex-direction: column;
   align-items: stretch;
-  justify-content: stretch;
+}
+
+html.scada-mobile .deck-plan-modal__nav,
+html.scada-mobile .deck-plan-modal__zoom {
+  justify-content: center;
 }
 
 html.scada-mobile .notes-modal,
