@@ -53,6 +53,7 @@ import { NavantiaLogo } from './NavantiaLogo'
 import { StartupFeedsPanel } from './StartupFeedsPanel'
 import { NoteEditorModal } from './NoteEditorModal'
 import { DeckPlanHost } from './DeckPlanHost'
+import { requestOpenDeckPlan } from '../deckPlans'
 import { NotesPanel } from './NotesPanel'
 import { useNotes } from '../notes/NotesContext'
 import { useUserProfile } from '../notes/UserProfileContext'
@@ -999,6 +1000,17 @@ export function ScadaCanvas({ vesselId, onVesselChange }: ScadaCanvasProps) {
                         )}
                       </span>
                     ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      requestOpenDeckPlan()
+                      if (isMobile) setChromeCollapsed(true)
+                    }}
+                    title="Consultar planos de cubierta del buque"
+                  >
+                    Planos
                   </button>
                   <button
                     type="button"

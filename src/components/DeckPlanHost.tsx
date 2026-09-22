@@ -14,7 +14,7 @@ export function DeckPlanHost() {
   useEffect(() => {
     const onOpen = (e: Event) => {
       const ce = e as CustomEvent<OpenDeckPlanDetail>
-      if (ce.detail?.local) setOpen(ce.detail)
+      setOpen(ce.detail ?? {})
     }
     window.addEventListener(SCADA_OPEN_DECK_PLAN_EVENT, onOpen)
     return () => window.removeEventListener(SCADA_OPEN_DECK_PLAN_EVENT, onOpen)

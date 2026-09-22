@@ -23,7 +23,7 @@ import {
 } from '../deckPlans'
 
 type Props = {
-  local: string
+  local?: string
   localName?: string
   equipmentId?: string
   onClose: () => void
@@ -40,6 +40,7 @@ export function DeckPlanViewer({
   onClose,
 }: Props) {
   const isMobile = useIsMobileUi()
+  const browseOnly = !local?.trim()
   const [index, setIndex] = useState(0)
   const [adjustMode, setAdjustMode] = useState(false)
   const [tick, setTick] = useState(0)
@@ -48,7 +49,10 @@ export function DeckPlanViewer({
   const [fallbackPlanId, setFallbackPlanId] = useState(
     () => listDeckPlans()[0]?.id ?? '',
   )
-  const hits = useMemo(() => hitsForLocal(local), [local, tick])
+  const hits = useMemo(
+    () => (browseOnly ? [] : hitsForLocal(local)),
+    [local, tick, browseOnly],
+  )
 
   const hit: DeckPlanHit | undefined =
     hits.length > 0
@@ -69,6 +73,11 @@ export function DeckPlanViewer({
   const selectedPlanId = hit?.planId || fallbackPlanId
 
   const selectPlan = (planId: string) => {
+    if (browseOnly) {
+      setFallbackPlanId(planId)
+      setImgSize({ w: 0, h: 0 })
+      return
+    }
     const hitIdx = hits.findIndex((h) => h.planId === planId)
     if (hitIdx >= 0) {
       setIndex(hitIdx)
@@ -105,8 +114,8 @@ export function DeckPlanViewer({
 
   useEffect(() => {
     setIndex(0)
-    setAdjustMode(!hasIndexedHits)
-  }, [local, hasIndexedHits])
+    setAdjustMode(!browseOnly && !hasIndexedHits)
+  }, [local, hasIndexedHits, browseOnly])
 
   useEffect(() => {
     const onChange = () => setTick((t) => t + 1)
@@ -187,7 +196,7 @@ export function DeckPlanViewer({
   }
 
   const onViewportClick = (e: ReactMouseEvent) => {
-    if (!adjustMode || !hit || !plan) return
+    if (browseOnly || !adjustMode || !hit || !plan || !local?.trim()) return
     const vp = viewportRef.current
     if (!vp) return
     const r = vp.getBoundingClientRect()
@@ -279,20 +288,30 @@ export function DeckPlanViewer({
         className={`notes-modal deck-plan-modal${isMobile ? ' notes-modal--mobile' : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-label={`Plano del local ${local}`}
+        aria-label={
+          browseOnly
+            ? 'Planos de cubierta'
+            : `Plano del local ${local}`
+        }
         onMouseDown={(e) => e.stopPropagation()}
       >
         <header className="notes-modal__header deck-plan-modal__header">
           <div>
-            <p className="notes-modal__kicker">Plano de cubierta</p>
+            <p className="notes-modal__kicker">Planos de cubierta</p>
             <h2 className="notes-modal__title">
-              {local}
-              {localName ? (
-                <span className="deck-plan-modal__local-name">
-                  {' '}
-                  · {localName}
-                </span>
-              ) : null}
+              {browseOnly ? (
+                plan?.label ?? 'Consulta'
+              ) : (
+                <>
+                  {local}
+                  {localName ? (
+                    <span className="deck-plan-modal__local-name">
+                      {' '}
+                      · {localName}
+                    </span>
+                  ) : null}
+                </>
+              )}
             </h2>
             {equipmentId ? (
               <p className="deck-plan-modal__eq">{equipmentId}</p>
@@ -349,7 +368,9 @@ export function DeckPlanViewer({
               </>
             ) : (
               <span className="deck-plan-modal__count">
-                Sin marca en este plano — usa «Ajustar marca»
+                {browseOnly
+                  ? 'Consulta de planos'
+                  : 'Sin marca en este plano — usa «Ajustar marca»'}
               </span>
             )}
           </div>
@@ -369,7 +390,7 @@ export function DeckPlanViewer({
               type="button"
               className="btn"
               onClick={() => {
-                if (hit) centerOnHit(hit, START_Z)
+                if (hit) centerOnHit(hit, browseOnly ? 0.85 : START_Z)
               }}
             >
               Centrar
@@ -388,9 +409,13 @@ export function DeckPlanViewer({
             <button
               type="button"
               className={`btn${adjustMode ? ' btn--active' : ''}`}
-              disabled={!hit}
+              disabled={browseOnly || !hit}
               onClick={() => setAdjustMode((v) => !v)}
-              title="Clic en el plano para reposicionar la marca"
+              title={
+                browseOnly
+                  ? 'Abre el plano desde el globo de un equipo para marcar su local'
+                  : 'Clic en el plano para reposicionar la marca'
+              }
             >
               {adjustMode ? 'Clic en el local…' : 'Ajustar marca'}
             </button>
