@@ -13,9 +13,11 @@ import {
   pushDeckPlanOverrides,
   type DeckPlanOverridesCloud,
 } from './cloudSync'
+import { migrateHitPlanIds, migratePlanId } from './planIds'
 
 export type { DeckPlanHit, DeckPlanMeta, DeckPlanManifest, DeckPlanHitsFile }
 export { normalizeLocalCode, localLookupKeys } from './normalize'
+export { migratePlanId, LEGACY_PLAN_IDS } from './planIds'
 export {
   requestOpenDeckPlan,
   SCADA_OPEN_DECK_PLAN_EVENT,
@@ -54,7 +56,11 @@ export function readLocalOverrides(): Record<string, DeckPlanHit[]> {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return {}
     const parsed = JSON.parse(raw) as DeckPlanHitsFile
-    return parsed.locals ?? {}
+    const locals: Record<string, DeckPlanHit[]> = {}
+    for (const [k, list] of Object.entries(parsed.locals ?? {})) {
+      locals[k] = (list ?? []).map(migrateHitPlanIds)
+    }
+    return locals
   } catch {
     return {}
   }
@@ -110,12 +116,12 @@ export function hitsForLocal(rawLocal: string | null | undefined): DeckPlanHit[]
     for (const key of keys) {
       const list = locals[key]
       if (!list) continue
-      for (const h of list) {
+      for (const raw of list) {
+        const h = migrateHitPlanIds(raw)
         const prev = byPlan.get(h.planId)
         if (!prev || hitStamp(h) >= hitStamp(prev)) {
           byPlan.set(h.planId, { ...h })
         } else if (!hitStamp(h) && !hitStamp(prev)) {
-          // Sin timestamp: la capa más tardía (localStorage) pisa
           byPlan.set(h.planId, { ...h })
         }
       }
@@ -147,7 +153,11 @@ export function adoptRemoteOverrides(
   remoteLocals: Record<string, DeckPlanHit[]>,
   _remoteUpdatedAt?: string,
 ): void {
-  const merged = mergeLocalsMaps(readLocalOverrides(), remoteLocals)
+  const migrated: Record<string, DeckPlanHit[]> = {}
+  for (const [k, list] of Object.entries(remoteLocals)) {
+    migrated[k] = (list ?? []).map(migrateHitPlanIds)
+  }
+  const merged = mergeLocalsMaps(readLocalOverrides(), migrated)
   writeLocalOverrides(merged)
 }
 
@@ -184,6 +194,7 @@ export function saveLocalOverrideHit(
   if (!norm) return
   const stamped: DeckPlanHit = {
     ...hit,
+    planId: migratePlanId(hit.planId),
     updatedAt: hit.updatedAt ?? new Date().toISOString(),
     conf: hit.conf ?? 100,
   }

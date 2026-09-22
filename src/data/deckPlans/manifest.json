@@ -2,73 +2,73 @@
   "version": 1,
   "plans": [
     {
-      "id": "000",
-      "file": "000.jpg",
-      "label": "Hoja 000",
+      "id": "cubierta-principal",
+      "file": "cubierta-principal.jpg",
+      "label": "Cubierta principal",
       "width": 4500,
       "height": 820,
       "sourceFile": "0801810003SRL_H2-3A aligerado-Por defecto-000 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "001",
-      "file": "001.jpg",
-      "label": "Hoja 001",
+      "id": "cubierta-2",
+      "file": "cubierta-2.jpg",
+      "label": "Cubierta 2",
       "width": 4500,
       "height": 706,
       "sourceFile": "0801810003SRL_H2-3A aligerado-Por defecto-001 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "003",
-      "file": "003.jpg",
-      "label": "Hoja 003",
+      "id": "cubierta-3",
+      "file": "cubierta-3.jpg",
+      "label": "Cubierta 3",
       "width": 4500,
       "height": 734,
       "sourceFile": "0801810003SRL_H2-3A aligerado-Por defecto-003 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "004",
-      "file": "004.jpg",
-      "label": "Hoja 004",
+      "id": "cubierta-4",
+      "file": "cubierta-4.jpg",
+      "label": "Cubierta 4-Techo Tanques",
       "width": 4500,
       "height": 702,
       "sourceFile": "0801810003SRL_H2-3A aligerado-Por defecto-004 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "005",
-      "file": "005.jpg",
-      "label": "Hoja 005",
+      "id": "tanques",
+      "file": "tanques.jpg",
+      "label": "Tanques",
       "width": 4500,
       "height": 729,
       "sourceFile": "0801810003SRL_H2-3A-Por defecto-005 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "006",
-      "file": "006.jpg",
-      "label": "Hoja 006",
+      "id": "cubierta-01",
+      "file": "cubierta-01.jpg",
+      "label": "Cubierta 01",
       "width": 4500,
       "height": 824,
       "sourceFile": "0801810003SRL_H2-3A-Por defecto-006 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "007",
-      "file": "007.jpg",
-      "label": "Hoja 007",
+      "id": "cubierta-02",
+      "file": "cubierta-02.jpg",
+      "label": "Cubierta 02",
       "width": 4500,
       "height": 1023,
       "sourceFile": "0801810003SRL_H2-3A-Por defecto-007 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "008",
-      "file": "008.jpg",
-      "label": "Hoja 008",
+      "id": "cubiertas-03-07",
+      "file": "cubiertas-03-07.jpg",
+      "label": "Cubiertas 03 a 07",
       "width": 4500,
       "height": 462,
       "sourceFile": "0801810003SRL_H2-3A-Por defecto-008 - Topaz Gigapixel, escala 2x.png"
     },
     {
-      "id": "009",
-      "file": "009.jpg",
-      "label": "Hoja 009",
+      "id": "cubierta-08",
+      "file": "cubierta-08.jpg",
+      "label": "Cubierta 08 y vista trasversal",
       "width": 4500,
       "height": 1252,
       "sourceFile": "0801810003SRL_H2-3A-Por defecto-009 - Topaz Gigapixel, escala 2x.png"
