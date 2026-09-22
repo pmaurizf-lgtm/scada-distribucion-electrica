@@ -18,6 +18,7 @@ import {
   hitsForLocal,
   listDeckPlans,
   saveLocalOverrideHit,
+  SCADA_DECK_PLAN_OVERRIDES_CHANGED,
   type DeckPlanHit,
 } from '../deckPlans'
 
@@ -42,6 +43,8 @@ export function DeckPlanViewer({
   const [index, setIndex] = useState(0)
   const [adjustMode, setAdjustMode] = useState(false)
   const [tick, setTick] = useState(0)
+  const [exportHint, setExportHint] = useState<string | null>(null)
+  const [exportPreview, setExportPreview] = useState<string | null>(null)
   const [fallbackPlanId, setFallbackPlanId] = useState(
     () => listDeckPlans()[0]?.id ?? '',
   )
@@ -90,6 +93,13 @@ export function DeckPlanViewer({
     setIndex(0)
     setAdjustMode(!hasIndexedHits)
   }, [local, hasIndexedHits])
+
+  useEffect(() => {
+    const onChange = () => setTick((t) => t + 1)
+    window.addEventListener(SCADA_DECK_PLAN_OVERRIDES_CHANGED, onChange)
+    return () =>
+      window.removeEventListener(SCADA_DECK_PLAN_OVERRIDES_CHANGED, onChange)
+  }, [])
 
   useEffect(() => {
     if (!hit || imgSize.w < 1) return
@@ -179,10 +189,11 @@ export function DeckPlanViewer({
     })
     setAdjustMode(false)
     setTick((t) => t + 1)
+    setExportHint(
+      'Posición guardada. Se recordará en este dispositivo y, si hay sesión, en la nube.',
+    )
+    window.setTimeout(() => setExportHint(null), 5000)
   }
-
-  const [exportHint, setExportHint] = useState<string | null>(null)
-  const [exportPreview, setExportPreview] = useState<string | null>(null)
 
   const exportOverrides = (e?: { stopPropagation?: () => void; preventDefault?: () => void }) => {
     e?.stopPropagation?.()
@@ -384,8 +395,9 @@ export function DeckPlanViewer({
                 ev.stopPropagation()
               }}
               onClick={exportOverrides}
+              title="Copia de seguridad opcional del JSON (ya no hace falta para recordar la marca)"
             >
-              Exportar overrides
+              Copia JSON…
             </button>
           </div>
         </div>

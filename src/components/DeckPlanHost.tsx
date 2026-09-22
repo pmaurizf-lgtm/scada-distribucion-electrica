@@ -4,10 +4,12 @@ import {
   SCADA_OPEN_DECK_PLAN_EVENT,
   type OpenDeckPlanDetail,
 } from '../deckPlans'
+import { useDeckPlanOverridesSync } from '../deckPlans/useDeckPlanOverridesSync'
 
 /** Escucha el evento global y monta el visor de plano. */
 export function DeckPlanHost() {
   const [open, setOpen] = useState<OpenDeckPlanDetail | null>(null)
+  useDeckPlanOverridesSync()
 
   useEffect(() => {
     const onOpen = (e: Event) => {

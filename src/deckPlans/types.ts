@@ -17,7 +17,10 @@ export interface DeckPlanHit {
   w?: number
   h?: number
   conf?: number
+  /** ISO · última corrección manual / nube (LWW). */
+  updatedAt?: string
 }
+
 
 export interface DeckPlanManifest {
   version: number

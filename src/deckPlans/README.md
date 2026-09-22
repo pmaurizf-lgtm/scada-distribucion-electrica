@@ -14,4 +14,12 @@ Lee `planos/*.png` y escribe `public/deck-plans/*.jpg` + `src/data/deckPlans/man
 npm run deck-plans:ocr
 ```
 
-Escribe `src/data/deckPlans/hits.json`. Las correcciones definitivas van en `overrides.json` (tienen prioridad). Los ajustes desde el visor se guardan en `localStorage` y se pueden exportar desde la UI.
+Escribe `src/data/deckPlans/hits.json`.
+
+## Correcciones manuales (automáticas)
+
+Al **Ajustar marca** en el visor, la posición se guarda en `localStorage` y se sincroniza a Firestore (`shared/deckPlanOverrides`) si hay sesión. No hace falta exportar.
+
+Opcional: botón «Copia JSON…» para backup en `overrides.json`.
+
+Tras cambiar reglas: `npm run notes:rules`.

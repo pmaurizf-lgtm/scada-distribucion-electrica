@@ -8,6 +8,11 @@ import type {
   DeckPlanManifest,
   DeckPlanMeta,
 } from './types'
+import {
+  isDeckPlanCloudConfigured,
+  pushDeckPlanOverrides,
+  type DeckPlanOverridesCloud,
+} from './cloudSync'
 
 export type { DeckPlanHit, DeckPlanMeta, DeckPlanManifest, DeckPlanHitsFile }
 export { normalizeLocalCode, localLookupKeys } from './normalize'
@@ -16,6 +21,9 @@ export {
   SCADA_OPEN_DECK_PLAN_EVENT,
   type OpenDeckPlanDetail,
 } from './openDeckPlanEvent'
+
+export const SCADA_DECK_PLAN_OVERRIDES_CHANGED = 'scada-deck-plan-overrides-changed'
+export const SCADA_DECK_PLAN_OVERRIDE_SAVED = 'scada-deck-plan-override-saved'
 
 const STORAGE_KEY = 'scada-deck-plan-overrides-v1'
 
@@ -36,7 +44,11 @@ export function deckPlanImageUrl(plan: DeckPlanMeta): string {
   return `./deck-plans/${plan.file}`
 }
 
-function readLocalOverrides(): Record<string, DeckPlanHit[]> {
+function notifyOverridesChanged(): void {
+  window.dispatchEvent(new CustomEvent(SCADA_DECK_PLAN_OVERRIDES_CHANGED))
+}
+
+export function readLocalOverrides(): Record<string, DeckPlanHit[]> {
   if (typeof localStorage === 'undefined') return {}
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -56,9 +68,37 @@ function writeLocalOverrides(locals: Record<string, DeckPlanHit[]>): void {
     locals,
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+  notifyOverridesChanged()
 }
 
-/** Merge: OCR < overrides.json < localStorage (más reciente gana por planId). */
+function hitStamp(h: DeckPlanHit): string {
+  return h.updatedAt ?? ''
+}
+
+/** Fusiona dos mapas de hits; por planId gana el updatedAt más reciente (o el entrante si empate). */
+export function mergeLocalsMaps(
+  base: Record<string, DeckPlanHit[]>,
+  incoming: Record<string, DeckPlanHit[]>,
+): Record<string, DeckPlanHit[]> {
+  const out: Record<string, DeckPlanHit[]> = {}
+  const keys = new Set([...Object.keys(base), ...Object.keys(incoming)])
+  for (const key of keys) {
+    const byPlan = new Map<string, DeckPlanHit>()
+    for (const h of base[key] ?? []) byPlan.set(h.planId, { ...h })
+    for (const h of incoming[key] ?? []) {
+      const prev = byPlan.get(h.planId)
+      if (!prev || hitStamp(h) >= hitStamp(prev)) {
+        byPlan.set(h.planId, { ...h })
+      }
+    }
+    out[key] = [...byPlan.values()].sort((a, b) =>
+      a.planId.localeCompare(b.planId),
+    )
+  }
+  return out
+}
+
+/** Merge: OCR < overrides.json < localStorage (LWW por updatedAt cuando exista). */
 export function hitsForLocal(rawLocal: string | null | undefined): DeckPlanHit[] {
   const keys = localLookupKeys(rawLocal)
   if (keys.length === 0) return []
@@ -71,7 +111,13 @@ export function hitsForLocal(rawLocal: string | null | undefined): DeckPlanHit[]
       const list = locals[key]
       if (!list) continue
       for (const h of list) {
-        byPlan.set(h.planId, { ...h })
+        const prev = byPlan.get(h.planId)
+        if (!prev || hitStamp(h) >= hitStamp(prev)) {
+          byPlan.set(h.planId, { ...h })
+        } else if (!hitStamp(h) && !hitStamp(prev)) {
+          // Sin timestamp: la capa más tardía (localStorage) pisa
+          byPlan.set(h.planId, { ...h })
+        }
       }
     }
   }
@@ -87,8 +133,48 @@ export function hasDeckPlanHits(rawLocal: string | null | undefined): boolean {
   return hitsForLocal(rawLocal).length > 0
 }
 
+export function getLocalOverridesSnapshot(): DeckPlanOverridesCloud {
+  return {
+    updatedAt: new Date().toISOString(),
+    locals: readLocalOverrides(),
+  }
+}
+
 /**
- * Sustituye/añade un hit para el local en el plan indicado (localStorage).
+ * Adopta marcas remotas (Firestore) fusionándolas en localStorage.
+ */
+export function adoptRemoteOverrides(
+  remoteLocals: Record<string, DeckPlanHit[]>,
+  _remoteUpdatedAt?: string,
+): void {
+  const merged = mergeLocalsMaps(readLocalOverrides(), remoteLocals)
+  writeLocalOverrides(merged)
+}
+
+export async function publishLocalOverridesToCloud(
+  snap?: DeckPlanOverridesCloud,
+): Promise<void> {
+  if (!isDeckPlanCloudConfigured() || !navigator.onLine) return
+  const localSnap = snap ?? getLocalOverridesSnapshot()
+  let remoteLocals: Record<string, DeckPlanHit[]> = {}
+  try {
+    const { pullDeckPlanOverrides } = await import('./cloudSync')
+    const remote = await pullDeckPlanOverrides()
+    remoteLocals = remote?.locals ?? {}
+  } catch {
+    remoteLocals = {}
+  }
+  const mergedLocals = mergeLocalsMaps(remoteLocals, localSnap.locals)
+  const payload: DeckPlanOverridesCloud = {
+    updatedAt: new Date().toISOString(),
+    locals: mergedLocals,
+  }
+  writeLocalOverrides(mergedLocals)
+  await pushDeckPlanOverrides(payload)
+}
+
+/**
+ * Guarda la marca del local (localStorage) y dispara sync a la nube.
  */
 export function saveLocalOverrideHit(
   rawLocal: string,
@@ -96,30 +182,28 @@ export function saveLocalOverrideHit(
 ): void {
   const norm = normalizeLocalCode(rawLocal)
   if (!norm) return
+  const stamped: DeckPlanHit = {
+    ...hit,
+    updatedAt: hit.updatedAt ?? new Date().toISOString(),
+    conf: hit.conf ?? 100,
+  }
   const locals = { ...readLocalOverrides() }
   const list = [...(locals[norm] ?? [])]
-  const i = list.findIndex((h) => h.planId === hit.planId)
-  if (i >= 0) list[i] = hit
-  else list.push(hit)
+  const i = list.findIndex((h) => h.planId === stamped.planId)
+  if (i >= 0) list[i] = stamped
+  else list.push(stamped)
   list.sort((a, b) => a.planId.localeCompare(b.planId))
   locals[norm] = list
   writeLocalOverrides(locals)
+  window.dispatchEvent(
+    new CustomEvent(SCADA_DECK_PLAN_OVERRIDE_SAVED, { detail: { local: norm } }),
+  )
 }
 
-/** JSON listo para pegar en overrides.json (merge con committed). */
+/** JSON listo para pegar en overrides.json (backup opcional). */
 export function exportOverridesJson(): string {
   const local = readLocalOverrides()
-  const merged: Record<string, DeckPlanHit[]> = {
-    ...(committedOverrides.locals ?? {}),
-  }
-  for (const [k, list] of Object.entries(local)) {
-    const byPlan = new Map<string, DeckPlanHit>()
-    for (const h of merged[k] ?? []) byPlan.set(h.planId, h)
-    for (const h of list) byPlan.set(h.planId, h)
-    merged[k] = [...byPlan.values()].sort((a, b) =>
-      a.planId.localeCompare(b.planId),
-    )
-  }
+  const merged = mergeLocalsMaps(committedOverrides.locals ?? {}, local)
   return JSON.stringify({ version: 1, locals: merged }, null, 2) + '\n'
 }
 
