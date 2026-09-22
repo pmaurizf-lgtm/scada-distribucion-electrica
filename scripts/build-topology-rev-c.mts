@@ -77,3 +77,14 @@ if (patchTrf.status !== 0) {
   console.error('Fallo el patch ABT/TRF/LCS sobre Rev.C')
   process.exit(patchTrf.status ?? 1)
 }
+
+// Acopladores QVM/QNV → barras VM/NV (Excel Rev.C los deja como SPARE).
+const patchTies = spawnSync(
+  process.execPath,
+  [path.join(root, 'scripts', 'patch-lcs-section-ties-topology.mjs'), outPath],
+  { stdio: 'inherit' },
+)
+if (patchTies.status !== 0) {
+  console.error('Fallo el patch acopladores LCS sobre Rev.C')
+  process.exit(patchTies.status ?? 1)
+}
